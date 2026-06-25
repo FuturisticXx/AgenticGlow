@@ -12,14 +12,19 @@
 		23EAAF6F9FBF994FA8F5CDD5 /* KlarityCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AEA4C15C6AB6353DA49DC358 /* KlarityCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		286AD1BD987C4AA5F778F7B8 /* KlarityCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AEA4C15C6AB6353DA49DC358 /* KlarityCore.framework */; };
 		319888860F50D6319910D4C2 /* KlarityEventSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67F8DE2B760031A16CB2C172 /* KlarityEventSmokeTests.swift */; };
+		2F0B8FAD3C1B4B2E8E83B0A5 /* HookEventKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D27D7A2E8D54D2EA5D49B40 /* HookEventKind.swift */; };
 		5BF3D7365A333F1496AD40C6 /* KlarityCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AEA4C15C6AB6353DA49DC358 /* KlarityCore.framework */; };
 		5D41C0E4EC7C6737A5458999 /* KlarityCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AEA4C15C6AB6353DA49DC358 /* KlarityCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		4B6D1D8E7E954E22A7A3F76E /* AgentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4C6C0B7D654F1BB8A3D0B1 /* AgentProvider.swift */; };
 		6372A8FD0C4765A65E8BDDAD /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15FDB20832755A343EC0267 /* TestSupport.swift */; };
 		66B90A0112087F337602588F /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C262B082FD7704A5E928A6 /* main.swift */; };
 		6F8A4BE3119356276C4F7245 /* KlarityCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AEA4C15C6AB6353DA49DC358 /* KlarityCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6B8D24D4EFD84E8DA7E6B6A1 /* ToolCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E6B4A5B5F1481DA3AE27F9 /* ToolCategory.swift */; };
 		867F3D6EF2081A6CF5B29589 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15FDB20832755A343EC0267 /* TestSupport.swift */; };
+		9F8C2B54710E4F359D7A3B50 /* NormalizedEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B0F3F5D4DAB4A4B8733B0F1 /* NormalizedEvent.swift */; };
 		871A87543DE1ED18E5F4B688 /* KlarityApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D7DA0B688AEC618C654157 /* KlarityApp.swift */; };
 		8AA94DF2D492C49D6CACA724 /* ProductMetadataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E0AE5BC50B57D9C3A7AED4D /* ProductMetadataTests.swift */; };
+		A4D73D6C5B0B4D7D8E2B8E11 /* NormalizedEventTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C9F2B1E0C3F4A3C9C8A1F0D /* NormalizedEventTests.swift */; };
 		95933CB3B3F241EC045793F3 /* KlarityCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AEA4C15C6AB6353DA49DC358 /* KlarityCore.framework */; };
 		DD60DCA65D9F9D6B49D81DC2 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 757AB20478EF260AACBC34B2 /* AppDelegate.swift */; };
 		E1B67E933598B0ABFE2494CA /* ProductMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 126667FF38B088DDAD46DA43 /* ProductMetadata.swift */; };
@@ -139,8 +144,11 @@
 /* Begin PBXFileReference section */
 		06D7DA0B688AEC618C654157 /* KlarityApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KlarityApp.swift; sourceTree = "<group>"; };
 		126667FF38B088DDAD46DA43 /* ProductMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductMetadata.swift; sourceTree = "<group>"; };
+		1A4C6C0B7D654F1BB8A3D0B1 /* AgentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProvider.swift; sourceTree = "<group>"; };
 		1ECE3C109FFB1AE9B6B119BC /* KlarityAppSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KlarityAppSmokeTests.swift; sourceTree = "<group>"; };
 		2E0AE5BC50B57D9C3A7AED4D /* ProductMetadataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductMetadataTests.swift; sourceTree = "<group>"; };
+		2C9F2B1E0C3F4A3C9C8A1F0D /* NormalizedEventTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NormalizedEventTests.swift; sourceTree = "<group>"; };
+		3D27D7A2E8D54D2EA5D49B40 /* HookEventKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookEventKind.swift; sourceTree = "<group>"; };
 		3E9DEB9D9D67E15DA15C561C /* Klarity.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Klarity.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3FCF3424B4083FCFCFFCB216 /* KlarityLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KlarityLaunchTests.swift; sourceTree = "<group>"; };
 		4E6961DAAF0BCB51824B78D2 /* KlarityEventTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KlarityEventTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -152,9 +160,11 @@
 		7CED604BD4564F59E0F0B4D6 /* KlarityUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KlarityUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E37364EA10A777E2EAE54CC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		828599A43AD28736F472BBC4 /* KlarityCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KlarityCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8B0F3F5D4DAB4A4B8733B0F1 /* NormalizedEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NormalizedEvent.swift; sourceTree = "<group>"; };
 		AEA4C15C6AB6353DA49DC358 /* KlarityCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = KlarityCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BD28088FA6C3EE99BE286570 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		C15FDB20832755A343EC0267 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
+		C8E6B4A5B5F1481DA3AE27F9 /* ToolCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolCategory.swift; sourceTree = "<group>"; };
 		F4C3B5F8AEF2BE80C81C3441 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -247,6 +257,7 @@
 			isa = PBXGroup;
 			children = (
 				2E0AE5BC50B57D9C3A7AED4D /* ProductMetadataTests.swift */,
+				2C9F2B1E0C3F4A3C9C8A1F0D /* NormalizedEventTests.swift */,
 			);
 			path = KlarityCoreTests;
 			sourceTree = "<group>";
@@ -273,6 +284,7 @@
 		6E859939C5285E359BBB3A8E /* KlarityCore */ = {
 			isa = PBXGroup;
 			children = (
+				7A0D7E8E6F304447B03E6C29 /* Events */,
 				4A078AF63A72D946462F9F2C /* Product */,
 			);
 			path = KlarityCore;
@@ -284,6 +296,17 @@
 				66C262B082FD7704A5E928A6 /* main.swift */,
 			);
 			path = KlarityEvent;
+			sourceTree = "<group>";
+		};
+		7A0D7E8E6F304447B03E6C29 /* Events */ = {
+			isa = PBXGroup;
+			children = (
+				1A4C6C0B7D654F1BB8A3D0B1 /* AgentProvider.swift */,
+				3D27D7A2E8D54D2EA5D49B40 /* HookEventKind.swift */,
+				8B0F3F5D4DAB4A4B8733B0F1 /* NormalizedEvent.swift */,
+				C8E6B4A5B5F1481DA3AE27F9 /* ToolCategory.swift */,
+			);
+			path = Events;
 			sourceTree = "<group>";
 		};
 		897F15A8254A5D451484DCA0 /* Sources */ = {
@@ -608,7 +631,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4B6D1D8E7E954E22A7A3F76E /* AgentProvider.swift in Sources */,
+				2F0B8FAD3C1B4B2E8E83B0A5 /* HookEventKind.swift in Sources */,
 				E1B67E933598B0ABFE2494CA /* ProductMetadata.swift in Sources */,
+				9F8C2B54710E4F359D7A3B50 /* NormalizedEvent.swift in Sources */,
+				6B8D24D4EFD84E8DA7E6B6A1 /* ToolCategory.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -617,6 +644,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8AA94DF2D492C49D6CACA724 /* ProductMetadataTests.swift in Sources */,
+				A4D73D6C5B0B4D7D8E2B8E11 /* NormalizedEventTests.swift in Sources */,
 				FAD7569D727DC51FC6734601 /* TestSupport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
