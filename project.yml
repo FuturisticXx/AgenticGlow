@@ -48,6 +48,13 @@ targets:
       - Sources/KlarityApp/Resources
     info:
       path: Config/Klarity-Info.plist
+      properties:
+        CFBundleDisplayName: Klarity
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        LSUIElement: true
+        NSHumanReadableCopyright: Copyright © 2026 Klarity contributors
     entitlements:
       path: Config/Klarity.entitlements
     dependencies:
