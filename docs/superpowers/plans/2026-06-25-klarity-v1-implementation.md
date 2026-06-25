@@ -471,10 +471,11 @@ xcodebuild test \
   -project Klarity.xcodeproj \
   -scheme Klarity \
   -destination 'platform=macOS' \
+  -skip-testing:KlarityUITests \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-Expected: project generation succeeds and all four smoke-test bundles pass.
+Expected: project generation succeeds, all three unit-test bundles pass, and the UI-test target is generated for the signed UI checkpoint in Task 10.
 
 - [ ] **Step 5: Verify the helper is embedded**
 
