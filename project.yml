@@ -1,0 +1,143 @@
+name: Klarity
+options:
+  createIntermediateGroups: true
+  bundleIdPrefix: com.twodamax
+configs:
+  Debug: debug
+  Release: release
+configFiles:
+  Debug: Config/Debug.xcconfig
+  Release: Config/Release.xcconfig
+settings:
+  base:
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    SWIFT_VERSION: "6.0"
+    CLANG_ENABLE_MODULES: YES
+    ONLY_ACTIVE_ARCH: NO
+targets:
+  KlarityCore:
+    type: framework
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - Sources/KlarityCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.core
+        DEFINES_MODULE: YES
+        GENERATE_INFOPLIST_FILE: YES
+  KlarityEvent:
+    type: tool
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - Sources/KlarityEvent
+    dependencies:
+      - target: KlarityCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.event
+        PRODUCT_NAME: klarity-event
+  Klarity:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - Sources/KlarityApp
+    resources:
+      - Sources/KlarityApp/Resources
+    info:
+      path: Config/Klarity-Info.plist
+    entitlements:
+      path: Config/Klarity.entitlements
+    dependencies:
+      - target: KlarityCore
+      - target: KlarityEvent
+        embed: false
+    postBuildScripts:
+      - name: Embed Klarity event helper
+        basedOnDependencyAnalysis: false
+        script: |
+          set -euo pipefail
+          destination="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/bin"
+          mkdir -p "$destination"
+          cp "$BUILT_PRODUCTS_DIR/klarity-event" "$destination/klarity-event"
+          chmod 755 "$destination/klarity-event"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity
+        PRODUCT_NAME: Klarity
+        GENERATE_INFOPLIST_FILE: NO
+  KlarityCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - Tests/KlarityCoreTests
+      - Tests/TestSupport
+      - Tests/Fixtures
+    dependencies:
+      - target: KlarityCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.core-tests
+  KlarityEventTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - Tests/KlarityEventTests
+      - Tests/TestSupport
+      - Tests/Fixtures
+    dependencies:
+      - target: KlarityCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.event-tests
+  KlarityAppTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - Tests/KlarityAppTests
+      - Tests/TestSupport
+    dependencies:
+      - target: Klarity
+      - target: KlarityCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.app-tests
+  KlarityUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - Tests/KlarityUITests
+    dependencies:
+      - target: Klarity
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.ui-tests
+schemes:
+  Klarity:
+    build:
+      targets:
+        Klarity: all
+        KlarityCoreTests: [test]
+        KlarityEventTests: [test]
+        KlarityAppTests: [test]
+        KlarityUITests: [test]
+    test:
+      targets:
+        - KlarityCoreTests
+        - KlarityEventTests
+        - KlarityAppTests
+        - KlarityUITests
+  KlarityEvent:
+    build:
+      targets:
+        KlarityEvent: all
+        KlarityEventTests: [test]
+    test:
+      targets:
+        - KlarityEventTests
