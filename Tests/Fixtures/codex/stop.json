@@ -1,0 +1,7 @@
+{
+  "session_id": "codex-session",
+  "turn_id": "turn-2",
+  "cwd": "/tmp/Klarity",
+  "hook_event_name": "Stop",
+  "last_assistant_message": "SECRET_RESPONSE_MUST_NOT_PERSIST"
+}

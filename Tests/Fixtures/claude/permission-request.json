@@ -1,0 +1,8 @@
+{
+  "session_id": "claude-session",
+  "cwd": "/tmp/Example",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "SECRET_COMMAND_MUST_NOT_PERSIST"
+  }
+}

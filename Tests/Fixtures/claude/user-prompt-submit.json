@@ -1,0 +1,6 @@
+{
+  "session_id": "claude-session",
+  "cwd": "/tmp/Example",
+  "prompt": "SECRET_PROMPT_MUST_NOT_PERSIST",
+  "permission_mode": "default"
+}
