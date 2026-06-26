@@ -226,7 +226,7 @@ Result summary:
 
 ### Commit SHA
 
-- `1a37392`
+- code fix commit: `241f1a0`
 
 ### Concerns
 
