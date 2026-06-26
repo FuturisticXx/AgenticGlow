@@ -59,4 +59,58 @@ final class KlarityEventCommandTests: XCTestCase {
         XCTAssertEqual(event.toolCategory, .edit)
         XCTAssertEqual(event.turnStartedAt, Date(timeIntervalSince1970: 500))
     }
+
+    func testCommandReturnsUsageErrorForMalformedOrNonDictionaryPayload() {
+        let directory = temporaryDirectory()
+        let command = KlarityEventCommand(
+            store: FileSessionStateStore(directory: directory),
+            processIdentity: { _, _ in .fixture }
+        )
+
+        let malformedCode = command.run(
+            arguments: ["klarity-event", "codex", "UserPromptSubmit", "--klarity-hook"],
+            input: Data("{".utf8),
+            environment: ["TERM_PROGRAM": "Apple_Terminal"],
+            now: Date(timeIntervalSince1970: 500)
+        )
+        let arrayPayloadCode = command.run(
+            arguments: ["klarity-event", "codex", "UserPromptSubmit", "--klarity-hook"],
+            input: Data(#"["not","a","dictionary"]"#.utf8),
+            environment: ["TERM_PROGRAM": "Apple_Terminal"],
+            now: Date(timeIntervalSince1970: 500)
+        )
+
+        XCTAssertEqual(malformedCode, 64)
+        XCTAssertEqual(arrayPayloadCode, 64)
+    }
+
+    func testSessionEndRemovesExistingSessionState() throws {
+        let directory = temporaryDirectory()
+        let store = FileSessionStateStore(directory: directory)
+        let command = KlarityEventCommand(
+            store: store,
+            processIdentity: { _, _ in .fixture }
+        )
+
+        let startCode = command.run(
+            arguments: ["klarity-event", "codex", "UserPromptSubmit", "--klarity-hook"],
+            input: Data("""
+            {"session_id":"codex-session","turn_id":"turn-1","cwd":"/tmp/Klarity","prompt":"SECRET"}
+            """.utf8),
+            environment: ["TERM_PROGRAM": "Apple_Terminal"],
+            now: Date(timeIntervalSince1970: 500)
+        )
+        let endCode = command.run(
+            arguments: ["klarity-event", "codex", "SessionEnd", "--klarity-hook"],
+            input: Data("""
+            {"session_id":"codex-session","cwd":"/tmp/Klarity"}
+            """.utf8),
+            environment: ["TERM_PROGRAM": "Apple_Terminal"],
+            now: Date(timeIntervalSince1970: 501)
+        )
+
+        XCTAssertEqual(startCode, 0)
+        XCTAssertEqual(endCode, 0)
+        XCTAssertEqual(try store.loadAll(), [])
+    }
 }

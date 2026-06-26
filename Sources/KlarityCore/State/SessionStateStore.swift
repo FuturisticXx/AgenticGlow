@@ -44,6 +44,8 @@ public final class FileSessionStateStore: SessionStateStoring {
         } else {
             try fileManager.moveItem(at: temporary, to: destination)
         }
+
+        try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: destination.path)
     }
 
     public func loadAll() throws -> [NormalizedEvent] {

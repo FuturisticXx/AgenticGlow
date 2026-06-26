@@ -52,6 +52,43 @@ final class SessionStateStoreTests: XCTestCase {
         XCTAssertEqual(try store.loadAll(), [event])
     }
 
+    func testWriteReappliesPrivatePermissionsWhenOverwritingExistingSessionFile() throws {
+        let directory = temporaryDirectory()
+        let store = FileSessionStateStore(directory: directory)
+        let original = stateFixture(
+            provider: .codex,
+            phase: .thinking,
+            turnStartedAt: Date(timeIntervalSince1970: 100)
+        )
+        let updated = NormalizedEvent(
+            schemaVersion: original.schemaVersion,
+            provider: original.provider,
+            surface: original.surface,
+            sessionID: original.sessionID,
+            turnID: original.turnID,
+            phase: .usingTool,
+            label: "Editing",
+            toolCategory: .edit,
+            projectName: original.projectName,
+            workingDirectory: original.workingDirectory,
+            sourceBundleID: original.sourceBundleID,
+            sourceProcessID: original.sourceProcessID,
+            sourceProcessStartedAt: original.sourceProcessStartedAt,
+            turnStartedAt: original.turnStartedAt,
+            updatedAt: Date(timeIntervalSince1970: 121)
+        )
+
+        try store.write(original)
+        let sessionFile = directory.appendingPathComponent(SessionKey(original).filename)
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: sessionFile.path)
+
+        XCTAssertEqual(try permissionMode(at: sessionFile), 0o644)
+
+        try store.write(updated)
+
+        XCTAssertEqual(try permissionMode(at: sessionFile), 0o600)
+    }
+
     private func stateFixture(
         provider: AgentProvider,
         phase: SessionPhase,
@@ -74,5 +111,12 @@ final class SessionStateStoreTests: XCTestCase {
             turnStartedAt: turnStartedAt,
             updatedAt: Date(timeIntervalSince1970: 120)
         )
+    }
+
+    private func permissionMode(at url: URL) throws -> UInt16 {
+        let permissions = try XCTUnwrap(
+            FileManager.default.attributesOfItem(atPath: url.path)[.posixPermissions] as? NSNumber
+        )
+        return UInt16(truncating: permissions) & 0o777
     }
 }
