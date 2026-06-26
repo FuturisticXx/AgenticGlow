@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 
 public enum HookNormalizationError: Error, Equatable {
     case missingSessionID
@@ -26,10 +27,14 @@ public enum HookNormalizer {
         if event == .notification {
             let notificationType = (payload["notification_type"] as? String)?.lowercased() ?? ""
             let message = (payload["message"] as? String)?.lowercased() ?? ""
-            let isPermission = notificationType == "permission_prompt"
-                || message.contains("permission")
-                || message.contains("approve")
-                || message.contains("allow")
+            let isPermission: Bool
+            if notificationType.isEmpty {
+                isPermission = message.contains("permission")
+                    || message.contains("approve")
+                    || message.contains("allow")
+            } else {
+                isPermission = notificationType == "permission_prompt"
+            }
             guard isPermission else {
                 return nil
             }
@@ -64,8 +69,8 @@ public enum HookNormalizer {
             turnStartedAt = now
         case .sessionStart, .sessionEnd, .stop:
             turnStartedAt = nil
-        default:
-            turnStartedAt = previous?.turnStartedAt ?? now
+        case .preToolUse, .postToolUse, .permissionRequest, .notification:
+            turnStartedAt = previous?.turnStartedAt
         }
 
         let terminalBundleID = environment["__CFBundleIdentifier"]
@@ -74,8 +79,8 @@ public enum HookNormalizer {
             schemaVersion: ProductMetadata.schemaVersion,
             provider: provider,
             surface: surface,
-            sessionID: sanitizedID(sessionID),
-            turnID: payload["turn_id"] as? String,
+            sessionID: safeIdentifier(prefix: "sid", raw: sessionID),
+            turnID: (payload["turn_id"] as? String).map { safeIdentifier(prefix: "tid", raw: $0) },
             phase: phase,
             label: label,
             toolCategory: toolCategory,
@@ -91,8 +96,9 @@ public enum HookNormalizer {
         return normalizedEvent
     }
 
-    private static func sanitizedID(_ raw: String) -> String {
-        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "._-"))
-        return String(raw.unicodeScalars.filter(allowed.contains).prefix(128))
+    private static func safeIdentifier(prefix: String, raw: String) -> String {
+        let digest = SHA256.hash(data: Data(raw.utf8))
+        let hex = digest.map { String(format: "%02x", $0) }.joined()
+        return "\(prefix)_\(hex)"
     }
 }

@@ -3,6 +3,7 @@ import Foundation
 public enum EventValidationError: Error, Equatable {
     case unsupportedSchema(Int)
     case invalidSessionID
+    case invalidTurnID
     case invalidProjectName
     case invalidWorkingDirectory
 }
@@ -63,11 +64,12 @@ public struct NormalizedEvent: Codable, Equatable, Sendable {
             throw EventValidationError.unsupportedSchema(schemaVersion)
         }
 
-        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "._-"))
-        guard !sessionID.isEmpty,
-              sessionID.count <= 128,
-              sessionID.unicodeScalars.allSatisfy(allowed.contains) else {
+        guard Self.isSafeIdentifier(sessionID) else {
             throw EventValidationError.invalidSessionID
+        }
+
+        if let turnID, !Self.isSafeIdentifier(turnID) {
+            throw EventValidationError.invalidTurnID
         }
 
         guard !projectName.isEmpty,
@@ -80,6 +82,13 @@ public struct NormalizedEvent: Codable, Equatable, Sendable {
               !workingDirectory.contains("\0") else {
             throw EventValidationError.invalidWorkingDirectory
         }
+    }
+
+    private static func isSafeIdentifier(_ value: String) -> Bool {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "._-"))
+        return !value.isEmpty
+            && value.count <= 128
+            && value.unicodeScalars.allSatisfy(allowed.contains)
     }
 }
 

@@ -133,3 +133,101 @@ Result: clean
 ## Notes
 
 - The broader non-UI test run still logs existing `com.apple.linkd.autoShortcut` connection warnings during app tests, but the suite passes and Task 3 does not depend on or change that area.
+
+---
+
+## Task 3 Fix 1 Report
+
+Date: 2026-06-26
+
+### Scope
+
+Fixed the Task 3 review findings in `HookNormalizer` and `NormalizedEvent` so provider identifiers are privacy-safe, timers are preserved correctly for partial hook streams, non-permission notifications are not over-promoted, and turn IDs are validated with the same safety rules as session IDs.
+
+### RED evidence
+
+Focused command:
+
+```bash
+xcodebuild test \
+  -project Klarity.xcodeproj \
+  -scheme Klarity \
+  -destination 'platform=macOS' \
+  -only-testing:KlarityCoreTests/HookNormalizerTests \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+Observed failing regressions before the fix:
+
+- `testClaudePromptHashesRawSessionIdentifierWithoutPersistingIt`
+- `testCodexPreToolUseHashesRawTurnIdentifierWithoutPersistingIt`
+- `testPreToolUseWithoutPreviousKeepsNilTurnTimer`
+- `testPermissionRequestWithoutPreviousKeepsNilTurnTimer`
+- `testPermissionNotificationDoesNotPersistMessageContent`
+- `testNonPermissionNotificationIsIgnored`
+- `testValidationRejectsUnsafeTurnIdentifier`
+
+Failure summaries:
+
+- raw `session_id` still persisted unchanged
+- raw `turn_id` still persisted unchanged
+- `.preToolUse`, `.permissionRequest`, and permission `.notification` fabricated `turnStartedAt` when `previous` was missing
+- `idle_prompt` notification with permission words was incorrectly normalized as `.permission`
+- invalid `turnID` values were accepted by `NormalizedEvent.validate()`
+
+### Files changed
+
+- `Sources/KlarityCore/Events/HookNormalizer.swift`
+- `Sources/KlarityCore/Events/NormalizedEvent.swift`
+- `Tests/KlarityCoreTests/HookNormalizerTests.swift`
+
+### Tests run
+
+Focused:
+
+```bash
+xcodebuild test \
+  -project Klarity.xcodeproj \
+  -scheme Klarity \
+  -destination 'platform=macOS' \
+  -only-testing:KlarityCoreTests/HookNormalizerTests \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+Result summary:
+
+- passed
+- `HookNormalizerTests`: 12 tests, 0 failures
+
+Full non-UI:
+
+```bash
+xcodebuild test \
+  -project Klarity.xcodeproj \
+  -scheme Klarity \
+  -destination 'platform=macOS' \
+  -skip-testing:KlarityUITests \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+Result summary:
+
+- passed
+- suite output in this repo configuration executed 1 non-UI test, 0 failures
+- existing `com.apple.linkd.autoShortcut` warnings still appeared during app test startup
+
+### Output summary
+
+- session IDs now store as stable `sid_<sha256-hex>` values
+- turn IDs now store as stable `tid_<sha256-hex>` values
+- permission fallback now only uses message text when `notification_type` is missing or empty
+- `.preToolUse`, `.postToolUse`, `.permissionRequest`, and `.notification` now preserve `previous?.turnStartedAt` exactly
+- unknown tools still map to `.other` with label `Using tool`
+
+### Commit SHA
+
+- `1a37392`
+
+### Concerns
+
+- none
