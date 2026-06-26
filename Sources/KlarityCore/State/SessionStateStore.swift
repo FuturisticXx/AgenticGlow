@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 
-public enum SessionStateStoreError: Error {
+public enum SessionStateStoreError: Error, Equatable {
     case unsafeDirectory
     case unsafeFile
 }
@@ -16,10 +16,16 @@ public protocol SessionStateStoring {
 public final class FileSessionStateStore: SessionStateStoring {
     public let directory: URL
     private let fileManager: FileManager
+    private let currentUserID: () -> uid_t
 
-    public init(directory: URL, fileManager: FileManager = .default) {
+    public init(
+        directory: URL,
+        fileManager: FileManager = .default,
+        currentUserID: @escaping () -> uid_t = { getuid() }
+    ) {
         self.directory = directory
         self.fileManager = fileManager
+        self.currentUserID = currentUserID
     }
 
     public static var defaultDirectory: URL {
@@ -53,7 +59,7 @@ public final class FileSessionStateStore: SessionStateStoring {
             return []
         }
 
-        try rejectSymlink(directory)
+        try validateOwnedDirectory()
 
         return try fileManager.contentsOfDirectory(
             at: directory,
@@ -64,7 +70,7 @@ public final class FileSessionStateStore: SessionStateStoring {
         .sorted { $0.lastPathComponent < $1.lastPathComponent }
         .compactMap { url in
             do {
-                try rejectSymlink(url)
+                try validateOwnedFile(at: url)
                 let event = try JSONDecoder.klarity.decode(
                     NormalizedEvent.self,
                     from: Data(contentsOf: url)
@@ -82,14 +88,14 @@ public final class FileSessionStateStore: SessionStateStoring {
             return nil
         }
 
-        try rejectSymlink(directory)
+        try validateOwnedDirectory()
 
         let url = directory.appendingPathComponent(key.filename)
         guard fileManager.fileExists(atPath: url.path) else {
             return nil
         }
 
-        try rejectSymlink(url)
+        try validateOwnedFile(at: url)
 
         let event = try JSONDecoder.klarity.decode(
             NormalizedEvent.self,
@@ -104,30 +110,43 @@ public final class FileSessionStateStore: SessionStateStoring {
             return
         }
 
-        try rejectSymlink(directory)
+        try validateOwnedDirectory()
 
         let url = directory.appendingPathComponent(key.filename)
         guard fileManager.fileExists(atPath: url.path) else {
             return
         }
 
-        try rejectSymlink(url)
+        try validateOwnedFile(at: url)
         try fileManager.removeItem(at: url)
     }
 
     private func prepareDirectory() throws {
         if fileManager.fileExists(atPath: directory.path) {
-            try rejectSymlink(directory)
-            let attributes = try fileManager.attributesOfItem(atPath: directory.path)
-            let owner = (attributes[.ownerAccountID] as? NSNumber)?.uint32Value
-            if let owner, owner != getuid() {
-                throw SessionStateStoreError.unsafeDirectory
-            }
+            try validateOwnedDirectory()
         } else {
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         }
 
         try fileManager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
+    }
+
+    private func validateOwnedDirectory() throws {
+        try rejectSymlink(directory)
+        try validateOwnership(at: directory, error: .unsafeDirectory)
+    }
+
+    private func validateOwnedFile(at url: URL) throws {
+        try rejectSymlink(url)
+        try validateOwnership(at: url, error: .unsafeFile)
+    }
+
+    private func validateOwnership(at url: URL, error: SessionStateStoreError) throws {
+        let attributes = try fileManager.attributesOfItem(atPath: url.path)
+        let owner = (attributes[.ownerAccountID] as? NSNumber)?.uint32Value
+        if let owner, owner != currentUserID() {
+            throw error
+        }
     }
 
     private func rejectSymlink(_ url: URL) throws {

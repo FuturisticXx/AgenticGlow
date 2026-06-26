@@ -52,6 +52,69 @@ final class SessionStateStoreTests: XCTestCase {
         XCTAssertEqual(try store.loadAll(), [event])
     }
 
+    func testLoadAllRejectsDirectoryOwnedByAnotherUser() throws {
+        let directory = temporaryDirectory()
+        let writeStore = FileSessionStateStore(directory: directory)
+        let event = stateFixture(
+            provider: .codex,
+            phase: .thinking,
+            turnStartedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        try writeStore.write(event)
+
+        let foreignStore = FileSessionStateStore(
+            directory: directory,
+            currentUserID: { getuid() + 1 }
+        )
+
+        XCTAssertThrowsError(try foreignStore.loadAll()) { error in
+            XCTAssertEqual(error as? SessionStateStoreError, .unsafeDirectory)
+        }
+    }
+
+    func testLoadRejectsDirectoryOwnedByAnotherUser() throws {
+        let directory = temporaryDirectory()
+        let writeStore = FileSessionStateStore(directory: directory)
+        let event = stateFixture(
+            provider: .codex,
+            phase: .thinking,
+            turnStartedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        try writeStore.write(event)
+
+        let foreignStore = FileSessionStateStore(
+            directory: directory,
+            currentUserID: { getuid() + 1 }
+        )
+
+        XCTAssertThrowsError(try foreignStore.load(SessionKey(event))) { error in
+            XCTAssertEqual(error as? SessionStateStoreError, .unsafeDirectory)
+        }
+    }
+
+    func testRemoveRejectsDirectoryOwnedByAnotherUser() throws {
+        let directory = temporaryDirectory()
+        let writeStore = FileSessionStateStore(directory: directory)
+        let event = stateFixture(
+            provider: .codex,
+            phase: .thinking,
+            turnStartedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        try writeStore.write(event)
+
+        let foreignStore = FileSessionStateStore(
+            directory: directory,
+            currentUserID: { getuid() + 1 }
+        )
+
+        XCTAssertThrowsError(try foreignStore.remove(SessionKey(event))) { error in
+            XCTAssertEqual(error as? SessionStateStoreError, .unsafeDirectory)
+        }
+    }
+
     func testWriteReappliesPrivatePermissionsWhenOverwritingExistingSessionFile() throws {
         let directory = temporaryDirectory()
         let store = FileSessionStateStore(directory: directory)
