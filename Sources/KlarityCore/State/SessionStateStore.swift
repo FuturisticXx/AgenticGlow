@@ -38,7 +38,7 @@ public final class FileSessionStateStore: SessionStateStoring {
         try prepareDirectory()
 
         let destination = directory.appendingPathComponent(SessionKey(event).filename)
-        try rejectSymlink(destination)
+        _ = try validatePathExistsWithoutFollowingSymlinks(at: destination, error: .unsafeFile)
 
         let temporary = directory.appendingPathComponent(".\(UUID().uuidString).tmp")
         let data = try JSONEncoder.klarity.encode(event)
@@ -55,7 +55,7 @@ public final class FileSessionStateStore: SessionStateStoring {
     }
 
     public func loadAll() throws -> [NormalizedEvent] {
-        guard fileManager.fileExists(atPath: directory.path) else {
+        guard try validatePathExistsWithoutFollowingSymlinks(at: directory, error: .unsafeDirectory) else {
             return []
         }
 
@@ -85,13 +85,16 @@ public final class FileSessionStateStore: SessionStateStoring {
     }
 
     public func load(_ key: SessionKey) throws -> NormalizedEvent? {
+        guard try validatePathExistsWithoutFollowingSymlinks(at: directory, error: .unsafeDirectory) else {
+            return nil
+        }
+
         let url = directory.appendingPathComponent(key.filename)
-        guard fileManager.fileExists(atPath: url.path) else {
+        guard try validatePathExistsWithoutFollowingSymlinks(at: url, error: .unsafeFile) else {
             return nil
         }
 
         try validateOwnedDirectory()
-
         try validateOwnedFile(at: url)
 
         let event = try JSONDecoder.klarity.decode(
@@ -103,20 +106,22 @@ public final class FileSessionStateStore: SessionStateStoring {
     }
 
     public func remove(_ key: SessionKey) throws {
+        guard try validatePathExistsWithoutFollowingSymlinks(at: directory, error: .unsafeDirectory) else {
+            return
+        }
+
         let url = directory.appendingPathComponent(key.filename)
-        guard fileManager.fileExists(atPath: url.path) else {
+        guard try validatePathExistsWithoutFollowingSymlinks(at: url, error: .unsafeFile) else {
             return
         }
 
         try validateOwnedDirectory()
-
         try validateOwnedFile(at: url)
         try fileManager.removeItem(at: url)
     }
 
     private func prepareDirectory() throws {
-        if fileManager.fileExists(atPath: directory.path) {
-            try rejectSymlink(directory)
+        if try validatePathExistsWithoutFollowingSymlinks(at: directory, error: .unsafeDirectory) {
             try validateOwnership(at: directory, error: .unsafeDirectory)
         } else {
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -126,21 +131,27 @@ public final class FileSessionStateStore: SessionStateStoring {
     }
 
     private func validateOwnedDirectory() throws {
-        try rejectSymlink(directory)
+        guard try validatePathExistsWithoutFollowingSymlinks(at: directory, error: .unsafeDirectory) else {
+            throw SessionStateStoreError.unsafeDirectory
+        }
         try validateOwnership(at: directory, error: .unsafeDirectory)
         try validatePrivatePermissions(at: directory, error: .unsafeDirectory)
     }
 
     private func validateOwnedFile(at url: URL) throws {
-        try rejectSymlink(url)
+        guard try validatePathExistsWithoutFollowingSymlinks(at: url, error: .unsafeFile) else {
+            throw SessionStateStoreError.unsafeFile
+        }
         try validateOwnership(at: url, error: .unsafeFile)
         try validatePrivatePermissions(at: url, error: .unsafeFile)
     }
 
     private func validateOwnership(at url: URL, error: SessionStateStoreError) throws {
         let attributes = try fileManager.attributesOfItem(atPath: url.path)
-        let owner = (attributes[.ownerAccountID] as? NSNumber)?.uint32Value
-        if let owner, owner != currentUserID() {
+        guard let owner = (attributes[.ownerAccountID] as? NSNumber)?.uint32Value else {
+            throw error
+        }
+        if owner != currentUserID() {
             throw error
         }
     }
@@ -153,17 +164,23 @@ public final class FileSessionStateStore: SessionStateStoring {
         }
     }
 
-    private func rejectSymlink(_ url: URL) throws {
+    @discardableResult
+    private func validatePathExistsWithoutFollowingSymlinks(
+        at url: URL,
+        error: SessionStateStoreError
+    ) throws -> Bool {
         var info = stat()
         guard lstat(url.path, &info) == 0 else {
             if errno == ENOENT {
-                return
+                return false
             }
-            throw SessionStateStoreError.unsafeFile
+            throw error
         }
 
         if (info.st_mode & S_IFMT) == S_IFLNK {
-            throw SessionStateStoreError.unsafeDirectory
+            throw error
         }
+
+        return true
     }
 }

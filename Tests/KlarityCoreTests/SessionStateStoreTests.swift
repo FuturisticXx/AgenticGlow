@@ -80,6 +80,58 @@ final class SessionStateStoreTests: XCTestCase {
         }
     }
 
+    func testLoadAllRejectsBrokenSymlinkedSessionDirectory() throws {
+        let root = temporaryDirectory()
+        let link = root.appendingPathComponent("sessions", isDirectory: true)
+        let missingTarget = root.appendingPathComponent("missing", isDirectory: true)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: missingTarget)
+
+        let store = FileSessionStateStore(directory: link)
+
+        XCTAssertThrowsError(try store.loadAll()) { error in
+            XCTAssertEqual(error as? SessionStateStoreError, .unsafeDirectory)
+        }
+    }
+
+    func testLoadAllRejectsSymlinkedSessionFileAsUnsafeFile() throws {
+        let directory = temporaryDirectory()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
+
+        let target = directory.appendingPathComponent("target.json")
+        let link = directory.appendingPathComponent("codex-sid_test_session.json")
+        try Data("{}".utf8).write(to: target)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: target.path)
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: target)
+
+        let store = FileSessionStateStore(directory: directory)
+
+        XCTAssertThrowsError(try store.loadAll()) { error in
+            XCTAssertEqual(error as? SessionStateStoreError, .unsafeFile)
+        }
+    }
+
+    func testLoadAllRejectsDirectoryWithoutOwnerAccountIDMetadata() throws {
+        let directory = temporaryDirectory()
+        let store = FileSessionStateStore(directory: directory)
+        let event = stateFixture(
+            provider: .codex,
+            phase: .thinking,
+            turnStartedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        try store.write(event)
+
+        let metadataFreeStore = FileSessionStateStore(
+            directory: directory,
+            fileManager: MissingOwnerAccountIDFileManager(paths: [directory.path])
+        )
+
+        XCTAssertThrowsError(try metadataFreeStore.loadAll()) { error in
+            XCTAssertEqual(error as? SessionStateStoreError, .unsafeDirectory)
+        }
+    }
+
     func testLoadAllRejectsDirectoryOwnedByAnotherUser() throws {
         let directory = temporaryDirectory()
         let writeStore = FileSessionStateStore(directory: directory)
@@ -167,6 +219,23 @@ final class SessionStateStoreTests: XCTestCase {
         }
     }
 
+    func testLoadRejectsBrokenSymlinkedSessionFile() throws {
+        let directory = temporaryDirectory()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
+
+        let key = SessionKey(provider: .codex, sessionID: "sid_test_session")
+        let link = directory.appendingPathComponent(key.filename)
+        let missingTarget = directory.appendingPathComponent("missing.json")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: missingTarget)
+
+        let store = FileSessionStateStore(directory: directory)
+
+        XCTAssertThrowsError(try store.load(key)) { error in
+            XCTAssertEqual(error as? SessionStateStoreError, .unsafeFile)
+        }
+    }
+
     func testRemoveRejectsDirectoryOwnedByAnotherUser() throws {
         let directory = temporaryDirectory()
         let writeStore = FileSessionStateStore(directory: directory)
@@ -210,6 +279,24 @@ final class SessionStateStoreTests: XCTestCase {
             XCTAssertEqual(error as? SessionStateStoreError, .unsafeFile)
         }
         XCTAssertTrue(FileManager.default.fileExists(atPath: sessionFile.path))
+    }
+
+    func testRemoveRejectsBrokenSymlinkedSessionFileWithoutRemovingIt() throws {
+        let directory = temporaryDirectory()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
+
+        let key = SessionKey(provider: .codex, sessionID: "sid_test_session")
+        let link = directory.appendingPathComponent(key.filename)
+        let missingTarget = directory.appendingPathComponent("missing.json")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: missingTarget)
+
+        let store = FileSessionStateStore(directory: directory)
+
+        XCTAssertThrowsError(try store.remove(key)) { error in
+            XCTAssertEqual(error as? SessionStateStoreError, .unsafeFile)
+        }
+        XCTAssertTrue(pathExistsWithoutFollowingSymlink(at: link))
     }
 
     func testWriteReappliesPrivatePermissionsWhenOverwritingExistingSessionFile() throws {
@@ -278,5 +365,27 @@ final class SessionStateStoreTests: XCTestCase {
             FileManager.default.attributesOfItem(atPath: url.path)[.posixPermissions] as? NSNumber
         )
         return UInt16(truncating: permissions) & 0o777
+    }
+
+    private func pathExistsWithoutFollowingSymlink(at url: URL) -> Bool {
+        var info = stat()
+        return lstat(url.path, &info) == 0
+    }
+}
+
+private final class MissingOwnerAccountIDFileManager: FileManager {
+    private let paths: Set<String>
+
+    init(paths: Set<String>) {
+        self.paths = paths
+        super.init()
+    }
+
+    override func attributesOfItem(atPath path: String) throws -> [FileAttributeKey : Any] {
+        var attributes = try super.attributesOfItem(atPath: path)
+        if paths.contains(path) {
+            attributes.removeValue(forKey: .ownerAccountID)
+        }
+        return attributes
     }
 }
