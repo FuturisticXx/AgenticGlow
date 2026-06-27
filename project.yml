@@ -38,6 +38,12 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.event
         PRODUCT_NAME: klarity-event
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@loader_path"
+          - "@loader_path/../Frameworks"
+          - "@loader_path/../../Frameworks"
+          - "@executable_path/../Frameworks"
   Klarity:
     type: application
     platform: macOS
