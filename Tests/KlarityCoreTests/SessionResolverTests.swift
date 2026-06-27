@@ -55,6 +55,52 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertTrue(expired.sessions.isEmpty)
     }
 
+    func testNewDeadEventWithSameKeyGetsFreshDisconnectedWindowAfterOlderEventExpires() {
+        let oldEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 100)
+        let newEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 1_005)
+        var memory = ResolutionMemory()
+
+        let initial = SessionResolver.resolve(
+            events: [oldEvent],
+            now: Date(timeIntervalSince1970: 1_000),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertEqual(initial.sessions.first?.phase, .disconnected)
+
+        let expired = SessionResolver.resolve(
+            events: [oldEvent],
+            now: Date(timeIntervalSince1970: 1_016),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertTrue(expired.sessions.isEmpty)
+
+        let refreshed = SessionResolver.resolve(
+            events: [newEvent],
+            now: Date(timeIntervalSince1970: 1_016),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertEqual(refreshed.sessions.first?.phase, .disconnected)
+
+        let stillVisible = SessionResolver.resolve(
+            events: [newEvent],
+            now: Date(timeIntervalSince1970: 1_030),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertEqual(stillVisible.sessions.first?.phase, .disconnected)
+
+        let reExpired = SessionResolver.resolve(
+            events: [newEvent],
+            now: Date(timeIntervalSince1970: 1_032),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertTrue(reExpired.sessions.isEmpty)
+    }
+
     func testUnknownProcessExpiresAfterFourHours() {
         var event = event(provider: .codex, session: "old", phase: .thinking, updated: 100)
         event = NormalizedEvent(

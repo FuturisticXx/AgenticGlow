@@ -20,7 +20,12 @@ public enum SessionResolver {
             if let pid = event.sourceProcessID {
                 if !isProcessAlive(pid, event.sourceProcessStartedAt) {
                     let key = SessionKey(event)
-                    let disconnectedAt = memory.disconnectedAt[key] ?? now
+                    let disconnectedAt: Date
+                    if let storedDisconnectedAt = memory.disconnectedAt[key] {
+                        disconnectedAt = event.updatedAt > storedDisconnectedAt ? now : storedDisconnectedAt
+                    } else {
+                        disconnectedAt = now
+                    }
                     memory.disconnectedAt[key] = disconnectedAt
                     guard now.timeIntervalSince(disconnectedAt) <= disconnectedDisplayDuration else {
                         return nil
