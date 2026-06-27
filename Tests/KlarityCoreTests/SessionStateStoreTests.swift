@@ -47,9 +47,37 @@ final class SessionStateStoreTests: XCTestCase {
         )
 
         try store.write(event)
-        try Data("not-json".utf8).write(to: directory.appendingPathComponent("malformed.json"))
+        let malformedFile = directory.appendingPathComponent("malformed.json")
+        try Data("not-json".utf8).write(to: malformedFile)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o600],
+            ofItemAtPath: malformedFile.path
+        )
 
         XCTAssertEqual(try store.loadAll(), [event])
+    }
+
+    func testLoadAllRejectsCurrentUserOwnedSharedModeSessionFile() throws {
+        let directory = temporaryDirectory()
+        let store = FileSessionStateStore(directory: directory)
+        let event = stateFixture(
+            provider: .codex,
+            phase: .thinking,
+            turnStartedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        try store.write(event)
+        let sessionFile = directory.appendingPathComponent(SessionKey(event).filename)
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o644],
+            ofItemAtPath: sessionFile.path
+        )
+
+        XCTAssertEqual(try permissionMode(at: sessionFile), 0o644)
+
+        XCTAssertThrowsError(try store.loadAll()) { error in
+            XCTAssertEqual(error as? SessionStateStoreError, .unsafeFile)
+        }
     }
 
     func testLoadAllRejectsDirectoryOwnedByAnotherUser() throws {

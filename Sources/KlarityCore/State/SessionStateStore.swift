@@ -69,15 +69,16 @@ public final class FileSessionStateStore: SessionStateStoring {
         .filter { $0.pathExtension == "json" }
         .sorted { $0.lastPathComponent < $1.lastPathComponent }
         .compactMap { url in
+            try validateOwnedFile(at: url)
+
+            let data = try Data(contentsOf: url)
             do {
-                try validateOwnedFile(at: url)
-                let event = try JSONDecoder.klarity.decode(
-                    NormalizedEvent.self,
-                    from: Data(contentsOf: url)
-                )
+                let event = try JSONDecoder.klarity.decode(NormalizedEvent.self, from: data)
                 try event.validate()
                 return event
-            } catch {
+            } catch is DecodingError {
+                return nil
+            } catch is EventValidationError {
                 return nil
             }
         }
