@@ -84,16 +84,12 @@ public final class FileSessionStateStore: SessionStateStoring {
     }
 
     public func load(_ key: SessionKey) throws -> NormalizedEvent? {
-        guard fileManager.fileExists(atPath: directory.path) else {
-            return nil
-        }
-
-        try validateOwnedDirectory()
-
         let url = directory.appendingPathComponent(key.filename)
         guard fileManager.fileExists(atPath: url.path) else {
             return nil
         }
+
+        try validateOwnedDirectory()
 
         try validateOwnedFile(at: url)
 
@@ -106,16 +102,12 @@ public final class FileSessionStateStore: SessionStateStoring {
     }
 
     public func remove(_ key: SessionKey) throws {
-        guard fileManager.fileExists(atPath: directory.path) else {
-            return
-        }
-
-        try validateOwnedDirectory()
-
         let url = directory.appendingPathComponent(key.filename)
         guard fileManager.fileExists(atPath: url.path) else {
             return
         }
+
+        try validateOwnedDirectory()
 
         try validateOwnedFile(at: url)
         try fileManager.removeItem(at: url)
@@ -123,7 +115,8 @@ public final class FileSessionStateStore: SessionStateStoring {
 
     private func prepareDirectory() throws {
         if fileManager.fileExists(atPath: directory.path) {
-            try validateOwnedDirectory()
+            try rejectSymlink(directory)
+            try validateOwnership(at: directory, error: .unsafeDirectory)
         } else {
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         }
@@ -134,17 +127,27 @@ public final class FileSessionStateStore: SessionStateStoring {
     private func validateOwnedDirectory() throws {
         try rejectSymlink(directory)
         try validateOwnership(at: directory, error: .unsafeDirectory)
+        try validatePrivatePermissions(at: directory, error: .unsafeDirectory)
     }
 
     private func validateOwnedFile(at url: URL) throws {
         try rejectSymlink(url)
         try validateOwnership(at: url, error: .unsafeFile)
+        try validatePrivatePermissions(at: url, error: .unsafeFile)
     }
 
     private func validateOwnership(at url: URL, error: SessionStateStoreError) throws {
         let attributes = try fileManager.attributesOfItem(atPath: url.path)
         let owner = (attributes[.ownerAccountID] as? NSNumber)?.uint32Value
         if let owner, owner != currentUserID() {
+            throw error
+        }
+    }
+
+    private func validatePrivatePermissions(at url: URL, error: SessionStateStoreError) throws {
+        let attributes = try fileManager.attributesOfItem(atPath: url.path)
+        let permissions = (attributes[.posixPermissions] as? NSNumber)?.uint16Value ?? 0
+        if permissions & 0o077 != 0 {
             throw error
         }
     }
