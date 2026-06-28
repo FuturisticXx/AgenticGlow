@@ -154,20 +154,21 @@ enum HookConfiguration {
 
     private static func parseManagedCommand(
         _ command: String
-    ) -> (path: String, provider: AgentProvider, event: HookEventKind)? {
+    ) -> (path: String, provider: AgentProvider, event: String)? {
         let characters = Array(command)
-        guard characters.first == "'" else { return nil }
+        guard let quote = characters.first, quote == "'" || quote == "\"" else { return nil }
 
         var path = ""
         var index = 1
         var foundClosingQuote = false
         while index < characters.count {
-            if characters[index] != "'" {
+            if characters[index] != quote {
                 path.append(characters[index])
                 index += 1
                 continue
             }
-            if index + 3 < characters.count,
+            if quote == "'",
+               index + 3 < characters.count,
                characters[index] == "'",
                characters[index + 1] == "\\",
                characters[index + 2] == "'",
@@ -191,10 +192,11 @@ enum HookConfiguration {
         let tokens = suffix.split(separator: " ", omittingEmptySubsequences: false)
         guard tokens.count == 3,
               let provider = AgentProvider(rawValue: String(tokens[0])),
-              let event = HookEventKind(rawValue: String(tokens[1])),
+              !tokens[1].isEmpty,
+              tokens[1].allSatisfy({ !$0.isWhitespace }),
               tokens[2] == Substring(HookDefinitionFactory.marker) else {
             return nil
         }
-        return (path, provider, event)
+        return (path, provider, String(tokens[1]))
     }
 }

@@ -44,31 +44,29 @@ public final class JSONConfigEditor {
             try prepareParentDirectory()
             guard try currentDataMatches(snapshot.data) else { continue }
 
-            let backup = try snapshot.data.flatMap(writeFirstBackupIfNeeded)
-            guard try currentDataMatches(snapshot.data) else {
-                removeNewBackup(backup)
-                continue
-            }
-
             let temporary: URL
             do {
                 temporary = try writeSecureTemporary(replacement)
             } catch {
-                removeNewBackup(backup)
                 throw error
-            }
-            guard try currentDataMatches(snapshot.data) else {
-                try? fileManager.removeItem(at: temporary)
-                removeNewBackup(backup)
-                continue
             }
 
             do {
-                try installTemporary(temporary, replacingExisting: snapshot.data != nil)
+                let committed: Bool
+                if let expected = snapshot.data {
+                    committed = try displaceVerifyAndInstall(
+                        temporary,
+                        expected: expected
+                    )
+                } else {
+                    committed = try installTemporaryExclusively(temporary)
+                }
+                if !committed {
+                    try? fileManager.removeItem(at: temporary)
+                    continue
+                }
             } catch {
                 try? fileManager.removeItem(at: temporary)
-                removeNewBackup(backup)
-                if try !currentDataMatches(snapshot.data) { continue }
                 throw error
             }
             try fileManager.setAttributes(
@@ -177,18 +175,9 @@ public final class JSONConfigEditor {
         }
     }
 
-    private func writeFirstBackupIfNeeded(_ data: Data) throws -> URL? {
+    private func writeBackup(_ data: Data) throws -> URL {
         let directory = url.deletingLastPathComponent()
         let prefix = "\(url.lastPathComponent)."
-        let existing = try fileManager.contentsOfDirectory(
-            at: directory,
-            includingPropertiesForKeys: nil
-        ).contains {
-            $0.lastPathComponent.hasPrefix(prefix)
-                && $0.lastPathComponent.hasSuffix(".bak-klarity")
-        }
-        guard !existing else { return nil }
-
         let backup = directory.appendingPathComponent(
             "\(prefix)\(UUID().uuidString).bak-klarity"
         )
@@ -263,17 +252,86 @@ public final class JSONConfigEditor {
         completed = true
     }
 
-    private func installTemporary(_ temporary: URL, replacingExisting: Bool) throws {
-        if replacingExisting {
-            guard rename(temporary.path, url.path) == 0 else { throw posixError() }
-            return
+    private func displaceVerifyAndInstall(
+        _ temporary: URL,
+        expected: Data
+    ) throws -> Bool {
+        let retained = url.deletingLastPathComponent().appendingPathComponent(
+            ".\(url.lastPathComponent).\(UUID().uuidString).retained-klarity"
+        )
+        do {
+            try fileManager.moveItem(at: url, to: retained)
+        } catch {
+            if try !currentDataMatches(expected) { return false }
+            throw error
         }
 
-        guard link(temporary.path, url.path) == 0 else { throw posixError() }
+        let displaced: Data
+        do {
+            displaced = try validatedData(at: retained)
+        } catch {
+            try restoreOrPreserveRetained(retained)
+            throw error
+        }
+        guard displaced == expected else {
+            try restoreOrPreserveRetained(retained)
+            return false
+        }
+
+        let backup: URL?
+        do {
+            backup = try writeBackup(displaced)
+        } catch {
+            try restoreOrPreserveRetained(retained)
+            throw error
+        }
+
+        let installed: Bool
+        do {
+            installed = try installTemporaryExclusively(temporary)
+        } catch {
+            removeNewBackup(backup)
+            try restoreOrPreserveRetained(retained)
+            throw error
+        }
+        guard installed else {
+            try fileManager.removeItem(at: retained)
+            return false
+        }
+
+        try fileManager.removeItem(at: retained)
+        return true
+    }
+
+    private func validatedData(at candidate: URL) throws -> Data {
+        try validateDirectory(at: candidate.deletingLastPathComponent())
+        try validateFile(at: candidate)
+        return try Data(contentsOf: candidate)
+    }
+
+    private func restoreOrPreserveRetained(_ retained: URL) throws {
+        if link(retained.path, url.path) == 0 {
+            try fileManager.removeItem(at: retained)
+            return
+        }
+        if errno == EEXIST {
+            _ = try writeBackup(validatedData(at: retained))
+            try fileManager.removeItem(at: retained)
+            return
+        }
+        throw posixError()
+    }
+
+    private func installTemporaryExclusively(_ temporary: URL) throws -> Bool {
+        guard link(temporary.path, url.path) == 0 else {
+            if errno == EEXIST { return false }
+            throw posixError()
+        }
         guard unlink(temporary.path) == 0 else {
             _ = unlink(url.path)
             throw posixError()
         }
+        return true
     }
 
     private func syncParentDirectory() throws {

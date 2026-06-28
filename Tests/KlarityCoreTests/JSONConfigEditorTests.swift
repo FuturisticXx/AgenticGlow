@@ -277,6 +277,92 @@ final class JSONConfigEditorTests: XCTestCase {
         XCTAssertEqual((try jsonObject(at: config))["keep"] as? Bool, true)
     }
 
+    func testMutateDoesNotDiscardChangeInFinalCheckToReplaceInterval() throws {
+        let directory = privateIntegrationDirectory()
+        let config = directory.appendingPathComponent("settings.json")
+        try Data(#"{"version":"initial"}"#.utf8).write(to: config)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: config.path)
+        let raced = Data(#"{"version":"final-race","external":true}"#.utf8)
+        let fileManager = FinalIntervalRacingFileManager(
+            configURL: config,
+            racedData: raced
+        )
+
+        try JSONConfigEditor(url: config, fileManager: fileManager)
+            .mutate { $0["enabled"] = true }
+
+        XCTAssertTrue(fileManager.didRace)
+        let object = try jsonObject(at: config)
+        XCTAssertEqual(object["version"] as? String, "final-race")
+        XCTAssertEqual(object["external"] as? Bool, true)
+        XCTAssertEqual(object["enabled"] as? Bool, true)
+        let backup = try XCTUnwrap(backupURLs(beside: config).first)
+        XCTAssertEqual(try Data(contentsOf: backup), raced)
+        let retained = try FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: nil
+        ).filter { $0.lastPathComponent.contains("retained-klarity") }
+        XCTAssertEqual(retained, [])
+    }
+
+    func testMutateNeverOverwritesDestinationRecreatedWhileDisplaced() throws {
+        let directory = privateIntegrationDirectory()
+        let config = directory.appendingPathComponent("settings.json")
+        let initial = Data(#"{"version":"initial"}"#.utf8)
+        try initial.write(to: config)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: config.path)
+        let raced = Data(#"{"version":"recreated","external":true}"#.utf8)
+        let fileManager = RecreatingDestinationFileManager(
+            configURL: config,
+            racedData: raced
+        )
+
+        try JSONConfigEditor(url: config, fileManager: fileManager)
+            .mutate { $0["enabled"] = true }
+
+        XCTAssertTrue(fileManager.didRace)
+        let object = try jsonObject(at: config)
+        XCTAssertEqual(object["version"] as? String, "recreated")
+        XCTAssertEqual(object["external"] as? Bool, true)
+        XCTAssertEqual(object["enabled"] as? Bool, true)
+        let backups = try backupURLs(beside: config).map { try Data(contentsOf: $0) }
+        XCTAssertEqual(backups.count, 2)
+        XCTAssertTrue(backups.contains(initial))
+        XCTAssertTrue(backups.contains(raced))
+        let retained = try FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: nil
+        ).filter { $0.lastPathComponent.contains("retained-klarity") }
+        XCTAssertEqual(retained, [])
+    }
+
+    func testMutatePreservesMismatchedDisplacementWhenDestinationIsRecreated() throws {
+        let directory = privateIntegrationDirectory()
+        let config = directory.appendingPathComponent("settings.json")
+        try Data(#"{"version":"initial"}"#.utf8).write(to: config)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: config.path)
+        let displaced = Data(#"{"version":"displaced","external":true}"#.utf8)
+        let recreated = Data(#"{"version":"recreated","external":true}"#.utf8)
+        let fileManager = MismatchAndRecreatingFileManager(
+            configURL: config,
+            displacedData: displaced,
+            recreatedData: recreated
+        )
+
+        try JSONConfigEditor(url: config, fileManager: fileManager)
+            .mutate { $0["enabled"] = true }
+
+        XCTAssertTrue(fileManager.didRace)
+        let object = try jsonObject(at: config)
+        XCTAssertEqual(object["version"] as? String, "recreated")
+        XCTAssertEqual(object["external"] as? Bool, true)
+        XCTAssertEqual(object["enabled"] as? Bool, true)
+        let backups = try backupURLs(beside: config).map { try Data(contentsOf: $0) }
+        XCTAssertEqual(backups.count, 2)
+        XCTAssertTrue(backups.contains(displaced))
+        XCTAssertTrue(backups.contains(recreated))
+    }
+
     private func jsonObject(at url: URL) throws -> [String: Any] {
         try XCTUnwrap(
             JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any]
@@ -385,5 +471,86 @@ private final class FailingTemporaryPermissionFileManager: FileManager {
             throw CocoaError(.fileWriteNoPermission)
         }
         try super.setAttributes(attributes, ofItemAtPath: path)
+    }
+}
+
+private final class FinalIntervalRacingFileManager: FileManager {
+    private let configURL: URL
+    private let racedData: Data
+    private(set) var didRace = false
+
+    init(configURL: URL, racedData: Data) {
+        self.configURL = configURL
+        self.racedData = racedData
+        super.init()
+    }
+
+    override func moveItem(at srcURL: URL, to dstURL: URL) throws {
+        if srcURL == configURL,
+           dstURL.lastPathComponent.contains("retained-klarity"),
+           !didRace {
+            didRace = true
+            try racedData.write(to: configURL)
+            try super.setAttributes(
+                [.posixPermissions: 0o600],
+                ofItemAtPath: configURL.path
+            )
+        }
+        try super.moveItem(at: srcURL, to: dstURL)
+    }
+}
+
+private final class RecreatingDestinationFileManager: FileManager {
+    private let configURL: URL
+    private let racedData: Data
+    private(set) var didRace = false
+
+    init(configURL: URL, racedData: Data) {
+        self.configURL = configURL
+        self.racedData = racedData
+        super.init()
+    }
+
+    override func moveItem(at srcURL: URL, to dstURL: URL) throws {
+        try super.moveItem(at: srcURL, to: dstURL)
+        if srcURL == configURL,
+           dstURL.lastPathComponent.contains("retained-klarity"),
+           !didRace {
+            didRace = true
+            try racedData.write(to: configURL)
+            try super.setAttributes(
+                [.posixPermissions: 0o600],
+                ofItemAtPath: configURL.path
+            )
+        }
+    }
+}
+
+private final class MismatchAndRecreatingFileManager: FileManager {
+    private let configURL: URL
+    private let displacedData: Data
+    private let recreatedData: Data
+    private(set) var didRace = false
+
+    init(configURL: URL, displacedData: Data, recreatedData: Data) {
+        self.configURL = configURL
+        self.displacedData = displacedData
+        self.recreatedData = recreatedData
+        super.init()
+    }
+
+    override func moveItem(at srcURL: URL, to dstURL: URL) throws {
+        guard srcURL == configURL,
+              dstURL.lastPathComponent.contains("retained-klarity"),
+              !didRace else {
+            try super.moveItem(at: srcURL, to: dstURL)
+            return
+        }
+        didRace = true
+        try displacedData.write(to: configURL)
+        try super.setAttributes([.posixPermissions: 0o600], ofItemAtPath: configURL.path)
+        try super.moveItem(at: srcURL, to: dstURL)
+        try recreatedData.write(to: configURL)
+        try super.setAttributes([.posixPermissions: 0o600], ofItemAtPath: configURL.path)
     }
 }

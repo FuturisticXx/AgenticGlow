@@ -180,8 +180,29 @@ final class CodexIntegrationManagerTests: XCTestCase {
         XCTAssertFalse(text.contains("/old/klarity-event"))
         XCTAssertTrue(text.contains("existing-policy"))
         XCTAssertTrue(text.contains("/usr/local/bin/not-klarity"))
-        XCTAssertTrue(text.contains("\\\"/tmp/klarity-event\\\" codex"))
+        XCTAssertFalse(text.contains("\\\"/tmp/klarity-event\\\" codex"))
         XCTAssertTrue(text.contains("claude Stop"))
+    }
+
+    func testRemoveRecognizesDoubleQuotedAndObsoleteEventOwnedCommands() throws {
+        let hooks = temporaryConfig(contents: """
+        {"hooks":{"LegacyHook":[{"hooks":[
+          {"type":"command","command":"\\\"/old/klarity-event\\\" codex Stop --klarity-hook"},
+          {"type":"command","command":"'/old/klarity-event' codex BeforeModel --klarity-hook"},
+          {"type":"command","command":"'/usr/local/bin/not-klarity' codex BeforeModel --klarity-hook"}
+        ]}]}}
+        """)
+        let manager = CodexIntegrationManager(
+            hooksURL: hooks,
+            helperURL: URL(fileURLWithPath: "/new/klarity-event")
+        )
+
+        try manager.remove()
+
+        let text = try String(contentsOf: hooks, encoding: .utf8)
+        XCTAssertFalse(text.contains("/old/klarity-event"))
+        XCTAssertTrue(text.contains("/usr/local/bin/not-klarity"))
+        XCTAssertEqual(text.components(separatedBy: "--klarity-hook").count - 1, 1)
     }
 
     func testRemoveMissingConfigDoesNotCreateIt() throws {
