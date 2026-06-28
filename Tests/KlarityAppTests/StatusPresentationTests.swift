@@ -89,6 +89,18 @@ final class StatusPresentationTests: XCTestCase {
         XCTAssertFalse(disconnected.animates)
     }
 
+    func testSessionRowAccessibilityLabelDoesNotChangeWithElapsedTime() {
+        let early = session(elapsedSeconds: 5)
+        let later = session(elapsedSeconds: 65)
+
+        let earlyLabel = SessionRowView.accessibilityLabel(for: early)
+        let laterLabel = SessionRowView.accessibilityLabel(for: later)
+
+        XCTAssertEqual(earlyLabel, "Codex, Klarity, Thinking, CLI")
+        XCTAssertEqual(laterLabel, earlyLabel)
+        XCTAssertFalse(laterLabel.contains("1m 5s"))
+    }
+
     private func resolved(phase: SessionPhase, elapsedSeconds: Int?) -> ResolvedSessions {
         let session = SessionSnapshot(
             provider: .codex,
@@ -107,6 +119,20 @@ final class StatusPresentationTests: XCTestCase {
             dominantPhase: phase,
             activeCount: isActive ? 1 : 0,
             permissionCount: phase == .permission ? 1 : 0
+        )
+    }
+
+    private func session(elapsedSeconds: Int) -> SessionSnapshot {
+        SessionSnapshot(
+            provider: .codex,
+            surface: .cli,
+            sessionID: "session",
+            phase: .thinking,
+            label: "Thinking",
+            projectName: "Klarity",
+            sourceBundleID: "com.apple.Terminal",
+            elapsedSeconds: elapsedSeconds,
+            updatedAt: Date()
         )
     }
 }

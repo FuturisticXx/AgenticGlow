@@ -31,7 +31,7 @@ struct SessionRowView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("Klarity.Session.\(session.id)")
-        .accessibilityLabel(accessibilityLabel)
+        .accessibilityLabel(Self.accessibilityLabel(for: session))
         .accessibilityHint("Activates the source application")
     }
 
@@ -59,13 +59,8 @@ struct SessionRowView: View {
         }
     }
 
-    private var accessibilityLabel: String {
-        let base = "\(session.provider.displayName), \(session.projectName), \(session.label), \(session.surface.displayName)"
-        guard let elapsed = session.elapsedSeconds,
-              [.thinking, .usingTool].contains(session.phase) else {
-            return base
-        }
-        return "\(base), \(Self.format(elapsed))"
+    static func accessibilityLabel(for session: SessionSnapshot) -> String {
+        "\(session.provider.displayName), \(session.projectName), \(session.label), \(session.surface.displayName)"
     }
 
     private static func format(_ seconds: Int) -> String {

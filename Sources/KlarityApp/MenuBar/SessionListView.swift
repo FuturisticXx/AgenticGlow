@@ -12,7 +12,14 @@ struct SessionListView: View {
                 .font(.headline)
                 .accessibilityIdentifier("Klarity.SessionSummary")
 
-            if model.resolved.sessions.isEmpty {
+            if let error = model.sessionDataErrorPresentation {
+                ContentUnavailableView(
+                    error.title,
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(error.message)
+                )
+                .accessibilityIdentifier("Klarity.SessionDataError")
+            } else if model.resolved.sessions.isEmpty {
                 ContentUnavailableView(
                     "No active sessions",
                     systemImage: "circle.hexagongrid",

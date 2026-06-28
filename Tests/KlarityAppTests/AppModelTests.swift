@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 @testable import Klarity
 @testable import KlarityCore
@@ -99,6 +100,109 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.storeErrorDescription, "loadFailed")
         XCTAssertTrue(model.resolved.sessions.isEmpty)
     }
+
+    func testRefreshFailsClosedAfterStoreLoadFailure() {
+        let store = FailingAfterFirstLoadStore(events: [
+            .testEvent(
+                provider: .codex,
+                phase: .thinking,
+                turnStartedAt: Date(timeIntervalSince1970: 90)
+            )
+        ])
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            now: { Date(timeIntervalSince1970: 120) }
+        )
+        model.refresh()
+        XCTAssertEqual(model.resolved.dominantPhase, .thinking)
+
+        model.refresh()
+
+        XCTAssertEqual(model.storeErrorDescription, "loadFailed")
+        XCTAssertEqual(model.resolved.dominantPhase, .idle)
+        XCTAssertTrue(model.resolved.sessions.isEmpty)
+        XCTAssertEqual(model.resolved.activeCount, 0)
+        XCTAssertEqual(model.resolved.permissionCount, 0)
+    }
+
+    func testStoreFailureProvidesSessionDataErrorPresentation() {
+        let model = AppModel(
+            store: FailingSessionStore(),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator()
+        )
+
+        model.refresh()
+
+        XCTAssertEqual(model.sessionDataErrorPresentation?.title, "Session data unavailable")
+        XCTAssertEqual(
+            model.sessionDataErrorPresentation?.message,
+            "Check Integrations and try again."
+        )
+    }
+
+    func testReduceMotionObserverUpdatesModelAndDisablesActiveAnimation() {
+        let center = NotificationCenter()
+        var reduceMotionEnabled = false
+        let model = AppModel(
+            store: InMemorySessionStore(events: [
+                .testEvent(
+                    provider: .codex,
+                    phase: .thinking,
+                    turnStartedAt: Date(timeIntervalSince1970: 90)
+                )
+            ]),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            now: { Date(timeIntervalSince1970: 120) }
+        )
+        model.refresh()
+        let observer = ReduceMotionObserver(
+            model: model,
+            notificationCenter: center,
+            reduceMotionEnabled: { reduceMotionEnabled }
+        )
+        observer.start()
+        XCTAssertTrue(statusPresentation(for: model).animates)
+
+        reduceMotionEnabled = true
+        center.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+
+        XCTAssertTrue(model.reduceMotion)
+        XCTAssertFalse(statusPresentation(for: model).animates)
+    }
+
+    func testReduceMotionObserverStopsListening() {
+        let center = NotificationCenter()
+        var reduceMotionEnabled = false
+        let model = AppModel(
+            store: InMemorySessionStore(events: []),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator()
+        )
+        let observer = ReduceMotionObserver(
+            model: model,
+            notificationCenter: center,
+            reduceMotionEnabled: { reduceMotionEnabled }
+        )
+        observer.start()
+        observer.stop()
+
+        reduceMotionEnabled = true
+        center.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+
+        XCTAssertFalse(model.reduceMotion)
+    }
+
+    private func statusPresentation(for model: AppModel) -> StatusPresentation {
+        StatusPresentation(
+            resolved: model.resolved,
+            showTimer: model.showTimer,
+            reduceMotion: model.reduceMotion
+        )
+    }
 }
 
 private final class InMemorySessionStore: SessionStateStoring {
@@ -139,6 +243,32 @@ private struct FailingSessionStore: SessionStateStoring {
 
     func write(_ event: NormalizedEvent) throws {}
     func loadAll() throws -> [NormalizedEvent] { throw Failure.loadFailed }
+    func load(_ key: SessionKey) throws -> NormalizedEvent? { nil }
+    func remove(_ key: SessionKey) throws {}
+}
+
+private final class FailingAfterFirstLoadStore: SessionStateStoring {
+    enum Failure: Error {
+        case loadFailed
+    }
+
+    private let events: [NormalizedEvent]
+    private var loadCount = 0
+
+    init(events: [NormalizedEvent]) {
+        self.events = events
+    }
+
+    func write(_ event: NormalizedEvent) throws {}
+
+    func loadAll() throws -> [NormalizedEvent] {
+        loadCount += 1
+        if loadCount > 1 {
+            throw Failure.loadFailed
+        }
+        return events
+    }
+
     func load(_ key: SessionKey) throws -> NormalizedEvent? { nil }
     func remove(_ key: SessionKey) throws {}
 }

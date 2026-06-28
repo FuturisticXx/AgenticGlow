@@ -2,6 +2,11 @@ import Foundation
 import KlarityCore
 import Observation
 
+struct SessionDataErrorPresentation: Equatable {
+    let title: String
+    let message: String
+}
+
 @MainActor
 @Observable
 final class AppModel {
@@ -16,6 +21,13 @@ final class AppModel {
     private(set) var storeErrorDescription: String?
     var showTimer = false
     var reduceMotion = false
+    var sessionDataErrorPresentation: SessionDataErrorPresentation? {
+        guard storeErrorDescription != nil else { return nil }
+        return SessionDataErrorPresentation(
+            title: "Session data unavailable",
+            message: "Check Integrations and try again."
+        )
+    }
 
     init(
         store: SessionStateStoring,
@@ -57,6 +69,13 @@ final class AppModel {
             events = try store.loadAll()
         } catch {
             storeErrorDescription = String(describing: error)
+            resolutionMemory = ResolutionMemory()
+            resolved = SessionResolver.resolve(
+                events: [],
+                now: now(),
+                memory: &resolutionMemory,
+                isProcessAlive: { _, _ in false }
+            )
             return
         }
 
