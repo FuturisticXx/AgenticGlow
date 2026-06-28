@@ -86,7 +86,9 @@ public enum HookNormalizer {
             toolCategory: toolCategory,
             projectName: URL(fileURLWithPath: cwd).lastPathComponent,
             workingDirectory: cwd,
-            sourceBundleID: surface == .cli ? terminalBundleID : processIdentity?.bundleIdentifier,
+            sourceBundleID: surface == .cli
+                ? (terminalBundleID ?? processIdentity?.bundleIdentifier)
+                : processIdentity?.bundleIdentifier,
             sourceProcessID: processIdentity?.processID,
             sourceProcessStartedAt: processIdentity?.startedAt,
             turnStartedAt: turnStartedAt,

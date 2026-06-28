@@ -12,9 +12,7 @@ public struct ProcessIdentityResolver: Sendable {
         provider: AgentProvider,
         environment: [String: String]
     ) -> ProcessIdentity? {
-        let expectedNames = provider == .codex
-            ? ["codex", "Codex"]
-            : ["claude", "Claude"]
+        let expectedName = provider == .codex ? "codex" : "claude"
         let isCLI = environment["TERM_PROGRAM"] != nil
         var agentProcess: InspectedProcess?
         var sourceBundle = isCLI ? environment["__CFBundleIdentifier"] : nil
@@ -22,14 +20,14 @@ public struct ProcessIdentityResolver: Sendable {
 
         for _ in 0..<12 {
             guard pid > 1, let row = inspector.process(pid) else { break }
-            if agentProcess == nil,
-               expectedNames.contains(where: { row.name.localizedCaseInsensitiveContains($0) }) {
+            let isExactAgentName = row.name.caseInsensitiveCompare(expectedName) == .orderedSame
+            if agentProcess == nil, isExactAgentName {
                 agentProcess = row
-                if !isCLI {
-                    sourceBundle = row.bundleID
-                }
             }
             if isCLI, sourceBundle == nil, let bundleID = row.bundleID {
+                sourceBundle = bundleID
+            }
+            if !isCLI, isExactAgentName, let bundleID = row.bundleID {
                 sourceBundle = bundleID
             }
             if let agentProcess, sourceBundle != nil {

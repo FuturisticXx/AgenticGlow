@@ -64,6 +64,27 @@ final class HookNormalizerTests: XCTestCase {
         XCTAssertFalse(encodedString.contains("tool_input"))
     }
 
+    func testCLIPersistsProcessIdentityBundleWhenEnvironmentBundleIsMissing() throws {
+        let processIdentity = ProcessIdentity(
+            processID: 123,
+            startedAt: Date(timeIntervalSince1970: 100),
+            bundleIdentifier: "com.apple.Terminal"
+        )
+
+        let event = try XCTUnwrap(HookNormalizer.normalize(
+            provider: .codex,
+            event: .preToolUse,
+            payload: try fixture("codex/pre-tool-use"),
+            environment: ["TERM_PROGRAM": "Apple_Terminal"],
+            processIdentity: processIdentity,
+            previous: nil,
+            now: Date(timeIntervalSince1970: 500)
+        ))
+
+        XCTAssertEqual(event.surface, .cli)
+        XCTAssertEqual(event.sourceBundleID, "com.apple.Terminal")
+    }
+
     func testClaudePermissionRequestDoesNotPersistCommand() throws {
         let event = try XCTUnwrap(HookNormalizer.normalize(
             provider: .claude,

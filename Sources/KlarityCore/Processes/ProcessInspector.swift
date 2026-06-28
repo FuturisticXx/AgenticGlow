@@ -43,10 +43,18 @@ public struct DarwinProcessInspector: ProcessInspecting {
 
         var nameBuffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
         proc_name(pid, &nameBuffer, UInt32(nameBuffer.count))
-        let name = String(cString: nameBuffer)
-        let startedAt = info.pbi_start_tvsec > 0
-            ? Date(timeIntervalSince1970: TimeInterval(info.pbi_start_tvsec))
-            : nil
+        let name = String(
+            decoding: nameBuffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) },
+            as: UTF8.self
+        )
+        let startedAt: Date?
+        if info.pbi_start_tvsec > 0 {
+            let startTime = TimeInterval(info.pbi_start_tvsec)
+                + (TimeInterval(info.pbi_start_tvusec) / 1_000_000)
+            startedAt = Date(timeIntervalSince1970: startTime)
+        } else {
+            startedAt = nil
+        }
         let bundleID = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier
 
         return InspectedProcess(

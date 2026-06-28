@@ -7,6 +7,7 @@ public protocol ProcessMonitoring: Sendable {
 }
 
 public struct DarwinProcessMonitor: ProcessMonitoring {
+    private static let startTimeTolerance: TimeInterval = 0.000_000_5
     private let inspector: any ProcessInspecting
 
     public init(inspector: any ProcessInspecting = DarwinProcessInspector()) {
@@ -21,7 +22,7 @@ public struct DarwinProcessMonitor: ProcessMonitoring {
         guard let expected = startedAt, let actual = current.startedAt else {
             return true
         }
-        return abs(actual.timeIntervalSince(expected)) < 1
+        return abs(actual.timeIntervalSince(expected)) < Self.startTimeTolerance
     }
 }
 
@@ -31,16 +32,26 @@ public protocol ApplicationActivating: Sendable {
 }
 
 public struct SourceApplicationActivator: ApplicationActivating {
-    public init() {}
+    private let activateBundle: @Sendable (String) -> Bool
+
+    public init() {
+        activateBundle = { bundleIdentifier in
+            guard let application = NSRunningApplication.runningApplications(
+                withBundleIdentifier: bundleIdentifier
+            ).first else {
+                return false
+            }
+            return application.activate(options: [.activateAllWindows])
+        }
+    }
+
+    init(activateBundle: @escaping @Sendable (String) -> Bool) {
+        self.activateBundle = activateBundle
+    }
 
     @discardableResult
     public func activate(bundleIdentifier: String?) -> Bool {
-        guard let bundleIdentifier,
-              let application = NSRunningApplication.runningApplications(
-                  withBundleIdentifier: bundleIdentifier
-              ).first else {
-            return false
-        }
-        return application.activate(options: [.activateAllWindows])
+        guard let bundleIdentifier else { return false }
+        return activateBundle(bundleIdentifier)
     }
 }
