@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import KlarityCore
 
 @MainActor
@@ -6,11 +7,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var model: AppModel!
     private var statusItemController: StatusItemController!
     private var reduceMotionObserver: ReduceMotionObserver!
+    private var preferences: PreferencesStore!
+    private var updateViewModel: UpdateViewModel!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+
+        // Check for UI test fixtures
+        let store: SessionStateStoring
+        if let fixtureEvents = UITestFixtureFactory.events(arguments: CommandLine.arguments) {
+            store = UITestSessionStore(events: fixtureEvents)
+        } else {
+            store = FileSessionStateStore(directory: FileSessionStateStore.defaultDirectory)
+        }
+
         model = AppModel(
-            store: FileSessionStateStore(directory: FileSessionStateStore.defaultDirectory),
+            store: store,
             processMonitor: DarwinProcessMonitor(),
             activator: SourceApplicationActivator()
         )
@@ -27,12 +39,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         reduceMotionObserver.start()
         model.start()
+
+        // Skip preferences and updates in UI test mode
+        if UITestFixtureFactory.events(arguments: CommandLine.arguments) == nil {
+            preferences = PreferencesStore()
+            updateViewModel = UpdateViewModel()
+
+            Task {
+                await updateViewModel.check(
+                    manual: false,
+                    automaticEnabled: preferences.automaticUpdateChecks
+                )
+            }
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         model.stop()
         statusItemController.stop()
         reduceMotionObserver.stop()
+    }
+
+    func makeSettingsView() -> some View {
+        SettingsView(
+            preferences: preferences,
+            updates: updateViewModel
+        )
     }
 }
 
