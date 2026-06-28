@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		05BC4AFDF3E65DA6D583EF1C /* ToolCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CD2C00EB2E17E942D4C727 /* ToolCategory.swift */; };
 		05FFA1C7CF9BA16C7CBE289D /* SessionStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F861DDA96E7055846F3D9D3B /* SessionStateStoreTests.swift */; };
+		1AAEC0559BC37286AC6424CD /* ProcessIdentityResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B769E8AE309BD6947C72C470 /* ProcessIdentityResolverTests.swift */; };
 		1B42E8F4D53E48E3BC66ACDE /* pre-tool-use.json in Resources */ = {isa = PBXBuildFile; fileRef = 08DE84E0FFEDB3205F68FFF9 /* pre-tool-use.json */; };
 		1B51734241DDF6D87937B751 /* KlarityCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AEA4C15C6AB6353DA49DC358 /* KlarityCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		1C65B67AC555ADF3EA7C8402 /* ProcessIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5DAADD969CFC1DFC6D38FB8 /* ProcessIdentity.swift */; };
@@ -19,6 +20,7 @@
 		27C2B8A65E75CBC940EDD171 /* AgentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CCD39F6663D894F545F2CBB /* AgentProvider.swift */; };
 		286AD1BD987C4AA5F778F7B8 /* KlarityCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AEA4C15C6AB6353DA49DC358 /* KlarityCore.framework */; };
 		294D4FDA3A3BC871E20A7B47 /* stop.json in Resources */ = {isa = PBXBuildFile; fileRef = 8052AA83024367CE7B30321C /* stop.json */; };
+		30DFA313FD50FDE4BCDF5564 /* ProcessInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1027D1E0A3186828C63C05C6 /* ProcessInspector.swift */; };
 		319888860F50D6319910D4C2 /* KlarityEventSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67F8DE2B760031A16CB2C172 /* KlarityEventSmokeTests.swift */; };
 		50DA0825FC7BDB5078F9253E /* stop.json in Resources */ = {isa = PBXBuildFile; fileRef = 8052AA83024367CE7B30321C /* stop.json */; };
 		520011B8F6B4CCA8218CE226 /* SessionStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FE103035D5E466D9046CB47 /* SessionStateStore.swift */; };
@@ -31,6 +33,7 @@
 		6F8A4BE3119356276C4F7245 /* KlarityCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AEA4C15C6AB6353DA49DC358 /* KlarityCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		72F9D2AAFF242CEE19C8BFC0 /* pre-tool-use.json in Resources */ = {isa = PBXBuildFile; fileRef = 08DE84E0FFEDB3205F68FFF9 /* pre-tool-use.json */; };
 		82909D9C15859047916CB44A /* permission-request.json in Resources */ = {isa = PBXBuildFile; fileRef = D9FF4F060EDD8D56DD59CE59 /* permission-request.json */; };
+		84E3FCB27C1D21C8F79A64F6 /* SourceApplicationActivator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 718F7885EF87C860A7BF4A9D /* SourceApplicationActivator.swift */; };
 		867F3D6EF2081A6CF5B29589 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15FDB20832755A343EC0267 /* TestSupport.swift */; };
 		871A87543DE1ED18E5F4B688 /* KlarityApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D7DA0B688AEC618C654157 /* KlarityApp.swift */; };
 		8AA94DF2D492C49D6CACA724 /* ProductMetadataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E0AE5BC50B57D9C3A7AED4D /* ProductMetadataTests.swift */; };
@@ -164,6 +167,7 @@
 /* Begin PBXFileReference section */
 		06D7DA0B688AEC618C654157 /* KlarityApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KlarityApp.swift; sourceTree = "<group>"; };
 		08DE84E0FFEDB3205F68FFF9 /* pre-tool-use.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "pre-tool-use.json"; sourceTree = "<group>"; };
+		1027D1E0A3186828C63C05C6 /* ProcessInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessInspector.swift; sourceTree = "<group>"; };
 		126667FF38B088DDAD46DA43 /* ProductMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductMetadata.swift; sourceTree = "<group>"; };
 		12D95C027DE2186B70C75518 /* HookNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookNormalizer.swift; sourceTree = "<group>"; };
 		1B5546BE5B09F389F8276915 /* HookNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookNormalizerTests.swift; sourceTree = "<group>"; };
@@ -180,6 +184,7 @@
 		66C262B082FD7704A5E928A6 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		67F8DE2B760031A16CB2C172 /* KlarityEventSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KlarityEventSmokeTests.swift; sourceTree = "<group>"; };
 		6FE19AB0A04E6B4B76DF4280 /* KlarityAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = KlarityAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		718F7885EF87C860A7BF4A9D /* SourceApplicationActivator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceApplicationActivator.swift; sourceTree = "<group>"; };
 		7434749CCE131AC576260EC7 /* SessionResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionResolverTests.swift; sourceTree = "<group>"; };
 		757AB20478EF260AACBC34B2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		79506F308940B2E6A62C4809 /* KlarityEvent */ = {isa = PBXFileReference; includeInIndex = 0; path = KlarityEvent; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -194,6 +199,7 @@
 		A586AF4527535E8CDBEA9225 /* SessionKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionKey.swift; sourceTree = "<group>"; };
 		A5DAADD969CFC1DFC6D38FB8 /* ProcessIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessIdentity.swift; sourceTree = "<group>"; };
 		AEA4C15C6AB6353DA49DC358 /* KlarityCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = KlarityCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B769E8AE309BD6947C72C470 /* ProcessIdentityResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessIdentityResolverTests.swift; sourceTree = "<group>"; };
 		BD28088FA6C3EE99BE286570 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		C15FDB20832755A343EC0267 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
 		D9FF4F060EDD8D56DD59CE59 /* permission-request.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "permission-request.json"; sourceTree = "<group>"; };
@@ -325,6 +331,7 @@
 			children = (
 				1B5546BE5B09F389F8276915 /* HookNormalizerTests.swift */,
 				EEA04CD00C5E7B78A528F4DF /* NormalizedEventTests.swift */,
+				B769E8AE309BD6947C72C470 /* ProcessIdentityResolverTests.swift */,
 				2E0AE5BC50B57D9C3A7AED4D /* ProductMetadataTests.swift */,
 				7434749CCE131AC576260EC7 /* SessionResolverTests.swift */,
 				F861DDA96E7055846F3D9D3B /* SessionStateStoreTests.swift */,
@@ -395,6 +402,8 @@
 			children = (
 				A5DAADD969CFC1DFC6D38FB8 /* ProcessIdentity.swift */,
 				52DB9F5EF986719EB322D920 /* ProcessIdentityResolver.swift */,
+				1027D1E0A3186828C63C05C6 /* ProcessInspector.swift */,
+				718F7885EF87C860A7BF4A9D /* SourceApplicationActivator.swift */,
 			);
 			path = Processes;
 			sourceTree = "<group>";
@@ -755,11 +764,13 @@
 				E91A7A55D6833E68498FCB60 /* NormalizedEvent.swift in Sources */,
 				1C65B67AC555ADF3EA7C8402 /* ProcessIdentity.swift in Sources */,
 				6C13D2B1016076934BFC2E3F /* ProcessIdentityResolver.swift in Sources */,
+				30DFA313FD50FDE4BCDF5564 /* ProcessInspector.swift in Sources */,
 				E1B67E933598B0ABFE2494CA /* ProductMetadata.swift in Sources */,
 				ACE0D34273DF6924BA31F3CA /* SessionKey.swift in Sources */,
 				F3067AA70A9C8B981590C01C /* SessionResolver.swift in Sources */,
 				B0F962FED3629CB5E87FB415 /* SessionSnapshot.swift in Sources */,
 				520011B8F6B4CCA8218CE226 /* SessionStateStore.swift in Sources */,
+				84E3FCB27C1D21C8F79A64F6 /* SourceApplicationActivator.swift in Sources */,
 				05BC4AFDF3E65DA6D583EF1C /* ToolCategory.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -770,6 +781,7 @@
 			files = (
 				E41BC4AD929A787C4983773A /* HookNormalizerTests.swift in Sources */,
 				DE35312F74E7CB0C4384B556 /* NormalizedEventTests.swift in Sources */,
+				1AAEC0559BC37286AC6424CD /* ProcessIdentityResolverTests.swift in Sources */,
 				8AA94DF2D492C49D6CACA724 /* ProductMetadataTests.swift in Sources */,
 				D591EF41B10215FF09B251A9 /* SessionResolverTests.swift in Sources */,
 				05FFA1C7CF9BA16C7CBE289D /* SessionStateStoreTests.swift in Sources */,
