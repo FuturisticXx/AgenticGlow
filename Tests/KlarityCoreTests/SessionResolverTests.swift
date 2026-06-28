@@ -55,6 +55,34 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertTrue(expired.sessions.isEmpty)
     }
 
+    func testExpiredDeadEventStaysHiddenOnRepeatedResolution() {
+        let deadEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 100)
+        var memory = ResolutionMemory()
+
+        _ = SessionResolver.resolve(
+            events: [deadEvent],
+            now: Date(timeIntervalSince1970: 1_000),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+
+        let expired = SessionResolver.resolve(
+            events: [deadEvent],
+            now: Date(timeIntervalSince1970: 1_016),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertTrue(expired.sessions.isEmpty)
+
+        let repeated = SessionResolver.resolve(
+            events: [deadEvent],
+            now: Date(timeIntervalSince1970: 1_017),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertTrue(repeated.sessions.isEmpty)
+    }
+
     func testNewDeadEventWithSameKeyGetsFreshDisconnectedWindowAfterOlderEventExpires() {
         let oldEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 100)
         let newEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 1_005)
@@ -99,6 +127,72 @@ final class SessionResolverTests: XCTestCase {
             isProcessAlive: { _, _ in false }
         )
         XCTAssertTrue(reExpired.sessions.isEmpty)
+    }
+
+    func testNewerDeadPayloadWithOlderTimestampGetsFreshDisconnectedWindow() {
+        let oldEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 100)
+        let newEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 900)
+        var memory = ResolutionMemory()
+
+        _ = SessionResolver.resolve(
+            events: [oldEvent],
+            now: Date(timeIntervalSince1970: 1_000),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+
+        let resolved = SessionResolver.resolve(
+            events: [newEvent],
+            now: Date(timeIntervalSince1970: 1_016),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+
+        XCTAssertEqual(resolved.sessions.first?.phase, .disconnected)
+    }
+
+    func testAbsentEventRemovesDisconnectedMemory() {
+        let deadEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 100)
+        var memory = ResolutionMemory()
+
+        _ = SessionResolver.resolve(
+            events: [deadEvent],
+            now: Date(timeIntervalSince1970: 1_000),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertFalse(memory.disconnectedRecords.isEmpty)
+
+        _ = SessionResolver.resolve(
+            events: [],
+            now: Date(timeIntervalSince1970: 1_001),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+
+        XCTAssertTrue(memory.disconnectedRecords.isEmpty)
+    }
+
+    func testRetentionExpiredEventRemovesDisconnectedMemory() {
+        let deadEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 100)
+        var memory = ResolutionMemory()
+
+        _ = SessionResolver.resolve(
+            events: [deadEvent],
+            now: Date(timeIntervalSince1970: 1_000),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertFalse(memory.disconnectedRecords.isEmpty)
+
+        _ = SessionResolver.resolve(
+            events: [deadEvent],
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.fileRetention + 1),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+
+        XCTAssertTrue(memory.disconnectedRecords.isEmpty)
     }
 
     func testUnknownProcessExpiresAfterFourHours() {

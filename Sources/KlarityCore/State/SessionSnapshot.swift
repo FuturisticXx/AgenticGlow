@@ -20,8 +20,13 @@ public struct ResolvedSessions: Equatable, Sendable {
     public let permissionCount: Int
 }
 
+struct DisconnectionRecord: Sendable {
+    let eventUpdatedAt: Date
+    let detectedAt: Date
+}
+
 public struct ResolutionMemory: Sendable {
-    public var disconnectedAt: [SessionKey: Date] = [:]
+    var disconnectedRecords: [SessionKey: DisconnectionRecord] = [:]
 
     public init() {}
 }

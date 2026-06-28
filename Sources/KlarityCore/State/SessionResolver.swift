@@ -12,6 +12,13 @@ public enum SessionResolver {
         memory: inout ResolutionMemory,
         isProcessAlive: (Int32, Date?) -> Bool
     ) -> ResolvedSessions {
+        let retainedKeys = Set(events.compactMap { event in
+            now.timeIntervalSince(event.updatedAt) <= fileRetention ? SessionKey(event) : nil
+        })
+        memory.disconnectedRecords = memory.disconnectedRecords.filter {
+            retainedKeys.contains($0.key)
+        }
+
         let snapshots = events.compactMap { event -> SessionSnapshot? in
             let age = now.timeIntervalSince(event.updatedAt)
             if age > fileRetention { return nil }
@@ -20,25 +27,30 @@ public enum SessionResolver {
             if let pid = event.sourceProcessID {
                 if !isProcessAlive(pid, event.sourceProcessStartedAt) {
                     let key = SessionKey(event)
-                    let disconnectedAt: Date
-                    if let storedDisconnectedAt = memory.disconnectedAt[key] {
-                        disconnectedAt = event.updatedAt > storedDisconnectedAt ? now : storedDisconnectedAt
+                    let record: DisconnectionRecord
+                    if let storedRecord = memory.disconnectedRecords[key],
+                       storedRecord.eventUpdatedAt == event.updatedAt {
+                        record = storedRecord
                     } else {
-                        disconnectedAt = now
+                        record = DisconnectionRecord(
+                            eventUpdatedAt: event.updatedAt,
+                            detectedAt: now
+                        )
                     }
-                    memory.disconnectedAt[key] = disconnectedAt
-                    guard now.timeIntervalSince(disconnectedAt) <= disconnectedDisplayDuration else {
+                    memory.disconnectedRecords[key] = record
+                    guard now.timeIntervalSince(record.detectedAt) <= disconnectedDisplayDuration else {
                         return nil
                     }
                     phase = .disconnected
                 } else if event.phase == .completed && age > completionDisplayDuration {
-                    memory.disconnectedAt.removeValue(forKey: SessionKey(event))
+                    memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
                     phase = .idle
                 } else {
-                    memory.disconnectedAt.removeValue(forKey: SessionKey(event))
+                    memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
                     phase = event.phase
                 }
             } else {
+                memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
                 guard age <= unknownProcessExpiration else { return nil }
                 phase = event.phase == .completed && age > completionDisplayDuration
                     ? .idle
