@@ -80,10 +80,54 @@ public final class JSONConfigEditor {
     }
 
     private func readSnapshotOnce() throws -> Snapshot {
+        try recoverInterruptedTransactionIfNeeded()
         guard let data = try validatedDataIfPresent() else {
             return Snapshot(data: nil, object: [:])
         }
         return Snapshot(data: data, object: try decodeObject(data))
+    }
+
+    private func recoverInterruptedTransactionIfNeeded() throws {
+        let parent = url.deletingLastPathComponent()
+        guard try pathExistsWithoutFollowingSymlinks(at: parent, error: .unsafeDirectory) else {
+            return
+        }
+        try validateDirectory(at: parent)
+
+        let retained = try retainedTransactionURLs(in: parent)
+        guard !retained.isEmpty else { return }
+        guard retained.count == 1 else { throw SessionStateStoreError.unsafeFile }
+
+        let transaction = retained[0]
+        let data = try validatedData(at: transaction)
+        _ = try decodeObject(data)
+
+        if try pathExistsWithoutFollowingSymlinks(at: url, error: .unsafeFile) {
+            try validateFile(at: url)
+            _ = try promoteRetainedToBackup(transaction)
+            return
+        }
+
+        if try restoreRetainedExclusively(transaction) {
+            return
+        }
+        try validateFile(at: url)
+        _ = try promoteRetainedToBackup(transaction)
+    }
+
+    private func retainedTransactionURLs(in parent: URL) throws -> [URL] {
+        let prefix = ".\(url.lastPathComponent)."
+        let suffix = ".retained-klarity"
+        return try fileManager.contentsOfDirectory(
+            at: parent,
+            includingPropertiesForKeys: nil
+        ).filter { candidate in
+            let name = candidate.lastPathComponent
+            guard name.hasPrefix(prefix), name.hasSuffix(suffix) else { return false }
+            let identifier = name.dropFirst(prefix.count).dropLast(suffix.count)
+            guard !identifier.isEmpty else { throw SessionStateStoreError.unsafeFile }
+            return true
+        }
     }
 
     private func validatedDataIfPresent() throws -> Data? {
@@ -175,27 +219,6 @@ public final class JSONConfigEditor {
         }
     }
 
-    private func writeBackup(_ data: Data) throws -> URL {
-        let directory = url.deletingLastPathComponent()
-        let prefix = "\(url.lastPathComponent)."
-        let backup = directory.appendingPathComponent(
-            "\(prefix)\(UUID().uuidString).bak-klarity"
-        )
-        try writeSecure(data, to: backup)
-        do {
-            try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: backup.path)
-        } catch {
-            try? fileManager.removeItem(at: backup)
-            throw error
-        }
-        return backup
-    }
-
-    private func removeNewBackup(_ backup: URL?) {
-        guard let backup else { return }
-        try? fileManager.removeItem(at: backup)
-    }
-
     private func writeSecureTemporary(_ data: Data) throws -> URL {
         let temporary = url.deletingLastPathComponent().appendingPathComponent(
             ".\(url.lastPathComponent).\(UUID().uuidString).tmp"
@@ -265,41 +288,38 @@ public final class JSONConfigEditor {
             if try !currentDataMatches(expected) { return false }
             throw error
         }
+        do {
+            try syncParentDirectory()
+        } catch {
+            try restoreOrPromoteRetained(retained)
+            throw error
+        }
 
         let displaced: Data
         do {
             displaced = try validatedData(at: retained)
         } catch {
-            try restoreOrPreserveRetained(retained)
+            try restoreOrPromoteRetained(retained)
             throw error
         }
         guard displaced == expected else {
-            try restoreOrPreserveRetained(retained)
+            try restoreOrPromoteRetained(retained)
             return false
-        }
-
-        let backup: URL?
-        do {
-            backup = try writeBackup(displaced)
-        } catch {
-            try restoreOrPreserveRetained(retained)
-            throw error
         }
 
         let installed: Bool
         do {
             installed = try installTemporaryExclusively(temporary)
         } catch {
-            removeNewBackup(backup)
-            try restoreOrPreserveRetained(retained)
+            try restoreOrPromoteRetained(retained)
             throw error
         }
         guard installed else {
-            try fileManager.removeItem(at: retained)
+            _ = try promoteRetainedToBackup(retained)
             return false
         }
 
-        try fileManager.removeItem(at: retained)
+        _ = try promoteRetainedToBackup(retained)
         return true
     }
 
@@ -309,17 +329,38 @@ public final class JSONConfigEditor {
         return try Data(contentsOf: candidate)
     }
 
-    private func restoreOrPreserveRetained(_ retained: URL) throws {
-        if link(retained.path, url.path) == 0 {
-            try fileManager.removeItem(at: retained)
-            return
+    private func restoreOrPromoteRetained(_ retained: URL) throws {
+        if try restoreRetainedExclusively(retained) { return }
+        _ = try promoteRetainedToBackup(retained)
+    }
+
+    private func restoreRetainedExclusively(_ retained: URL) throws -> Bool {
+        try validateFile(at: retained)
+        try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: retained.path)
+        guard renamex_np(retained.path, url.path, UInt32(RENAME_EXCL)) == 0 else {
+            if errno == EEXIST { return false }
+            throw posixError()
         }
-        if errno == EEXIST {
-            _ = try writeBackup(validatedData(at: retained))
-            try fileManager.removeItem(at: retained)
-            return
+        try syncParentDirectory()
+        return true
+    }
+
+    private func promoteRetainedToBackup(_ retained: URL) throws -> URL {
+        try validateFile(at: retained)
+        try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: retained.path)
+        try validateFile(at: retained)
+
+        for _ in 0..<Self.maximumMutationAttempts {
+            let backup = url.deletingLastPathComponent().appendingPathComponent(
+                "\(url.lastPathComponent).\(UUID().uuidString).bak-klarity"
+            )
+            if renamex_np(retained.path, backup.path, UInt32(RENAME_EXCL)) == 0 {
+                try syncParentDirectory()
+                return backup
+            }
+            if errno != EEXIST { throw posixError() }
         }
-        throw posixError()
+        throw CocoaError(.fileWriteFileExists)
     }
 
     private func installTemporaryExclusively(_ temporary: URL) throws -> Bool {
