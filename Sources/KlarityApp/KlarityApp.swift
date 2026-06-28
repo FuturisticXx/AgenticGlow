@@ -6,8 +6,7 @@ struct KlarityApp: App {
 
     var body: some Scene {
         Settings {
-            Text("Klarity")
-                .padding()
+            appDelegate.makeSettingsView()
         }
     }
 }
