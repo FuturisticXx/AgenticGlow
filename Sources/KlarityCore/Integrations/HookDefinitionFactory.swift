@@ -69,46 +69,60 @@ enum HookConfiguration {
         provider: AgentProvider,
         event: HookEventKind
     ) throws -> Bool {
+        let requiresMatcher = [.preToolUse, .postToolUse, .permissionRequest].contains(event)
+        if requiresMatcher {
+            guard group["matcher"] as? String == "*" else { return false }
+        } else if group["matcher"] != nil {
+            return false
+        }
         let expected = HookDefinitionFactory.command(
             helperURL: helperURL,
             provider: provider,
             event: event
         )
         return try handlers(in: group).contains {
-            $0["type"] as? String == "command" && $0["command"] as? String == expected
+            $0["type"] as? String == "command"
+                && $0["command"] as? String == expected
+                && ($0["timeout"] as? NSNumber)?.intValue == 5
         }
     }
 
     static func removingManagedHandlers(
-        from groups: [[String: Any]],
-        provider: AgentProvider,
-        event: HookEventKind
-    ) throws -> [[String: Any]] {
-        try groups.compactMap { group in
-            var updated = group
-            let remaining = try handlers(in: group).filter {
-                !isManagedHandler($0, provider: provider, event: event)
+        from hooks: [String: Any],
+        provider: AgentProvider
+    ) throws -> [String: Any] {
+        var updatedHooks = hooks
+        for key in hooks.keys {
+            let groups = try validatedGroups(hooks[key] as Any)
+            let updatedGroups: [[String: Any]] = try groups.compactMap { group -> [String: Any]? in
+                var updatedGroup = group
+                let remaining = try handlers(in: group).filter {
+                    !isManagedHandler($0, provider: provider)
+                }
+                guard !remaining.isEmpty else { return nil }
+                updatedGroup["hooks"] = remaining
+                return updatedGroup
             }
-            guard !remaining.isEmpty else { return nil }
-            updated["hooks"] = remaining
-            return updated
+            if updatedGroups.isEmpty {
+                updatedHooks.removeValue(forKey: key)
+            } else {
+                updatedHooks[key] = updatedGroups
+            }
         }
+        return updatedHooks
     }
 
     static func hasManagedHandlers(
         in hooks: [String: Any],
-        provider: AgentProvider,
-        events: [HookEventKind]
+        provider: AgentProvider
     ) throws -> Bool {
-        for event in events {
-            let eventGroups = try groups(for: event, in: hooks)
-            for group in eventGroups where try handlers(in: group).contains(where: {
-                isManagedHandler($0, provider: provider, event: event)
-            }) {
-                return true
+        try hooks.values.contains { value in
+            try validatedGroups(value).contains { group in
+                try handlers(in: group).contains {
+                    isManagedHandler($0, provider: provider)
+                }
             }
         }
-        return false
     }
 
     private static func validatedGroups(_ value: Any) throws -> [[String: Any]] {
@@ -126,15 +140,61 @@ enum HookConfiguration {
 
     private static func isManagedHandler(
         _ handler: [String: Any],
-        provider: AgentProvider,
-        event: HookEventKind
+        provider: AgentProvider
     ) -> Bool {
         guard handler["type"] as? String == "command",
-              let command = handler["command"] as? String else {
+              let command = handler["command"] as? String,
+              let parsed = parseManagedCommand(command),
+              parsed.provider == provider,
+              URL(fileURLWithPath: parsed.path).lastPathComponent == "klarity-event" else {
             return false
         }
-        return command.hasSuffix(
-            " \(provider.rawValue) \(event.rawValue) \(HookDefinitionFactory.marker)"
-        )
+        return true
+    }
+
+    private static func parseManagedCommand(
+        _ command: String
+    ) -> (path: String, provider: AgentProvider, event: HookEventKind)? {
+        let characters = Array(command)
+        guard characters.first == "'" else { return nil }
+
+        var path = ""
+        var index = 1
+        var foundClosingQuote = false
+        while index < characters.count {
+            if characters[index] != "'" {
+                path.append(characters[index])
+                index += 1
+                continue
+            }
+            if index + 3 < characters.count,
+               characters[index] == "'",
+               characters[index + 1] == "\\",
+               characters[index + 2] == "'",
+               characters[index + 3] == "'" {
+                path.append("'")
+                index += 4
+                continue
+            }
+            foundClosingQuote = true
+            index += 1
+            break
+        }
+
+        guard foundClosingQuote,
+              path.hasPrefix("/"),
+              index < characters.count,
+              characters[index] == " " else {
+            return nil
+        }
+        let suffix = String(characters[(index + 1)...])
+        let tokens = suffix.split(separator: " ", omittingEmptySubsequences: false)
+        guard tokens.count == 3,
+              let provider = AgentProvider(rawValue: String(tokens[0])),
+              let event = HookEventKind(rawValue: String(tokens[1])),
+              tokens[2] == Substring(HookDefinitionFactory.marker) else {
+            return nil
+        }
+        return (path, provider, event)
     }
 }

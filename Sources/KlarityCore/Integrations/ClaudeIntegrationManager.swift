@@ -46,20 +46,18 @@ public final class ClaudeIntegrationManager: ProviderIntegrationManaging {
             let hooks = try HookConfiguration.validatedHooks(in: object)
             guard try HookConfiguration.hasManagedHandlers(
                 in: hooks,
-                provider: .claude,
-                events: events
+                provider: .claude
             ) else { return }
         }
 
         try editor.mutate { object in
-            var hooks = try HookConfiguration.validatedHooks(in: object)
+            let existingHooks = try HookConfiguration.validatedHooks(in: object)
+            var hooks = try HookConfiguration.removingManagedHandlers(
+                from: existingHooks,
+                provider: .claude
+            )
             for event in events {
-                let groups = try HookConfiguration.groups(for: event, in: hooks)
-                var updated = try HookConfiguration.removingManagedHandlers(
-                    from: groups,
-                    provider: .claude,
-                    event: event
-                )
+                var updated = try HookConfiguration.groups(for: event, in: hooks)
                 if add {
                     updated.append(HookDefinitionFactory.entry(
                         helperURL: helperURL,

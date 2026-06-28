@@ -192,6 +192,91 @@ final class JSONConfigEditorTests: XCTestCase {
         }
     }
 
+    func testBackupAndReplacementTemporaryFilesArePrivateBeforeChmod() throws {
+        let directory = privateIntegrationDirectory()
+        let config = directory.appendingPathComponent("settings.json")
+        try Data(#"{"keep":true}"#.utf8).write(to: config)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: config.path)
+        let fileManager = CreationModeObservingFileManager(configName: config.lastPathComponent)
+        let priorMask = umask(0)
+        defer { umask(priorMask) }
+
+        try JSONConfigEditor(url: config, fileManager: fileManager)
+            .mutate { $0["enabled"] = true }
+
+        XCTAssertEqual(fileManager.observedPreChmodModes.count, 2)
+        XCTAssertTrue(fileManager.observedPreChmodModes.allSatisfy { $0 == 0o600 })
+    }
+
+    func testMutateRetriesModifiedConfigAndBacksUpExactReplacedVersion() throws {
+        let directory = privateIntegrationDirectory()
+        let config = directory.appendingPathComponent("settings.json")
+        try Data(#"{"version":"initial"}"#.utf8).write(to: config)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: config.path)
+        let raced = Data(#"{"version":"raced","external":true}"#.utf8)
+        let fileManager = RacingConfigFileManager(
+            parentPath: directory.path,
+            configURL: config,
+            racedData: raced
+        )
+
+        try JSONConfigEditor(url: config, fileManager: fileManager)
+            .mutate { $0["enabled"] = true }
+
+        let object = try jsonObject(at: config)
+        XCTAssertEqual(object["version"] as? String, "raced")
+        XCTAssertEqual(object["external"] as? Bool, true)
+        XCTAssertEqual(object["enabled"] as? Bool, true)
+        let backup = try XCTUnwrap(backupURLs(beside: config).first)
+        XCTAssertEqual(try Data(contentsOf: backup), raced)
+    }
+
+    func testMutateRetriesConfigCreatedAfterMissingSnapshot() throws {
+        let directory = privateIntegrationDirectory()
+        let config = directory.appendingPathComponent("settings.json")
+        let raced = Data(#"{"createdExternally":true}"#.utf8)
+        let fileManager = RacingConfigFileManager(
+            parentPath: directory.path,
+            configURL: config,
+            racedData: raced
+        )
+
+        try JSONConfigEditor(url: config, fileManager: fileManager)
+            .mutate { $0["enabled"] = true }
+
+        let object = try jsonObject(at: config)
+        XCTAssertEqual(object["createdExternally"] as? Bool, true)
+        XCTAssertEqual(object["enabled"] as? Bool, true)
+        let backup = try XCTUnwrap(backupURLs(beside: config).first)
+        XCTAssertEqual(try Data(contentsOf: backup), raced)
+    }
+
+    func testMutateCleansSecureFilesWhenTemporaryPermissionConfirmationFails() throws {
+        let directory = privateIntegrationDirectory()
+        let config = directory.appendingPathComponent("settings.json")
+        try Data(#"{"keep":true}"#.utf8).write(to: config)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: config.path)
+        let fileManager = FailingTemporaryPermissionFileManager(
+            configName: config.lastPathComponent
+        )
+
+        XCTAssertThrowsError(
+            try JSONConfigEditor(url: config, fileManager: fileManager)
+                .mutate { $0["enabled"] = true }
+        )
+
+        XCTAssertEqual(try backupURLs(beside: config), [])
+        let temporaryFiles = try FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: nil
+        ).filter {
+            $0.lastPathComponent.hasPrefix(".\(config.lastPathComponent).")
+                && $0.lastPathComponent.hasSuffix(".tmp")
+        }
+        XCTAssertEqual(temporaryFiles, [])
+        XCTAssertEqual((try jsonObject(at: config))["keep"] as? Bool, true)
+    }
+
     private func jsonObject(at url: URL) throws -> [String: Any] {
         try XCTUnwrap(
             JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any]
@@ -225,5 +310,80 @@ private final class MissingConfigOwnerFileManager: FileManager {
             attributes.removeValue(forKey: .ownerAccountID)
         }
         return attributes
+    }
+}
+
+private final class CreationModeObservingFileManager: FileManager {
+    let configName: String
+    var observedPreChmodModes: [UInt16] = []
+
+    init(configName: String) {
+        self.configName = configName
+        super.init()
+    }
+
+    override func setAttributes(
+        _ attributes: [FileAttributeKey: Any],
+        ofItemAtPath path: String
+    ) throws {
+        let name = URL(fileURLWithPath: path).lastPathComponent
+        let isBackup = name.hasPrefix("\(configName).") && name.hasSuffix(".bak-klarity")
+        let isTemporary = name.hasPrefix(".\(configName).") && name.hasSuffix(".tmp")
+        if (isBackup || isTemporary), attributes[.posixPermissions] != nil {
+            let current = try super.attributesOfItem(atPath: path)
+            let mode = (current[.posixPermissions] as? NSNumber)?.uint16Value ?? 0
+            observedPreChmodModes.append(mode & 0o777)
+        }
+        try super.setAttributes(attributes, ofItemAtPath: path)
+    }
+}
+
+private final class RacingConfigFileManager: FileManager {
+    private let parentPath: String
+    private let configURL: URL
+    private let racedData: Data
+    private var parentReadCount = 0
+    private var didRace = false
+
+    init(parentPath: String, configURL: URL, racedData: Data) {
+        self.parentPath = parentPath
+        self.configURL = configURL
+        self.racedData = racedData
+        super.init()
+    }
+
+    override func attributesOfItem(atPath path: String) throws -> [FileAttributeKey: Any] {
+        if path == parentPath {
+            parentReadCount += 1
+            if parentReadCount == 2, !didRace {
+                didRace = true
+                try racedData.write(to: configURL)
+                try super.setAttributes(
+                    [.posixPermissions: 0o600],
+                    ofItemAtPath: configURL.path
+                )
+            }
+        }
+        return try super.attributesOfItem(atPath: path)
+    }
+}
+
+private final class FailingTemporaryPermissionFileManager: FileManager {
+    private let configName: String
+
+    init(configName: String) {
+        self.configName = configName
+        super.init()
+    }
+
+    override func setAttributes(
+        _ attributes: [FileAttributeKey: Any],
+        ofItemAtPath path: String
+    ) throws {
+        let name = URL(fileURLWithPath: path).lastPathComponent
+        if name.hasPrefix(".\(configName)."), name.hasSuffix(".tmp") {
+            throw CocoaError(.fileWriteNoPermission)
+        }
+        try super.setAttributes(attributes, ofItemAtPath: path)
     }
 }

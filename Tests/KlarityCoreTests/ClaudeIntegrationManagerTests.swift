@@ -43,7 +43,7 @@ final class ClaudeIntegrationManagerTests: XCTestCase {
         let settings = temporaryConfig(contents: """
         {"hooks":{"PreToolUse":[{"matcher":"*","hooks":[
           {"type":"command","command":"existing-policy"},
-          {"type":"command","command":"\\\"/tmp/klarity-event\\\" claude PreToolUse --klarity-hook"}
+          {"type":"command","command":"'/tmp/klarity-event' claude PreToolUse --klarity-hook"}
         ]}]}}
         """)
         let manager = ClaudeIntegrationManager(
@@ -102,6 +102,32 @@ final class ClaudeIntegrationManagerTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: settings), original)
         XCTAssertEqual(try backupURLs(beside: settings), [])
     }
+
+    func testRepairRemovesOwnedHooksFromWrongAndObsoleteGroups() throws {
+        let settings = temporaryConfig(contents: """
+        {"hooks":{
+          "PreToolUse":[{"hooks":[
+            {"type":"command","command":"existing-policy"},
+            {"type":"command","command":"'/old/klarity-event' claude Stop --klarity-hook"}
+          ]}],
+          "ObsoleteHook":[{"hooks":[
+            {"type":"command","command":"'/old/klarity-event' claude Notification --klarity-hook"}
+          ]}]
+        }}
+        """)
+        let manager = ClaudeIntegrationManager(
+            settingsURL: settings,
+            helperURL: URL(fileURLWithPath: "/new/klarity-event")
+        )
+
+        try manager.repair()
+
+        let text = try String(contentsOf: settings, encoding: .utf8)
+        XCTAssertFalse(text.contains("/old/klarity-event"))
+        XCTAssertTrue(text.contains("existing-policy"))
+        XCTAssertEqual(text.components(separatedBy: "--klarity-hook").count - 1, 8)
+        XCTAssertTrue(try manager.status().installed)
+    }
 }
 
 private extension HookEventKind {
@@ -117,7 +143,7 @@ private func configuredClaudeSettings() -> String {
       "hooks": {
         "PreToolUse": [
           {"matcher":"Bash","hooks":[{"type":"command","command":"existing-policy"}]},
-          {"matcher":"*","hooks":[{"type":"command","command":"\\\"/tmp/klarity-event\\\" claude PreToolUse --klarity-hook"}]}
+          {"matcher":"*","hooks":[{"type":"command","command":"'/tmp/klarity-event' claude PreToolUse --klarity-hook"}]}
         ]
       }
     }

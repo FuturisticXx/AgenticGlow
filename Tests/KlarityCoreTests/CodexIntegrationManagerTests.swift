@@ -44,7 +44,7 @@ final class CodexIntegrationManagerTests: XCTestCase {
         let hooks = temporaryConfig(contents: """
         {"hooks":{"PreToolUse":[
           {"matcher":"Bash","hooks":[{"type":"command","command":"existing-policy"}]},
-          {"matcher":"*","hooks":[{"type":"command","command":"\\\"/tmp/klarity-event\\\" codex PreToolUse --klarity-hook"}]}
+          {"matcher":"*","hooks":[{"type":"command","command":"'/tmp/klarity-event' codex PreToolUse --klarity-hook"}]}
         ]}}
         """)
         let manager = CodexIntegrationManager(
@@ -103,6 +103,85 @@ final class CodexIntegrationManagerTests: XCTestCase {
         )
 
         XCTAssertThrowsError(try manager.status())
+    }
+
+    func testStatusRejectsNoncanonicalMatcherAndTimeoutFields() throws {
+        enum Mutation {
+            case removeMatcher
+            case wrongMatcher
+            case removeTimeout
+            case wrongTimeout
+        }
+
+        let scenarios: [(HookEventKind, Mutation)] = [
+            (.preToolUse, .removeMatcher),
+            (.preToolUse, .wrongMatcher),
+            (.sessionStart, .removeTimeout),
+            (.sessionStart, .wrongTimeout)
+        ]
+
+        for (event, mutation) in scenarios {
+            let hooks = temporaryConfig(contents: "{}")
+            let manager = CodexIntegrationManager(
+                hooksURL: hooks,
+                helperURL: URL(fileURLWithPath: "/tmp/klarity-event")
+            )
+            try manager.install()
+
+            var object = try integrationJSONObject(hooks)
+            var configuredHooks = try XCTUnwrap(object["hooks"] as? [String: Any])
+            var groups = try XCTUnwrap(configuredHooks[event.rawValue] as? [[String: Any]])
+            switch mutation {
+            case .removeMatcher:
+                groups[0].removeValue(forKey: "matcher")
+            case .wrongMatcher:
+                groups[0]["matcher"] = "Bash"
+            case .removeTimeout:
+                var handlers = try XCTUnwrap(groups[0]["hooks"] as? [[String: Any]])
+                handlers[0].removeValue(forKey: "timeout")
+                groups[0]["hooks"] = handlers
+            case .wrongTimeout:
+                var handlers = try XCTUnwrap(groups[0]["hooks"] as? [[String: Any]])
+                handlers[0]["timeout"] = 10
+                groups[0]["hooks"] = handlers
+            }
+            configuredHooks[event.rawValue] = groups
+            object["hooks"] = configuredHooks
+            try writeIntegrationJSONObject(object, to: hooks)
+
+            let status = try manager.status()
+            XCTAssertFalse(status.installed, "Unexpected canonical status for \(event) \(mutation)")
+            XCTAssertFalse(status.installedEvents.contains(event))
+        }
+    }
+
+    func testRemoveFindsOwnedHookInWrongGroupButPreservesMarkerLookalikes() throws {
+        let hooks = temporaryConfig(contents: """
+        {"hooks":{
+          "SessionEnd":[{"hooks":[
+            {"type":"command","command":"'/old/klarity-event' codex Stop --klarity-hook"}
+          ]}],
+          "Stop":[{"hooks":[
+            {"type":"command","command":"existing-policy"},
+            {"type":"command","command":"'/usr/local/bin/not-klarity' codex Stop --klarity-hook"},
+            {"type":"command","command":"\\\"/tmp/klarity-event\\\" codex Stop --klarity-hook"},
+            {"type":"command","command":"'/tmp/klarity-event' claude Stop --klarity-hook"}
+          ]}]
+        }}
+        """)
+        let manager = CodexIntegrationManager(
+            hooksURL: hooks,
+            helperURL: URL(fileURLWithPath: "/new/klarity-event")
+        )
+
+        try manager.remove()
+
+        let text = try String(contentsOf: hooks, encoding: .utf8)
+        XCTAssertFalse(text.contains("/old/klarity-event"))
+        XCTAssertTrue(text.contains("existing-policy"))
+        XCTAssertTrue(text.contains("/usr/local/bin/not-klarity"))
+        XCTAssertTrue(text.contains("\\\"/tmp/klarity-event\\\" codex"))
+        XCTAssertTrue(text.contains("claude Stop"))
     }
 
     func testRemoveMissingConfigDoesNotCreateIt() throws {
@@ -177,4 +256,10 @@ func integrationJSONObject(_ url: URL) throws -> [String: Any] {
     try XCTUnwrap(
         JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any]
     )
+}
+
+func writeIntegrationJSONObject(_ object: [String: Any], to url: URL) throws {
+    try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
+        .write(to: url)
+    try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
 }
