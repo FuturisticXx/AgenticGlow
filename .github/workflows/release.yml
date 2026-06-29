@@ -1,0 +1,24 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version without the v prefix
+        required: true
+
+jobs:
+  package:
+    if: ${{ vars.KLARITY_PUBLICATION_APPROVED == '1' }}
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - name: Import signing certificate
+        run: echo "Enable only after publication approval and secret configuration."
+      - name: Build
+        run: Scripts/build-release.sh "${{ inputs.version }}"
+      - name: Package
+        run: Scripts/create-dmg.sh "${{ inputs.version }}"
+      - name: Verify
+        run: Scripts/verify-release.sh "${{ inputs.version }}"

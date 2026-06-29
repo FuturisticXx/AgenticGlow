@@ -4257,7 +4257,7 @@ final class KlarityUITests: XCTestCase {
 
 For `--ui-test-fixture setup-repair`, `AppDelegate` must show `SetupView` with in-memory provider managers. The Codex manager starts in a repair-needed state and changes to installed after `repair()` without touching `~/.codex` or `~/.claude`.
 
-- [x] **Step 9: Run unit and UI tests**
+- [ ] **Step 9: Run unit and UI tests**
 
 ```bash
 xcodebuild test \
@@ -4275,6 +4275,8 @@ xcodebuild test \
 
 Expected: update, logging, permission-state, and empty-state tests PASS.
 
+**Current verification note (2026-06-29):** Focused event-helper and preferences tests pass. The macOS 27 beta XCUITest runner reaches the signed test host only with hardened runtime disabled, then times out enabling automation mode. Full UI verification remains open.
+
 - [x] **Step 10: Commit**
 
 ```bash
@@ -4282,7 +4284,7 @@ git add Sources Design Tests project.yml
 git commit -m "feat: add preferences updates branding and accessibility"
 ```
 
-**Note:** Task 10 was implemented on branch `devin/task-10`. The app icon creation was skipped due to lack of $imagegen tool access. Launch-at-login toggle was skipped in SettingsView because LaunchAtLoginService is on the devin/task-9 branch. All other features (preferences, updates, diagnostics, accessibility, UI test fixtures) were implemented and tested successfully.
+**Note:** Task 10 originated on branch `devin/task-10`. The consolidated baseline now includes launch-at-login, shared preferences, diagnostics, update checks, and deterministic UI fixtures. App icon creation and full XCUITest verification remain open.
 
 ---
 
@@ -4513,7 +4515,7 @@ git commit -m "docs: define privacy integrations and release gates"
 - Produces: `build/Klarity.app`, `build/Klarity-<version>.dmg`, verified signatures, notarization tickets, and a generated Homebrew Cask.
 - Consumes: `DEVELOPER_ID_APPLICATION`, `NOTARY_PROFILE`, `KLARITY_NAME_CLEARED=1`, and `KLARITY_RELEASE_BUILD_APPROVED=1`.
 
-- [ ] **Step 1: Write failing release-script syntax and gate checks**
+- [x] **Step 1: Write failing release-script syntax and gate checks**
 
 Create empty executable script files, then run:
 
@@ -4528,7 +4530,7 @@ Scripts/verify-release-gates.sh
 
 Expected: syntax checks pass and the release-gate command FAILS with `Missing release gate: KLARITY_NAME_CLEARED`.
 
-- [ ] **Step 2: Implement universal app build and signing**
+- [x] **Step 2: Implement universal app build and signing**
 
 ```bash
 #!/usr/bin/env bash
@@ -4568,7 +4570,7 @@ lipo -archs build/Klarity.app/Contents/MacOS/Klarity
 lipo -archs "$helper"
 ```
 
-- [ ] **Step 3: Implement signed and notarized DMG creation**
+- [x] **Step 3: Implement signed and notarized DMG creation**
 
 ```bash
 #!/usr/bin/env bash
@@ -4604,7 +4606,7 @@ xcrun stapler validate "$dmg"
 rm -rf "$stage"
 ```
 
-- [ ] **Step 4: Implement release verification**
+- [x] **Step 4: Implement release verification**
 
 ```bash
 #!/usr/bin/env bash
@@ -4636,7 +4638,7 @@ test -d "$mount/Klarity.app"
 test -L "$mount/Applications"
 ```
 
-- [ ] **Step 5: Implement deterministic Cask generation**
+- [x] **Step 5: Implement deterministic Cask generation**
 
 ```bash
 #!/usr/bin/env bash
@@ -4675,7 +4677,7 @@ end
 RUBY
 ```
 
-- [ ] **Step 6: Add a manual release workflow without enabling publication**
+- [x] **Step 6: Add a manual release workflow without enabling publication**
 
 ```yaml
 # .github/workflows/release.yml
@@ -4707,7 +4709,7 @@ jobs:
 
 The repository variable `KLARITY_PUBLICATION_APPROVED` must remain unset until explicit publication approval, signing-secret configuration, and review of the exact release workflow.
 
-- [ ] **Step 7: Run unsigned local packaging preflight**
+- [x] **Step 7: Run unsigned local packaging preflight**
 
 Before signing credentials are used, verify build and script shape:
 
@@ -4725,6 +4727,8 @@ xcodebuild build \
 ```
 
 Expected: Release build succeeds and both app and helper contain arm64 and x86_64 slices.
+
+**Verification note (2026-06-29):** The unsigned 0.1.0 Release app and standalone helper both contain `arm64` and `x86_64` slices. The installed-helper smoke check passes without `KlarityCore.framework`.
 
 - [ ] **Step 8: Run signed release verification only after credentials and approvals exist**
 
@@ -4781,7 +4785,7 @@ Scripts/verify-privacy.sh
 
 Expected: all unit, integration, app-model, and UI tests PASS.
 
-- [ ] **Step 2: Exercise both providers with temporary isolated configs**
+- [x] **Step 2: Exercise both providers with temporary isolated configs**
 
 Build the helper, then execute every committed fixture into an isolated state directory:
 
@@ -4816,6 +4820,8 @@ rg -n 'SECRET_PROMPT|SECRET_COMMAND|SECRET_PATCH|SECRET_RESPONSE' \
 ```
 
 Expected: one final valid file for the Claude session, one final valid file for the Codex session, and no prohibited decoy text.
+
+**Verification note (2026-06-29):** The four committed fixtures produced exactly two session files and no prohibited decoy text.
 
 - [ ] **Step 3: Run the live local smoke matrix**
 
