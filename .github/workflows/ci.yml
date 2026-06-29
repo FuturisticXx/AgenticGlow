@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Test
+        run: |
+          xcodebuild test \
+            -project Klarity.xcodeproj \
+            -scheme Klarity \
+            -destination 'platform=macOS' \
+            -skip-testing:KlarityUITests \
+            CODE_SIGNING_ALLOWED=NO
+      - name: Verify privacy contract
+        run: Scripts/verify-privacy.sh
