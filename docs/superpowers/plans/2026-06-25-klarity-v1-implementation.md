@@ -4298,7 +4298,7 @@ git commit -m "feat: add preferences updates branding and accessibility"
 - Produces: documented privacy contract, contributor onboarding, CI, and enforceable local release gates.
 - Consumes: exact schema and supported-event lists from prior tasks.
 
-- [ ] **Step 1: Write failing privacy verification script**
+- [x] **Step 1: Write failing privacy verification script**
 
 ```bash
 #!/usr/bin/env bash
@@ -4336,7 +4336,7 @@ Scripts/verify-privacy.sh
 
 Expected: FAIL because `docs/privacy.md` does not exist.
 
-- [ ] **Step 2: Write the exact privacy contract**
+- [x] **Step 2: Write the exact privacy contract**
 
 `docs/privacy.md` must state:
 
@@ -4374,7 +4374,7 @@ automatic update check explicitly enabled by the user, requests only the latest
 release metadata from GitHub's public Releases API.
 ```
 
-- [ ] **Step 3: Add README, integration guide, MIT license, and attribution**
+- [x] **Step 3: Add README, integration guide, MIT license, and attribution**
 
 The README must include:
 
@@ -4399,7 +4399,7 @@ Use the standard MIT license text with:
 Copyright (c) 2026 Klarity contributors
 ```
 
-- [ ] **Step 4: Add enforceable name and publication gates**
+- [x] **Step 4: Add enforceable name and publication gates**
 
 ```bash
 #!/usr/bin/env bash
@@ -4437,7 +4437,7 @@ done
 - Accessibility review.
 - DMG and Cask verification.
 
-- [ ] **Step 5: Add macOS CI**
+- [x] **Step 5: Add macOS CI**
 
 ```yaml
 # .github/workflows/ci.yml
@@ -4468,7 +4468,7 @@ jobs:
         run: Scripts/verify-privacy.sh
 ```
 
-- [ ] **Step 6: Run documentation and CI-equivalent checks**
+- [x] **Step 6: Run documentation and CI-equivalent checks**
 
 ```bash
 Scripts/verify-privacy.sh
@@ -4484,12 +4484,14 @@ xcodebuild test \
 
 Expected: privacy verification and tests PASS. `verify-release-gates.sh` is syntax-checked but not executed because public release is not approved yet.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add README.md LICENSE docs Scripts .github
 git commit -m "docs: define privacy integrations and release gates"
 ```
+
+**Note:** Task 11 was implemented on branch `devin/task-11`. All documentation, privacy verification, release gates, and CI workflow were implemented and verified successfully.
 
 ---
 
