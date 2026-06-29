@@ -3,13 +3,16 @@ import Foundation
 public struct KlarityEventCommand {
     private let store: SessionStateStoring
     private let processIdentity: (AgentProvider, [String: String]) -> ProcessIdentity?
+    private let logger: DiagnosticLogging?
 
     public init(
         store: SessionStateStoring,
-        processIdentity: @escaping (AgentProvider, [String: String]) -> ProcessIdentity?
+        processIdentity: @escaping (AgentProvider, [String: String]) -> ProcessIdentity?,
+        logger: DiagnosticLogging? = nil
     ) {
         self.store = store
         self.processIdentity = processIdentity
+        self.logger = logger
     }
 
     public func run(
@@ -59,8 +62,22 @@ public struct KlarityEventCommand {
             } else {
                 try store.write(normalized)
             }
+            logger?.record(
+                provider: provider,
+                event: event,
+                sessionID: normalized.sessionID,
+                result: "written",
+                rawPayload: nil
+            )
             return 0
         } catch {
+            logger?.record(
+                provider: provider,
+                event: event,
+                sessionID: payload["session_id"] as? String ?? "unknown",
+                result: "failed:\(String(describing: type(of: error)))",
+                rawPayload: nil
+            )
             return 1
         }
     }

@@ -2,6 +2,30 @@ import XCTest
 @testable import KlarityCore
 
 final class KlarityEventCommandTests: XCTestCase {
+    func testCommandRecordsSuccessfulWriteWithoutRawPayload() throws {
+        let directory = temporaryDirectory()
+        let logger = RecordingDiagnosticLogger()
+        let command = KlarityEventCommand(
+            store: FileSessionStateStore(directory: directory),
+            processIdentity: { _, _ in .fixture },
+            logger: logger
+        )
+
+        let code = command.run(
+            arguments: ["klarity-event", "codex", "UserPromptSubmit", "--klarity-hook"],
+            input: Data(#"{"session_id":"codex-session","cwd":"/tmp/Klarity","prompt":"SECRET"}"#.utf8),
+            environment: ["TERM_PROGRAM": "Apple_Terminal"],
+            now: Date(timeIntervalSince1970: 500)
+        )
+
+        XCTAssertEqual(code, 0)
+        XCTAssertEqual(logger.records.count, 1)
+        XCTAssertEqual(logger.records.first?.provider, .codex)
+        XCTAssertEqual(logger.records.first?.event, .userPromptSubmit)
+        XCTAssertEqual(logger.records.first?.result, "written")
+        XCTAssertNil(logger.records.first?.rawPayload)
+    }
+
     func testCommandWritesNormalizedStateAndReturnsSuccess() throws {
         let directory = temporaryDirectory()
         let store = FileSessionStateStore(directory: directory)
@@ -112,5 +136,33 @@ final class KlarityEventCommandTests: XCTestCase {
         XCTAssertEqual(startCode, 0)
         XCTAssertEqual(endCode, 0)
         XCTAssertEqual(try store.loadAll(), [])
+    }
+}
+
+private final class RecordingDiagnosticLogger: DiagnosticLogging {
+    struct Record {
+        let provider: AgentProvider
+        let event: HookEventKind
+        let sessionID: String
+        let result: String
+        let rawPayload: String?
+    }
+
+    private(set) var records: [Record] = []
+
+    func record(
+        provider: AgentProvider,
+        event: HookEventKind,
+        sessionID: String,
+        result: String,
+        rawPayload: String?
+    ) {
+        records.append(.init(
+            provider: provider,
+            event: event,
+            sessionID: sessionID,
+            result: result,
+            rawPayload: rawPayload
+        ))
     }
 }

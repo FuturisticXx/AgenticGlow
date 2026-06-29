@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import KlarityCore
 import Observation
@@ -39,6 +40,8 @@ final class AppModel {
         self.processMonitor = processMonitor
         self.activator = activator
         self.now = now
+        reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        showTimer = UserDefaults.standard.bool(forKey: "showTimer")
         var initialMemory = ResolutionMemory()
         resolved = SessionResolver.resolve(
             events: [],

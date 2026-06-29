@@ -19,7 +19,10 @@ jobs:
             -project Klarity.xcodeproj \
             -scheme Klarity \
             -destination 'platform=macOS' \
+            -derivedDataPath build/DerivedData \
             -skip-testing:KlarityUITests \
             CODE_SIGNING_ALLOWED=NO
+      - name: Verify standalone helper
+        run: Scripts/verify-standalone-helper.sh build/DerivedData/Build/Products/Debug/Klarity.app/Contents/Resources/bin/klarity-event
       - name: Verify privacy contract
         run: Scripts/verify-privacy.sh

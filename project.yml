@@ -26,6 +26,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.core
         DEFINES_MODULE: YES
         GENERATE_INFOPLIST_FILE: YES
+        MACH_O_TYPE: staticlib
   KlarityEvent:
     type: tool
     platform: macOS
@@ -94,6 +95,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.core-tests
+        GENERATE_INFOPLIST_FILE: YES
   KlarityEventTests:
     type: bundle.unit-test
     platform: macOS
@@ -107,6 +109,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.event-tests
+        GENERATE_INFOPLIST_FILE: YES
   KlarityAppTests:
     type: bundle.unit-test
     platform: macOS
@@ -120,6 +123,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.app-tests
+        GENERATE_INFOPLIST_FILE: YES
   KlarityUITests:
     type: bundle.ui-testing
     platform: macOS
@@ -131,6 +135,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.ui-tests
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
   Klarity:
     build:

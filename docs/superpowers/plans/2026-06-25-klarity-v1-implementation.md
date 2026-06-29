@@ -3059,7 +3059,7 @@ git commit -m "feat: manage Claude and Codex integrations safely"
 - Produces: `HelperInstalling`, `HelperInstaller`, `ExecutableLocator`, `ProviderVersionDetector`, `SetupViewModel`, `SyntheticEventService`, and `LaunchAtLoginService`.
 - Consumes: provider integration managers, embedded `klarity-event`, and `FileSessionStateStore`.
 
-- [ ] **Step 1: Write failing helper-installation and setup tests**
+- [x] **Step 1: Write failing helper-installation and setup tests**
 
 ```swift
 // Tests/KlarityCoreTests/HelperInstallerTests.swift
@@ -3154,7 +3154,7 @@ private final class SetupRecorder:
 }
 ```
 
-- [ ] **Step 2: Run focused tests and verify failure**
+- [x] **Step 2: Run focused tests and verify failure**
 
 ```bash
 xcodebuild test \
@@ -3168,7 +3168,7 @@ xcodebuild test \
 
 Expected: FAIL because the setup types do not exist.
 
-- [ ] **Step 3: Implement stable helper installation and executable detection**
+- [x] **Step 3: Implement stable helper installation and executable detection**
 
 ```swift
 // Sources/KlarityCore/Integrations/HelperInstaller.swift
@@ -3264,7 +3264,7 @@ public enum ExecutableLocator {
 }
 ```
 
-- [ ] **Step 4: Implement provider version detection**
+- [x] **Step 4: Implement provider version detection**
 
 ```swift
 // Sources/KlarityCore/Integrations/ProviderVersionDetector.swift
@@ -3300,7 +3300,7 @@ public enum ProviderVersionDetector {
 }
 ```
 
-- [ ] **Step 5: Implement synthetic event verification**
+- [x] **Step 5: Implement synthetic event verification**
 
 ```swift
 // Sources/KlarityApp/Services/SyntheticEventService.swift
@@ -3340,7 +3340,7 @@ struct SyntheticEventService: SyntheticEventTesting {
 }
 ```
 
-- [ ] **Step 6: Implement setup state and view**
+- [x] **Step 6: Implement setup state and view**
 
 ```swift
 // Sources/KlarityApp/Setup/SetupViewModel.swift
@@ -3504,7 +3504,7 @@ struct SetupView: View {
 }
 ```
 
-- [ ] **Step 7: Implement launch at login**
+- [x] **Step 7: Implement launch at login**
 
 ```swift
 // Sources/KlarityApp/Services/LaunchAtLoginService.swift
@@ -3530,7 +3530,7 @@ struct LaunchAtLoginService: LaunchAtLoginServicing {
 }
 ```
 
-- [ ] **Step 8: Wire first launch into the app**
+- [x] **Step 8: Wire first launch into the app**
 
 ```swift
 @main
@@ -3635,7 +3635,7 @@ if CommandLine.arguments.contains("--remove-integrations") {
 
 This mode removes only Klarity-marked hooks and Klarity-owned helper files.
 
-- [ ] **Step 9: Run setup tests and a clean-home smoke test**
+- [x] **Step 9: Run setup tests and a clean-home smoke test**
 
 ```bash
 xcodebuild test \
@@ -3656,7 +3656,7 @@ open "$HOME/Library/Developer/Xcode/DerivedData/Klarity-"*/Build/Products/Debug/
 
 Expected: tests PASS and the setup window appears without modifying integrations until an Install button is selected.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add Sources/KlarityCore/Integrations Sources/KlarityApp Tests
@@ -3686,7 +3686,7 @@ git commit -m "feat: add safe first-launch integration setup"
 - Produces: `UpdateChecking`, `GitHubUpdateChecker`, `DiagnosticLogging`, `DiagnosticLogger`, `PreferencesStore`, `UpdateViewModel`, and complete accessibility identifiers.
 - Consumes: app model, GitHub Releases endpoint, and macOS accessibility settings.
 
-- [ ] **Step 1: Write failing opt-in update and sanitized logging tests**
+- [x] **Step 1: Write failing opt-in update and sanitized logging tests**
 
 ```swift
 // Tests/KlarityCoreTests/UpdateCheckerTests.swift
@@ -3748,7 +3748,7 @@ final class DiagnosticLoggerTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run focused tests and verify failure**
+- [x] **Step 2: Run focused tests and verify failure**
 
 ```bash
 xcodebuild test \
@@ -3762,7 +3762,7 @@ xcodebuild test \
 
 Expected: FAIL because update and logging types do not exist.
 
-- [ ] **Step 3: Implement the opt-in GitHub release checker**
+- [x] **Step 3: Implement the opt-in GitHub release checker**
 
 ```swift
 // Sources/KlarityCore/Updates/UpdateChecker.swift
@@ -3825,7 +3825,7 @@ public struct GitHubUpdateChecker: UpdateChecking {
 }
 ```
 
-- [ ] **Step 4: Implement sanitized diagnostics and preferences**
+- [x] **Step 4: Implement sanitized diagnostics and preferences**
 
 ```swift
 // Sources/KlarityCore/Logging/DiagnosticLogger.swift
@@ -3963,7 +3963,7 @@ final class PreferencesStore {
 }
 ```
 
-- [ ] **Step 5: Implement manual and opt-in automatic update behavior**
+- [x] **Step 5: Implement manual and opt-in automatic update behavior**
 
 ```swift
 // Sources/KlarityApp/Settings/UpdateViewModel.swift
@@ -4019,7 +4019,7 @@ final class UpdateViewModel {
 }
 ```
 
-- [ ] **Step 6: Add settings and accessibility behavior**
+- [x] **Step 6: Add settings and accessibility behavior**
 
 ```swift
 // Sources/KlarityApp/Settings/SettingsView.swift
@@ -4127,7 +4127,9 @@ test "$(sips -g pixelHeight Design/KlarityIcon-1024.png | awk '/pixelHeight/ {pr
 
 Expected: both checks exit `0`.
 
-- [ ] **Step 8: Add deterministic UI-test fixtures and XCUITests**
+**Note:** App icon creation was skipped due to lack of $imagegen tool access.
+
+- [x] **Step 8: Add deterministic UI-test fixtures and XCUITests**
 
 When launched with:
 
@@ -4255,7 +4257,7 @@ final class KlarityUITests: XCTestCase {
 
 For `--ui-test-fixture setup-repair`, `AppDelegate` must show `SetupView` with in-memory provider managers. The Codex manager starts in a repair-needed state and changes to installed after `repair()` without touching `~/.codex` or `~/.claude`.
 
-- [ ] **Step 9: Run unit and UI tests**
+- [x] **Step 9: Run unit and UI tests**
 
 ```bash
 xcodebuild test \
@@ -4273,12 +4275,14 @@ xcodebuild test \
 
 Expected: update, logging, permission-state, and empty-state tests PASS.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add Sources Design Tests project.yml
 git commit -m "feat: add preferences updates branding and accessibility"
 ```
+
+**Note:** Task 10 was implemented on branch `devin/task-10`. The app icon creation was skipped due to lack of $imagegen tool access. Launch-at-login toggle was skipped in SettingsView because LaunchAtLoginService is on the devin/task-9 branch. All other features (preferences, updates, diagnostics, accessibility, UI test fixtures) were implemented and tested successfully.
 
 ---
 

@@ -8,6 +8,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController!
     private var reduceMotionObserver: ReduceMotionObserver!
     private var setupWindow: NSWindow?
+    private var preferences = PreferencesStore()
+    private var updateViewModel = UpdateViewModel()
+    private let launchAtLogin = LaunchAtLoginService()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Support noninteractive clean-removal mode
@@ -18,8 +21,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         NSApp.setActivationPolicy(.accessory)
+
+        // Check for UI test fixtures
+        let store: SessionStateStoring
+        if let fixtureEvents = UITestFixtureFactory.events(arguments: CommandLine.arguments) {
+            store = UITestSessionStore(events: fixtureEvents)
+        } else {
+            store = FileSessionStateStore(directory: FileSessionStateStore.defaultDirectory)
+        }
+
         model = AppModel(
-            store: FileSessionStateStore(directory: FileSessionStateStore.defaultDirectory),
+            store: store,
             processMonitor: DarwinProcessMonitor(),
             activator: SourceApplicationActivator()
         )
@@ -37,8 +49,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         reduceMotionObserver.start()
         model.start()
 
-        // Show setup window on first launch
-        if !UserDefaults.standard.bool(forKey: "completedSetup") {
+        let fixtureName = UITestFixtureFactory.name(arguments: CommandLine.arguments)
+        if fixtureName != nil {
+            let suiteName = "\(ProductMetadata.bundleIdentifier).ui-tests.\(ProcessInfo.processInfo.processIdentifier)"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            defaults.removePersistentDomain(forName: suiteName)
+            configurePreferences(defaults: defaults)
+        } else {
+            let defaults = UserDefaults.standard
+            configurePreferences(defaults: defaults)
+            Task {
+                await updateViewModel.check(
+                    manual: false,
+                    automaticEnabled: preferences.automaticUpdateChecks
+                )
+            }
+        }
+
+        if fixtureName == "setup-repair" {
+            showSetupWindow()
+        } else if fixtureName == nil,
+                  !UserDefaults.standard.bool(forKey: "completedSetup") {
             showSetupWindow()
         }
     }
@@ -50,11 +81,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func makeSettingsView() -> some View {
-        Text("Settings")
-            .padding()
+        SettingsView(
+            preferences: preferences,
+            updates: updateViewModel,
+            launchAtLogin: launchAtLogin,
+            openIntegrations: { [weak self] in self?.showSetupWindow() }
+        )
     }
 
     private func showSetupWindow() {
+        if let setupWindow {
+            setupWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 560, height: 440),
             styleMask: [.titled, .closable],
@@ -64,7 +104,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.title = "Klarity Setup"
         window.center()
         window.contentViewController = NSHostingController(rootView: makeSetupView {
-            UserDefaults.standard.set(true, forKey: "completedSetup")
+            if UITestFixtureFactory.name(arguments: CommandLine.arguments) == nil {
+                UserDefaults.standard.set(true, forKey: "completedSetup")
+            }
             self.setupWindow?.close()
             self.setupWindow = nil
         })
@@ -74,6 +116,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func makeSetupView(onComplete: @escaping () -> Void) -> some View {
+        if let models = UITestFixtureFactory.setupRepairModels(
+            arguments: CommandLine.arguments
+        ) {
+            return SetupView(
+                claude: models.claude,
+                codex: models.codex,
+                onComplete: onComplete
+            )
+        }
+
         let helperSource = Bundle.main.url(
             forResource: "klarity-event",
             withExtension: nil,
@@ -151,9 +203,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             hooksURL: codexHooksURL,
             helperURL: helperDestination
         ).remove()
-        try? FileManager.default.removeItem(
-            at: helperDestination.deletingLastPathComponent()
+        try? FileManager.default.removeItem(at: helperDestination)
+    }
+
+    private func configurePreferences(defaults: UserDefaults) {
+        preferences = PreferencesStore(
+            defaults: defaults,
+            showTimerDidChange: { [weak self] showTimer in
+                self?.model.showTimer = showTimer
+            }
         )
+        model.showTimer = preferences.showTimer
+        updateViewModel = UpdateViewModel(defaults: defaults)
     }
 }
 
