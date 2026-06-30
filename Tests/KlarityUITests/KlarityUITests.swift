@@ -4,23 +4,24 @@ import XCTest
 final class KlarityUITests: XCTestCase {
     func testPermissionSessionAppearsFirstAndIsAccessible() {
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-test-fixture", "permission"]
+        app.launchArguments = ["--ui-test-fixture", "permission", "--ui-test-open-popover"]
         app.launch()
 
         let statusItem = app.statusItems["Klarity.StatusItem"]
         XCTAssertTrue(statusItem.waitForExistence(timeout: 5))
-        statusItem.click()
 
+        XCTAssertTrue(app.windows["Klarity"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["Klarity.SessionSummary"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.buttons["Example, Awaiting permission, Desktop"].exists)
+        XCTAssertTrue(app.buttons["Claude, Example, Awaiting permission, Desktop"].exists)
     }
 
     func testEmptyStateExplainsHowToStart() {
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-test-fixture", "empty"]
+        app.launchArguments = ["--ui-test-fixture", "empty", "--ui-test-open-popover"]
         app.launch()
-        app.statusItems["Klarity.StatusItem"].click()
-        XCTAssertTrue(app.staticTexts["No active sessions"].exists)
+        XCTAssertTrue(app.statusItems["Klarity.StatusItem"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.windows["Klarity"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.staticTexts["No active sessions"].waitForExistence(timeout: 3))
     }
 
     func testSetupRepairChangesIntegrationState() {

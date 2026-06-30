@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController!
     private var reduceMotionObserver: ReduceMotionObserver!
     private var setupWindow: NSWindow?
+    private var uiTestSessionWindow: NSWindow?
     private var preferences = PreferencesStore()
     private var updateViewModel = UpdateViewModel()
     private let launchAtLogin = LaunchAtLoginService()
@@ -72,6 +73,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                   !UserDefaults.standard.bool(forKey: "completedSetup") {
             showSetupWindow()
         }
+        if fixtureName != nil,
+           CommandLine.arguments.contains("--ui-test-open-popover") {
+            DispatchQueue.main.async { [weak self] in
+                self?.showUITestSessionWindow()
+            }
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -113,6 +120,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         setupWindow = window
+    }
+
+    private func showUITestSessionWindow() {
+        if let uiTestSessionWindow {
+            uiTestSessionWindow.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 360, height: 420),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Klarity"
+        window.center()
+        window.contentViewController = NSHostingController(
+            rootView: SessionListView(
+                model: model,
+                openIntegrations: { [weak self] in self?.showSetupWindow() }
+            )
+        )
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        uiTestSessionWindow = window
     }
 
     private func makeSetupView(onComplete: @escaping () -> Void) -> some View {

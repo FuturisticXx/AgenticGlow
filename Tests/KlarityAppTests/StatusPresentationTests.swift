@@ -89,6 +89,7 @@ final class StatusPresentationTests: XCTestCase {
         XCTAssertFalse(disconnected.animates)
     }
 
+    @MainActor
     func testSessionRowAccessibilityLabelDoesNotChangeWithElapsedTime() {
         let early = session(elapsedSeconds: 5)
         let later = session(elapsedSeconds: 65)

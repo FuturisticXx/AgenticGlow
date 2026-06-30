@@ -1,5 +1,6 @@
 import XCTest
 
+@MainActor
 final class KlarityLaunchTests: XCTestCase {
     func testApplicationLaunches() {
         let app = XCUIApplication()

@@ -81,10 +81,12 @@ final class StatusItemController: NSObject {
         guard animationTimer == nil else { return }
 
         animationTimer = Timer.scheduledTimer(withTimeInterval: 0.55, repeats: true) { [weak self] _ in
-            guard let button = self?.item.button else { return }
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.25
-                button.animator().alphaValue = button.alphaValue < 1 ? 1 : 0.55
+            Task { @MainActor [weak self] in
+                guard let button = self?.item.button else { return }
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = 0.25
+                    button.animator().alphaValue = button.alphaValue < 1 ? 1 : 0.55
+                }
             }
         }
     }

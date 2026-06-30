@@ -34,6 +34,7 @@ struct SessionListView: View {
                     }
                 }
                 .frame(maxHeight: 300)
+                .frame(minHeight: 120)
             }
 
             Divider()
@@ -59,16 +60,15 @@ struct SessionListView: View {
     private func providerSection(_ provider: AgentProvider) -> some View {
         let sessions = model.resolved.sessions.filter { $0.provider == provider }
         if !sessions.isEmpty {
-            Section {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(provider.displayName)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
                 ForEach(sessions) { session in
                     SessionRowView(session: session) {
                         model.activate(session)
                     }
                 }
-            } header: {
-                Text(provider.displayName)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
             }
         }
     }
