@@ -19,6 +19,18 @@ Recorded 2026-06-29 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 - Cask generation dry-run produced Ruby syntax OK with a dummy local DMG, then the placeholder output was removed.
 - Real `Cask/klarity.rb` generation, signed DMG, notarization, Gatekeeper, Homebrew installation, live-provider, and accessibility checks remain unverified.
 
+Recorded 2026-06-30 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
+
+- Full scheme tests passed with `ENABLE_HARDENED_RUNTIME=NO`, the local beta-runner workaround confirmed by triage.
+- Privacy contract verification passed.
+- Release script syntax checks passed.
+- Release gates intentionally fail while `KLARITY_NAME_CLEARED` remains unset.
+- Unsigned Release build passed with `ARCHS="arm64 x86_64"` and `CODE_SIGNING_ALLOWED=NO`.
+- The unsigned Release app and helper both contain `arm64` and `x86_64` slices.
+- The embedded Release helper ran standalone without a bundled framework dependency.
+- The sanitized Claude and Codex fixture matrix produced two session files and no prohibited decoy text.
+- Real `Cask/klarity.rb` generation, signed DMG, notarization, Gatekeeper, Homebrew installation, live-provider, and accessibility checks remain unverified.
+
 ## Legal and Branding
 
 - [ ] **Trademark search completed** (date: ________)
@@ -62,11 +74,11 @@ Recorded 2026-06-29 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
   - GitHub secrets `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_SPECIFIC_PASSWORD` configured for workflow release builds, if using GitHub Actions
   - Document profile name
 
-- [ ] **Privacy review completed** (date: ________)
+- [x] **Privacy review completed** (date: 2026-06-30)
   - `Scripts/verify-privacy.sh` passes
   - Privacy contract in `docs/privacy.md` reviewed
-  - No sensitive data stored or transmitted
-  - Document review findings
+  - No sensitive data stored or transmitted by the app itself; opt-in update checks contact GitHub Releases only
+  - Findings: passed automated privacy contract verification
 
 - [ ] **Accessibility review completed** (date: ________)
   - VoiceOver navigation tested

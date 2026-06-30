@@ -4789,6 +4789,8 @@ Expected: all unit, integration, app-model, and UI tests PASS.
 
 **Verification note (2026-06-29):** Full scheme tests passed with `ENABLE_HARDENED_RUNTIME=NO`, the local beta-runner workaround confirmed by UI-test triage. Default hardened-runtime UI automation remains blocked by the local Xcode/macOS beta runner.
 
+**Verification note (2026-06-30):** Full scheme tests, `Scripts/verify-privacy.sh`, release-script syntax checks, expected release-gate failure, unsigned universal Release build, Release helper standalone smoke, and sanitized fixture matrix all passed. The full scheme test still requires `ENABLE_HARDENED_RUNTIME=NO` on this local beta runner.
+
 - [x] **Step 2: Exercise both providers with temporary isolated configs**
 
 Build the helper, then execute every committed fixture into an isolated state directory:
@@ -4826,6 +4828,8 @@ rg -n 'SECRET_PROMPT|SECRET_COMMAND|SECRET_PATCH|SECRET_RESPONSE' \
 Expected: one final valid file for the Claude session, one final valid file for the Codex session, and no prohibited decoy text.
 
 **Verification note (2026-06-29):** The four committed fixtures produced exactly two session files and no prohibited decoy text.
+
+**Verification note (2026-06-30):** The Release helper replayed the four committed fixtures into an isolated state directory, produced exactly two session files, and stored no prohibited decoy text.
 
 - [ ] **Step 3: Run the live local smoke matrix**
 
