@@ -29,6 +29,8 @@ Recorded 2026-06-30 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 - The unsigned Release app and helper both contain `arm64` and `x86_64` slices.
 - The embedded Release helper ran standalone without a bundled framework dependency.
 - The sanitized Claude and Codex fixture matrix produced two session files and no prohibited decoy text.
+- Preliminary web preflight found active Klarity AI businesses and repositories; this is not trademark clearance and the working name remains blocked for public release.
+- Homebrew's public cask list did not show an exact `klarity` token during preflight, but Cask availability is not brand clearance.
 - Real `Cask/klarity.rb` generation, signed DMG, notarization, Gatekeeper, Homebrew installation, live-provider, and accessibility checks remain unverified.
 
 ## Legal and Branding
@@ -37,12 +39,14 @@ Recorded 2026-06-30 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
   - Search USPTO for "Klarity" and similar marks
   - Search App Store for similar app names
   - Document any conflicts or clearance results
+  - Preliminary web preflight found active Klarity AI businesses; formal clearance remains required
 
 - [ ] **Marketplace availability confirmed** (date: ________)
   - GitHub repository available: https://github.com/jwright0180/Klarity
   - GitHub organization available (if applicable)
   - Homebrew cask name available: `klarity`
   - Document any conflicts or reservation confirmations
+  - Preliminary Homebrew cask-list preflight found no exact `klarity` token; formal marketplace checks remain required
 
 - [ ] **Domain and social handles secured** (date: ________)
   - Domain decision: ________ (registered or decision not to register)
