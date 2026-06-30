@@ -4707,7 +4707,7 @@ jobs:
         run: Scripts/verify-release.sh "${{ inputs.version }}"
 ```
 
-The repository variable `KLARITY_PUBLICATION_APPROVED` must remain unset until explicit publication approval, signing-secret configuration, and review of the exact release workflow.
+The repository variables `KLARITY_PUBLICATION_APPROVED`, `KLARITY_NAME_CLEARED`, and `KLARITY_RELEASE_BUILD_APPROVED` must remain unset until explicit publication approval, name clearance, signing-secret configuration, and review of the exact release workflow.
 
 - [x] **Step 7: Run unsigned local packaging preflight**
 
@@ -4729,6 +4729,8 @@ xcodebuild build \
 Expected: Release build succeeds and both app and helper contain arm64 and x86_64 slices.
 
 **Verification note (2026-06-29):** The unsigned 0.1.0 Release app and standalone helper both contain `arm64` and `x86_64` slices. The installed-helper smoke check passes without `KlarityCore.framework`.
+
+**Review note (2026-06-29):** Real `Cask/klarity.rb` generation remains blocked until a signed DMG exists because the Cask must contain the real DMG SHA-256. The GitHub workflow is now gated by release/name approval variables and configured to import signing secrets, notarize, generate the Cask, and upload private artifacts when those credentials exist.
 
 - [ ] **Step 8: Run signed release verification only after credentials and approvals exist**
 

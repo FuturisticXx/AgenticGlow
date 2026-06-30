@@ -9,16 +9,79 @@ on:
 
 jobs:
   package:
-    if: ${{ vars.KLARITY_PUBLICATION_APPROVED == '1' }}
+    if: ${{ vars.KLARITY_PUBLICATION_APPROVED == '1' && vars.KLARITY_NAME_CLEARED == '1' && vars.KLARITY_RELEASE_BUILD_APPROVED == '1' }}
     runs-on: macos-15
+    env:
+      KLARITY_NAME_CLEARED: ${{ vars.KLARITY_NAME_CLEARED }}
+      KLARITY_RELEASE_BUILD_APPROVED: ${{ vars.KLARITY_RELEASE_BUILD_APPROVED }}
+      NOTARY_PROFILE: klarity-notary
     steps:
       - uses: actions/checkout@v4
       - run: brew install xcodegen
-      - name: Import signing certificate
-        run: echo "Enable only after publication approval and secret configuration."
+      - name: Configure signing and notarization
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KLARITY_RELEASE_KEYCHAIN_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          certificate_path="$RUNNER_TEMP/developer-id.p12"
+          keychain_path="$RUNNER_TEMP/klarity-signing.keychain-db"
+
+          test -n "$CERTIFICATE_BASE64"
+          test -n "$CERTIFICATE_PASSWORD"
+          test -n "$KEYCHAIN_PASSWORD"
+          test -n "$APPLE_ID"
+          test -n "$APPLE_TEAM_ID"
+          test -n "$APPLE_APP_SPECIFIC_PASSWORD"
+
+          echo "$CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$keychain_path"
+          security import "$certificate_path" \
+            -P "$CERTIFICATE_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "$keychain_path"
+          security list-keychains -d user -s "$keychain_path" login.keychain-db
+          security default-keychain -s "$keychain_path"
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s \
+            -k "$KEYCHAIN_PASSWORD" \
+            "$keychain_path"
+
+          identity="$(
+            security find-identity -v -p codesigning "$keychain_path" |
+              awk -F '"' '/Developer ID Application/ {print $2; exit}'
+          )"
+          test -n "$identity"
+
+          xcrun notarytool store-credentials "$NOTARY_PROFILE" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD"
+
+          echo "DEVELOPER_ID_APPLICATION=$identity" >> "$GITHUB_ENV"
+      - name: Check release gates
+        run: Scripts/verify-release-gates.sh
       - name: Build
         run: Scripts/build-release.sh "${{ inputs.version }}"
       - name: Package
         run: Scripts/create-dmg.sh "${{ inputs.version }}"
       - name: Verify
         run: Scripts/verify-release.sh "${{ inputs.version }}"
+      - name: Generate Homebrew Cask
+        run: Scripts/generate-cask.sh "${{ inputs.version }}" "build/Klarity-${{ inputs.version }}.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Klarity-${{ inputs.version }}-private-rc
+          path: |
+            build/Klarity-${{ inputs.version }}.dmg
+            Cask/klarity.rb

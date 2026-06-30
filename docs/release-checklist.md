@@ -8,6 +8,7 @@ Recorded 2026-06-29 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 
 - Release script syntax checks passed.
 - Release gates intentionally fail while `KLARITY_NAME_CLEARED` remains unset.
+- The manual release workflow remains gated by repository variables and requires signing/notarization secrets before it can run.
 - Privacy contract verification passed.
 - The standalone installed helper regression passed without a bundled framework dependency.
 - The sanitized Claude and Codex fixture matrix produced two session files and no prohibited decoy text.
@@ -15,7 +16,8 @@ Recorded 2026-06-29 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 - Focused event-helper and preferences tests passed.
 - Full UI target and full scheme tests passed with `ENABLE_HARDENED_RUNTIME=NO`, the local beta-runner workaround confirmed by triage.
 - Default hardened-runtime UI automation remains a local beta-runner blocker.
-- Signed DMG, notarization, Gatekeeper, Homebrew installation, live-provider, and accessibility checks remain unverified.
+- Cask generation dry-run produced Ruby syntax OK with a dummy local DMG, then the placeholder output was removed.
+- Real `Cask/klarity.rb` generation, signed DMG, notarization, Gatekeeper, Homebrew installation, live-provider, and accessibility checks remain unverified.
 
 ## Legal and Branding
 
@@ -49,11 +51,15 @@ Recorded 2026-06-29 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 - [ ] **Developer ID signing identity configured** (date: ________)
   - `DEVELOPER_ID_APPLICATION` environment variable set
   - Certificate valid and not expired
+  - GitHub secret `DEVELOPER_ID_CERTIFICATE_BASE64` configured for workflow release builds, if using GitHub Actions
+  - GitHub secret `DEVELOPER_ID_CERTIFICATE_PASSWORD` configured for workflow release builds, if using GitHub Actions
+  - GitHub secret `KLARITY_RELEASE_KEYCHAIN_PASSWORD` configured for workflow release builds, if using GitHub Actions
   - Document certificate name and expiration
 
 - [ ] **Notary profile configured** (date: ________)
   - `NOTARY_PROFILE` environment variable set
   - Apple Developer notary service access confirmed
+  - GitHub secrets `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_SPECIFIC_PASSWORD` configured for workflow release builds, if using GitHub Actions
   - Document profile name
 
 - [ ] **Privacy review completed** (date: ________)
