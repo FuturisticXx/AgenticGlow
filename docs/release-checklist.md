@@ -6,12 +6,15 @@ This checklist must be completed and documented with dated evidence before any r
 
 Recorded 2026-06-29 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 
+- Release script syntax checks passed.
+- Release gates intentionally fail while `KLARITY_NAME_CLEARED` remains unset.
 - Privacy contract verification passed.
 - The standalone installed helper regression passed without a bundled framework dependency.
 - The sanitized Claude and Codex fixture matrix produced two session files and no prohibited decoy text.
 - The unsigned Release app and helper both contain `arm64` and `x86_64` slices.
 - Focused event-helper and preferences tests passed.
-- Full UI automation is blocked: the local Xcode runner times out while enabling automation mode on this beta OS.
+- Full UI target and full scheme tests passed with `ENABLE_HARDENED_RUNTIME=NO`, the local beta-runner workaround confirmed by triage.
+- Default hardened-runtime UI automation remains a local beta-runner blocker.
 - Signed DMG, notarization, Gatekeeper, Homebrew installation, live-provider, and accessibility checks remain unverified.
 
 ## Legal and Branding

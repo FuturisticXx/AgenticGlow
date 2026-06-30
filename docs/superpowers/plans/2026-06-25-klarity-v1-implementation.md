@@ -4275,7 +4275,7 @@ xcodebuild test \
 
 Expected: update, logging, permission-state, and empty-state tests PASS.
 
-**Current verification note (2026-06-29):** Focused event-helper and preferences tests pass. The macOS 27 beta XCUITest runner reaches the signed test host only with hardened runtime disabled, then times out enabling automation mode. Full UI verification remains open.
+**Current verification note (2026-06-29):** Focused event-helper and preferences tests pass. The macOS 27 beta XCUITest runner reaches the signed test host only with hardened runtime disabled. Full UI target and full scheme tests now pass with `ENABLE_HARDENED_RUNTIME=NO`; default hardened-runtime UI automation remains a local beta-runner blocker.
 
 - [x] **Step 10: Commit**
 
@@ -4784,6 +4784,8 @@ Scripts/verify-privacy.sh
 ```
 
 Expected: all unit, integration, app-model, and UI tests PASS.
+
+**Verification note (2026-06-29):** Full scheme tests passed with `ENABLE_HARDENED_RUNTIME=NO`, the local beta-runner workaround confirmed by UI-test triage. Default hardened-runtime UI automation remains blocked by the local Xcode/macOS beta runner.
 
 - [x] **Step 2: Exercise both providers with temporary isolated configs**
 
