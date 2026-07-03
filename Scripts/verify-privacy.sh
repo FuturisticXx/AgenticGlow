@@ -2,7 +2,7 @@
 # Scripts/verify-privacy.sh
 set -euo pipefail
 
-schema="Sources/KlarityCore/Events/NormalizedEvent.swift"
+schema="Sources/AgenticGlowCore/Events/NormalizedEvent.swift"
 privacy="docs/privacy.md"
 
 required_fields=(

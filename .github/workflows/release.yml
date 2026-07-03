@@ -9,12 +9,12 @@ on:
 
 jobs:
   package:
-    if: ${{ vars.KLARITY_PUBLICATION_APPROVED == '1' && vars.KLARITY_NAME_CLEARED == '1' && vars.KLARITY_RELEASE_BUILD_APPROVED == '1' }}
+    if: ${{ vars.AGENTICGLOW_PUBLICATION_APPROVED == '1' && vars.AGENTICGLOW_NAME_CLEARED == '1' && vars.AGENTICGLOW_RELEASE_BUILD_APPROVED == '1' }}
     runs-on: macos-15
     env:
-      KLARITY_NAME_CLEARED: ${{ vars.KLARITY_NAME_CLEARED }}
-      KLARITY_RELEASE_BUILD_APPROVED: ${{ vars.KLARITY_RELEASE_BUILD_APPROVED }}
-      NOTARY_PROFILE: klarity-notary
+      AGENTICGLOW_NAME_CLEARED: ${{ vars.AGENTICGLOW_NAME_CLEARED }}
+      AGENTICGLOW_RELEASE_BUILD_APPROVED: ${{ vars.AGENTICGLOW_RELEASE_BUILD_APPROVED }}
+      NOTARY_PROFILE: agenticglow-notary
     steps:
       - uses: actions/checkout@v4
       - run: brew install xcodegen
@@ -22,7 +22,7 @@ jobs:
         env:
           CERTIFICATE_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KLARITY_RELEASE_KEYCHAIN_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.AGENTICGLOW_RELEASE_KEYCHAIN_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
@@ -30,7 +30,7 @@ jobs:
           set -euo pipefail
 
           certificate_path="$RUNNER_TEMP/developer-id.p12"
-          keychain_path="$RUNNER_TEMP/klarity-signing.keychain-db"
+          keychain_path="$RUNNER_TEMP/agenticglow-signing.keychain-db"
 
           test -n "$CERTIFICATE_BASE64"
           test -n "$CERTIFICATE_PASSWORD"
@@ -78,10 +78,10 @@ jobs:
       - name: Verify
         run: Scripts/verify-release.sh "${{ inputs.version }}"
       - name: Generate Homebrew Cask
-        run: Scripts/generate-cask.sh "${{ inputs.version }}" "build/Klarity-${{ inputs.version }}.dmg"
+        run: Scripts/generate-cask.sh "${{ inputs.version }}" "build/AgenticGlow-${{ inputs.version }}.dmg"
       - uses: actions/upload-artifact@v4
         with:
-          name: Klarity-${{ inputs.version }}-private-rc
+          name: AgenticGlow-${{ inputs.version }}-private-rc
           path: |
-            build/Klarity-${{ inputs.version }}.dmg
-            Cask/klarity.rb
+            build/AgenticGlow-${{ inputs.version }}.dmg
+            Cask/agenticglow.rb

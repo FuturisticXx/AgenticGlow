@@ -7,11 +7,11 @@ cd "$root"
 
 Scripts/verify-release-gates.sh
 xcodegen generate
-rm -rf build/DerivedData build/Klarity.app
+rm -rf build/DerivedData build/AgenticGlow.app
 
 xcodebuild build \
-  -project Klarity.xcodeproj \
-  -scheme Klarity \
+  -project AgenticGlow.xcodeproj \
+  -scheme AgenticGlow \
   -configuration Release \
   -derivedDataPath build/DerivedData \
   ARCHS="arm64 x86_64" \
@@ -19,16 +19,16 @@ xcodebuild build \
   MARKETING_VERSION="$version" \
   CODE_SIGNING_ALLOWED=NO
 
-source_app="build/DerivedData/Build/Products/Release/Klarity.app"
-ditto "$source_app" build/Klarity.app
+source_app="build/DerivedData/Build/Products/Release/AgenticGlow.app"
+ditto "$source_app" build/AgenticGlow.app
 
-helper="build/Klarity.app/Contents/Resources/bin/klarity-event"
+helper="build/AgenticGlow.app/Contents/Resources/bin/agenticglow-event"
 codesign --force --options runtime --timestamp \
   --sign "$DEVELOPER_ID_APPLICATION" "$helper"
 codesign --force --options runtime --timestamp \
-  --entitlements Config/Klarity.entitlements \
-  --sign "$DEVELOPER_ID_APPLICATION" build/Klarity.app
+  --entitlements Config/AgenticGlow.entitlements \
+  --sign "$DEVELOPER_ID_APPLICATION" build/AgenticGlow.app
 
-codesign --verify --deep --strict --verbose=2 build/Klarity.app
-lipo -archs build/Klarity.app/Contents/MacOS/Klarity
+codesign --verify --deep --strict --verbose=2 build/AgenticGlow.app
+lipo -archs build/AgenticGlow.app/Contents/MacOS/AgenticGlow
 lipo -archs "$helper"

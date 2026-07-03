@@ -6,17 +6,17 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
 Scripts/verify-release-gates.sh
-app="build/Klarity.app"
-dmg="build/Klarity-${version}.dmg"
+app="build/AgenticGlow.app"
+dmg="build/AgenticGlow-${version}.dmg"
 stage="build/dmg-stage"
 test -d "$app"
 rm -rf "$stage" "$dmg"
 mkdir -p "$stage"
-ditto "$app" "$stage/Klarity.app"
+ditto "$app" "$stage/AgenticGlow.app"
 ln -s /Applications "$stage/Applications"
 
 hdiutil create \
-  -volname "Klarity" \
+  -volname "AgenticGlow" \
   -srcfolder "$stage" \
   -ov \
   -format UDZO \

@@ -1,7 +1,7 @@
 {
   "session_id": "codex-session",
   "turn_id": "turn-2",
-  "cwd": "/tmp/Klarity",
+  "cwd": "/tmp/AgenticGlow",
   "hook_event_name": "PreToolUse",
   "tool_name": "apply_patch",
   "tool_input": {

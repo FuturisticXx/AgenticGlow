@@ -1,6 +1,6 @@
-# Klarity
+# AgenticGlow
 
-Klarity is a local macOS menu bar app that shows the status of your AI coding agent sessions.
+AgenticGlow is a local macOS menu bar app that shows the status of your AI coding agent sessions.
 
 ## Requirements
 
@@ -16,24 +16,24 @@ Klarity is a local macOS menu bar app that shows the status of your AI coding ag
 
 ### DMG
 
-Download the latest DMG from the [Releases](https://github.com/jwright0180/Klarity/releases) page and drag Klarity to your Applications folder.
+Download the latest DMG from the [Releases](https://github.com/jwright0180/AgenticGlow/releases) page and drag AgenticGlow to your Applications folder.
 
 ### Homebrew
 
 ```bash
-brew install --cask klarity
+brew install --cask agenticglow
 ```
 
 ## Setup
 
-1. Launch Klarity from Applications
+1. Launch AgenticGlow from Applications
 2. In the setup window, click "Install" for each provider you use
-3. For Codex, open Codex, run `/hooks`, review the Klarity entries, and choose "Trust"
+3. For Codex, open Codex, run `/hooks`, review the AgenticGlow entries, and choose "Trust"
 4. Click "Done" when complete
 
 ## Privacy
 
-Klarity runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks when you manually check for updates or enable automatic update checks.
+AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks when you manually check for updates or enable automatic update checks.
 
 See [docs/privacy.md](docs/privacy.md) for the complete privacy contract.
 
@@ -43,16 +43,16 @@ See [docs/privacy.md](docs/privacy.md) for the complete privacy contract.
 brew install xcodegen
 xcodegen generate
 xcodebuild test \
-  -project Klarity.xcodeproj \
-  -scheme Klarity \
+  -project AgenticGlow.xcodeproj \
+  -scheme AgenticGlow \
   -destination 'platform=macOS' \
-  -skip-testing:KlarityUITests \
+  -skip-testing:AgenticGlowUITests \
   CODE_SIGNING_ALLOWED=NO
 ```
 
 ## Attribution
 
-Klarity is an independent implementation inspired by Mick Cesanek's MIT-licensed Claude Status Bar project. Klarity does not reuse that project's source code or branding.
+AgenticGlow is an independent implementation inspired by Mick Cesanek's MIT-licensed Claude Status Bar project. AgenticGlow does not reuse that project's source code or branding.
 
 ## License
 

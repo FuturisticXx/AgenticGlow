@@ -10,29 +10,29 @@ test -f "$dmg"
 sha="$(shasum -a 256 "$dmg" | awk '{print $1}')"
 mkdir -p Cask
 
-cat > Cask/klarity.rb <<RUBY
-cask "klarity" do
+cat > Cask/agenticglow.rb <<RUBY
+cask "agenticglow" do
   version "${version}"
   sha256 "${sha}"
 
-  url "https://github.com/jwright0180/Klarity/releases/download/v#{version}/Klarity-#{version}.dmg"
-  name "Klarity"
+  url "https://github.com/jwright0180/AgenticGlow/releases/download/v#{version}/AgenticGlow-#{version}.dmg"
+  name "AgenticGlow"
   desc "Local Codex and Claude session status for the macOS menu bar"
-  homepage "https://github.com/jwright0180/Klarity"
+  homepage "https://github.com/jwright0180/AgenticGlow"
 
   depends_on macos: ">= :sonoma"
-  app "Klarity.app"
+  app "AgenticGlow.app"
 
-  uninstall quit: "com.twodamax.klarity",
+  uninstall quit: "com.twodamax.agenticglow",
             script: {
-              executable: "#{appdir}/Klarity.app/Contents/MacOS/Klarity",
+              executable: "#{appdir}/AgenticGlow.app/Contents/MacOS/AgenticGlow",
               args: ["--remove-integrations"],
               sudo: false,
             }
 
   zap trash: [
-    "~/Library/Application Support/Klarity",
-    "~/Library/Preferences/com.twodamax.klarity.plist",
+    "~/Library/Application Support/AgenticGlow",
+    "~/Library/Preferences/com.twodamax.agenticglow.plist",
   ]
 end
 RUBY

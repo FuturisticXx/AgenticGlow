@@ -2,8 +2,8 @@
 set -euo pipefail
 
 MODE="${1:-run}"
-APP_NAME="Klarity"
-BUNDLE_ID="com.twodamax.klarity"
+APP_NAME="AgenticGlow"
+BUNDLE_ID="com.twodamax.agenticglow"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DERIVED_DATA="$ROOT_DIR/.build/DerivedData"
@@ -13,7 +13,7 @@ APP_BINARY="$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 pkill -x "$APP_NAME" >/dev/null 2>&1 || true
 
 xcodebuild \
-  -project "$ROOT_DIR/Klarity.xcodeproj" \
+  -project "$ROOT_DIR/AgenticGlow.xcodeproj" \
   -scheme "$APP_NAME" \
   -configuration Debug \
   -derivedDataPath "$DERIVED_DATA" \

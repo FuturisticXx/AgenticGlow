@@ -1,4 +1,4 @@
-name: Klarity
+name: AgenticGlow
 options:
   createIntermediateGroups: true
   bundleIdPrefix: com.twodamax
@@ -15,148 +15,148 @@ settings:
     CLANG_ENABLE_MODULES: YES
     ONLY_ACTIVE_ARCH: NO
 targets:
-  KlarityCore:
+  AgenticGlowCore:
     type: framework
     platform: macOS
     deploymentTarget: "14.0"
     sources:
-      - Sources/KlarityCore
+      - Sources/AgenticGlowCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.core
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.core
         DEFINES_MODULE: YES
         GENERATE_INFOPLIST_FILE: YES
         MACH_O_TYPE: staticlib
-  KlarityEvent:
+  AgenticGlowEvent:
     type: tool
     platform: macOS
     deploymentTarget: "14.0"
     sources:
-      - Sources/KlarityEvent
+      - Sources/AgenticGlowEvent
     dependencies:
-      - target: KlarityCore
+      - target: AgenticGlowCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.event
-        PRODUCT_NAME: klarity-event
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.event
+        PRODUCT_NAME: agenticglow-event
         LD_RUNPATH_SEARCH_PATHS:
           - "$(inherited)"
           - "@loader_path"
           - "@loader_path/../Frameworks"
           - "@loader_path/../../Frameworks"
           - "@executable_path/../Frameworks"
-  Klarity:
+  AgenticGlow:
     type: application
     platform: macOS
     deploymentTarget: "14.0"
     sources:
-      - Sources/KlarityApp
+      - Sources/AgenticGlowApp
     resources:
-      - Sources/KlarityApp/Resources
+      - Sources/AgenticGlowApp/Resources
     info:
-      path: Config/Klarity-Info.plist
+      path: Config/AgenticGlow-Info.plist
       properties:
-        CFBundleDisplayName: Klarity
+        CFBundleDisplayName: AgenticGlow
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         LSUIElement: true
-        NSHumanReadableCopyright: Copyright © 2026 Klarity contributors
+        NSHumanReadableCopyright: Copyright © 2026 AgenticGlow contributors
     entitlements:
-      path: Config/Klarity.entitlements
+      path: Config/AgenticGlow.entitlements
     dependencies:
-      - target: KlarityCore
-      - target: KlarityEvent
+      - target: AgenticGlowCore
+      - target: AgenticGlowEvent
         embed: false
     postBuildScripts:
-      - name: Embed Klarity event helper
+      - name: Embed AgenticGlow event helper
         basedOnDependencyAnalysis: false
         script: |
           set -euo pipefail
           destination="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/bin"
           mkdir -p "$destination"
-          cp "$BUILT_PRODUCTS_DIR/klarity-event" "$destination/klarity-event"
-          chmod 755 "$destination/klarity-event"
+          cp "$BUILT_PRODUCTS_DIR/agenticglow-event" "$destination/agenticglow-event"
+          chmod 755 "$destination/agenticglow-event"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity
-        PRODUCT_NAME: Klarity
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow
+        PRODUCT_NAME: AgenticGlow
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-  KlarityCoreTests:
+  AgenticGlowCoreTests:
     type: bundle.unit-test
     platform: macOS
     deploymentTarget: "14.0"
     sources:
-      - Tests/KlarityCoreTests
+      - Tests/AgenticGlowCoreTests
       - Tests/TestSupport
       - Tests/Fixtures
     dependencies:
-      - target: KlarityCore
+      - target: AgenticGlowCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.core-tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.core-tests
         GENERATE_INFOPLIST_FILE: YES
-  KlarityEventTests:
+  AgenticGlowEventTests:
     type: bundle.unit-test
     platform: macOS
     deploymentTarget: "14.0"
     sources:
-      - Tests/KlarityEventTests
+      - Tests/AgenticGlowEventTests
       - Tests/TestSupport
       - Tests/Fixtures
     dependencies:
-      - target: KlarityCore
+      - target: AgenticGlowCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.event-tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.event-tests
         GENERATE_INFOPLIST_FILE: YES
-  KlarityAppTests:
+  AgenticGlowAppTests:
     type: bundle.unit-test
     platform: macOS
     deploymentTarget: "14.0"
     sources:
-      - Tests/KlarityAppTests
+      - Tests/AgenticGlowAppTests
       - Tests/TestSupport
     dependencies:
-      - target: Klarity
-      - target: KlarityCore
+      - target: AgenticGlow
+      - target: AgenticGlowCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.app-tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.app-tests
         GENERATE_INFOPLIST_FILE: YES
-  KlarityUITests:
+  AgenticGlowUITests:
     type: bundle.ui-testing
     platform: macOS
     deploymentTarget: "14.0"
     sources:
-      - Tests/KlarityUITests
+      - Tests/AgenticGlowUITests
     dependencies:
-      - target: Klarity
+      - target: AgenticGlow
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.klarity.ui-tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.ui-tests
         GENERATE_INFOPLIST_FILE: YES
 schemes:
-  Klarity:
+  AgenticGlow:
     build:
       targets:
-        Klarity: all
-        KlarityCoreTests: [test]
-        KlarityEventTests: [test]
-        KlarityAppTests: [test]
-        KlarityUITests: [test]
+        AgenticGlow: all
+        AgenticGlowCoreTests: [test]
+        AgenticGlowEventTests: [test]
+        AgenticGlowAppTests: [test]
+        AgenticGlowUITests: [test]
     test:
       targets:
-        - KlarityCoreTests
-        - KlarityEventTests
-        - KlarityAppTests
-        - KlarityUITests
-  KlarityEvent:
+        - AgenticGlowCoreTests
+        - AgenticGlowEventTests
+        - AgenticGlowAppTests
+        - AgenticGlowUITests
+  AgenticGlowEvent:
     build:
       targets:
-        KlarityEvent: all
-        KlarityEventTests: [test]
+        AgenticGlowEvent: all
+        AgenticGlowEventTests: [test]
     test:
       targets:
-        - KlarityEventTests
+        - AgenticGlowEventTests

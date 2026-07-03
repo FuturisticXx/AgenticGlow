@@ -1,0 +1,1444 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		04D6F3C0A4D68B99003F6848 /* AgenticGlowEventSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D36E4568D4C0C232DAC4F1B /* AgenticGlowEventSmokeTests.swift */; };
+		097C25276DAD34C5452388F2 /* ProductMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705977BC1D4D77B2475CECD6 /* ProductMetadata.swift */; };
+		09F035F92222190CA45A5054 /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBFF8B113BD5CCF602B1399C /* AppModelTests.swift */; };
+		0CEAD218BEDA2994FB61450D /* SetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C79BC8D0FB4DCC545F214B9 /* SetupView.swift */; };
+		0D626A999A92570603B3B9BF /* AgenticGlowCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB215EF226A2A930E51664A7 /* AgenticGlowCore.framework */; };
+		0DF282F51837E86223918BA8 /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB240EE03BC6D945AB738F1 /* PreferencesStore.swift */; };
+		0E0E6B37F4EB9D98BB5AEAA6 /* AgenticGlowEventCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D6527B9D899D9AE37E6513 /* AgenticGlowEventCommand.swift */; };
+		18320558595D293EA74457AC /* AgenticGlowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C88672709FBBE9C229FB665 /* AgenticGlowApp.swift */; };
+		196226E7439686D8D2AEDF45 /* SessionKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB2F40E369FB0BBDFF5C36B /* SessionKey.swift */; };
+		1B996A44F546B3858CC97BA3 /* SessionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F50AE41D54AF0BBEA05DD1D /* SessionRowView.swift */; };
+		1BF7C5E67DF40811BADA4C16 /* AgenticGlowCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB215EF226A2A930E51664A7 /* AgenticGlowCore.framework */; };
+		1CFC2FEB95B85CA26F2769EC /* AgenticGlowCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB215EF226A2A930E51664A7 /* AgenticGlowCore.framework */; };
+		1ECE8999E8900F3E024601D0 /* pre-tool-use.json in Resources */ = {isa = PBXBuildFile; fileRef = 45A57C3729989A4F98DAEE89 /* pre-tool-use.json */; };
+		237D084CA3B597B8062E7DBB /* ProviderVersionDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB63ED78E1ADC4BD9D2714AE /* ProviderVersionDetector.swift */; };
+		2456D0D90270016AB3D17E47 /* ToolCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8926BBF020B1EC1C5537E5C5 /* ToolCategory.swift */; };
+		2C261D41276EE035893827B4 /* NormalizedEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 281DE424930B0B861F4C4B20 /* NormalizedEvent.swift */; };
+		2D9E5212FAEF0047CA863CE0 /* UpdateViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 849DF0FB9E1B17DB2BCCB500 /* UpdateViewModel.swift */; };
+		3010D6F3DBA4EA7644895741 /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216B6EA781EC14324868BEB0 /* TestSupport.swift */; };
+		318F45DFD510AA2C5073D8EB /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216B6EA781EC14324868BEB0 /* TestSupport.swift */; };
+		3534BB8D6CF80DA4F68BD30C /* permission-request.json in Resources */ = {isa = PBXBuildFile; fileRef = 8104D5A1E6309BDA159B0EB3 /* permission-request.json */; };
+		3AEB2F2987802D3F7A0CE8E8 /* permission-request.json in Resources */ = {isa = PBXBuildFile; fileRef = 8104D5A1E6309BDA159B0EB3 /* permission-request.json */; };
+		3C25322E93C645BEC611F7BF /* AgenticGlowAppSmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C39F4753E65D9704083133 /* AgenticGlowAppSmokeTests.swift */; };
+		3CC79689096A6B74FD70B83C /* ExecutableLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21ED6440DC5F8BE0F0346AA2 /* ExecutableLocator.swift */; };
+		41C304D8029BD3377846F53B /* SessionSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0D57322B8A0ACBB63DE7E49 /* SessionSnapshot.swift */; };
+		4370510C2C61144C02233103 /* AgenticGlowEventCommandTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD7BD42FBB6DB455CECF203F /* AgenticGlowEventCommandTests.swift */; };
+		462BEF211C63BA7995DFC677 /* SessionStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5431A7C2F1A4EF086D142B05 /* SessionStateStore.swift */; };
+		4640DBCDCB2B0C5695CE67DC /* stop.json in Resources */ = {isa = PBXBuildFile; fileRef = 49964EE335B3F42FA70E989A /* stop.json */; };
+		4ACCE55191A2EE2A2BDBA062 /* IntegrationStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82CB06FA8CA96570073A5931 /* IntegrationStatus.swift */; };
+		4BA78FF28099354B057B2A2E /* HookNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9B2E99889D9DD3C4DA034D /* HookNormalizer.swift */; };
+		5148B4D61979ABE2A235797F /* AgenticGlowLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AFB630BA9BD83DF76A64083 /* AgenticGlowLaunchTests.swift */; };
+		560F13E337C8692F0D32C9DB /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216B6EA781EC14324868BEB0 /* TestSupport.swift */; };
+		59B7064BC525BB9983969226 /* ProcessIdentityResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B41BB5ACD7A89E1DC0660B9 /* ProcessIdentityResolverTests.swift */; };
+		5A21DBBD0A80204E75FBA076 /* SourceApplicationActivator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 493FB20BB6159F16A52EFBAB /* SourceApplicationActivator.swift */; };
+		5A5DCF454C17C45C0B1C3070 /* AgenticGlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4EF183F02A6D2B64F64CAB2 /* AgenticGlowUITests.swift */; };
+		5E19FA68F706AA0263E045EC /* pre-tool-use.json in Resources */ = {isa = PBXBuildFile; fileRef = 45A57C3729989A4F98DAEE89 /* pre-tool-use.json */; };
+		5EF1FDD618E19AA1B393CF18 /* CodexIntegrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F17758F92DA69BE48F7C3EC /* CodexIntegrationManager.swift */; };
+		632CCFF5BAF2E0060D5752CE /* user-prompt-submit.json in Resources */ = {isa = PBXBuildFile; fileRef = E2E98FF53E88A359B5C3E345 /* user-prompt-submit.json */; };
+		662326058893BB21A7B04493 /* SetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30AD5E52FB58312BF6DF93A2 /* SetupViewModel.swift */; };
+		66C47EDDEC29C3371EE1EE33 /* LaunchAtLoginService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 404BC3AEDF8446564803A481 /* LaunchAtLoginService.swift */; };
+		696D7565CE4E9845DE9823CD /* StatusPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF55C0928A839C5F09DD4F50 /* StatusPresentationTests.swift */; };
+		69DE5C69CA8074EC6AD913B5 /* JSONConfigEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA48A33A7F83D51545B46C58 /* JSONConfigEditorTests.swift */; };
+		6D012C9FDEFBC5DAF5AA7EB4 /* StatusPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4135907A526D059ECAB4872C /* StatusPresentation.swift */; };
+		6D3752451B73567DAE129C70 /* SessionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 166738A4E3CA52BF6BAA156A /* SessionListView.swift */; };
+		72F090DE27777269AF8DB405 /* ProcessIdentityResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 978BC98579D24733CBE3FF66 /* ProcessIdentityResolver.swift */; };
+		737EBF36C88DC838672F4A62 /* HookNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DC217C0449B7AA3CFA3A1C0 /* HookNormalizerTests.swift */; };
+		7916C939D5FAFFD6DC0D4754 /* ProductMetadataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D22C7FDD542B1FE8FA631C /* ProductMetadataTests.swift */; };
+		813A3B80E6A8A1C4ADCF9D14 /* SessionResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523377D885E7D16EDB5BD471 /* SessionResolverTests.swift */; };
+		838AF383BE64791BD5538FCD /* UpdateCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2417216E5D617D9EDF73F87 /* UpdateCheckerTests.swift */; };
+		852D7ABAD149551CB9AC3BDA /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55191268A04D7DA3945A36B4 /* main.swift */; };
+		89CF82D3F400F9A21AB3A46F /* SessionResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3597CD22675B161FAB22C04 /* SessionResolver.swift */; };
+		8C556B28E93AD5F008F7DB3A /* JSONConfigEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC01C9DC54834FCD2968551A /* JSONConfigEditor.swift */; };
+		919B0EC61D7CE4FDAD0D28A7 /* HelperInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2FBF576C59C9FADAEDD071 /* HelperInstaller.swift */; };
+		9CB22BDA15491AD86835F8F8 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57FAAB171A3AF6CA945DE557 /* StatusItemController.swift */; };
+		9D4145D344BA9CED64470B3E /* user-prompt-submit.json in Resources */ = {isa = PBXBuildFile; fileRef = E2E98FF53E88A359B5C3E345 /* user-prompt-submit.json */; };
+		9D54966B84C2C9C4A3FC2A13 /* ProcessInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACCD7381A4853B8E111A773 /* ProcessInspector.swift */; };
+		A5626E95332C82CBC96A787D /* HookDefinitionFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EAF9E00C138C15B698C03B4 /* HookDefinitionFactory.swift */; };
+		A66DCF1EE03BFF169A2E3F6B /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E56337F47EF2714D05823D2E /* UpdateChecker.swift */; };
+		A721D354D59679998714572C /* AgenticGlowCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB215EF226A2A930E51664A7 /* AgenticGlowCore.framework */; };
+		A74B58C03AF64E6D5FD0EC4A /* ProcessIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEFBEECE0CB8A09500C9CA31 /* ProcessIdentity.swift */; };
+		AA595E83E76DE8D9A39456D2 /* SessionStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF9B30242B649B5C6291047 /* SessionStateStoreTests.swift */; };
+		AB79A0D58C5EE1D88CC599AF /* UITestSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0763AF5FB0C0D3034BE5AB2D /* UITestSessionStore.swift */; };
+		AEF2E424FB6EC7FDCF96373D /* HookEventKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DBC5398CA02E6A4C00D7A2B /* HookEventKind.swift */; };
+		B17BDD406240127E4F78FA04 /* SetupViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9076E66E6BF081096A0783 /* SetupViewModelTests.swift */; };
+		B782EFFA66668A475E4B0622 /* CodexIntegrationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EEBCA97BDCCEF19F99C91BA /* CodexIntegrationManagerTests.swift */; };
+		B9785B941DEDFFA28C9717BF /* DiagnosticLoggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F16F21073C05BCF4BE52185 /* DiagnosticLoggerTests.swift */; };
+		B9CB48CF2D51271CCA36D761 /* ClaudeIntegrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F53617C3A4D3E6EE091A7876 /* ClaudeIntegrationManager.swift */; };
+		BCA9D1F05EDB16D92A69737C /* SyntheticEventService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 829A953919BF21B83C220FFE /* SyntheticEventService.swift */; };
+		C55B3CBE83F8B46D216AB393 /* stop.json in Resources */ = {isa = PBXBuildFile; fileRef = 49964EE335B3F42FA70E989A /* stop.json */; };
+		C7C9B31CE60FA321C870674B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FD71F7060C2532BA0590C9AE /* Assets.xcassets */; };
+		CF57CE6B8A985B4A5BADC008 /* HelperInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2F943F38C7970E829E11BD2 /* HelperInstallerTests.swift */; };
+		D3E0C5B16827C452403E474A /* DiagnosticLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D5F748819AA3331177D6D4 /* DiagnosticLogger.swift */; };
+		D6EBA6BFF60DC6724AA3E151 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F88D47C441E780F8ADA4880 /* SettingsView.swift */; };
+		D8D4457FF742F561DB4F36F4 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D80032B619FD4696E5CAEFA3 /* AppDelegate.swift */; };
+		D90686462916B77A3593C55B /* NormalizedEventTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E366BBA73A954436275513 /* NormalizedEventTests.swift */; };
+		DCFB1626E45373461875416C /* AgenticGlowCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB215EF226A2A930E51664A7 /* AgenticGlowCore.framework */; };
+		DE08088A9510936ECA46CC1E /* PreferencesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E752BA418FA3E0A5A56086 /* PreferencesStoreTests.swift */; };
+		E60681C5715B2578326BD81C /* AgentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 543709F2AB86176074499CBB /* AgentProvider.swift */; };
+		F1682E6AE910E5B9A2A04E77 /* ClaudeIntegrationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD0B9B8E1037AAFBDD11437 /* ClaudeIntegrationManagerTests.swift */; };
+		F286223DEB57DC70F9E27A0F /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CB928AEE9B3D0C394AA900B /* AppModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		04EA03E389CD50CB9CB35BBD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D9897CC5BFCC8F2D7D68CFD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E2D99C5FCA5EA16B2777B0C1;
+			remoteInfo = AgenticGlow;
+		};
+		3C1CB2671C6D93430C22314B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D9897CC5BFCC8F2D7D68CFD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0051B037A762B63699E54A23;
+			remoteInfo = AgenticGlowCore;
+		};
+		49C201C606F05D9EC09D9106 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D9897CC5BFCC8F2D7D68CFD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0051B037A762B63699E54A23;
+			remoteInfo = AgenticGlowCore;
+		};
+		4B90C2CD5145388F5AD1D1D3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D9897CC5BFCC8F2D7D68CFD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E2D99C5FCA5EA16B2777B0C1;
+			remoteInfo = AgenticGlow;
+		};
+		639549B73CE680CF6B13A666 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D9897CC5BFCC8F2D7D68CFD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0051B037A762B63699E54A23;
+			remoteInfo = AgenticGlowCore;
+		};
+		7921E913E56263DC5EA34156 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D9897CC5BFCC8F2D7D68CFD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0051B037A762B63699E54A23;
+			remoteInfo = AgenticGlowCore;
+		};
+		989107E3CE5CD192D6882E69 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D9897CC5BFCC8F2D7D68CFD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0051B037A762B63699E54A23;
+			remoteInfo = AgenticGlowCore;
+		};
+		F9A1005E176D57214B84170F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D9897CC5BFCC8F2D7D68CFD5 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 34A7A5A7E96CE1F2D6FAF827;
+			remoteInfo = AgenticGlowEvent;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		04E752BA418FA3E0A5A56086 /* PreferencesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStoreTests.swift; sourceTree = "<group>"; };
+		0763AF5FB0C0D3034BE5AB2D /* UITestSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestSessionStore.swift; sourceTree = "<group>"; };
+		0BA5EC4E6D06504DF5A657C9 /* AgenticGlowEvent */ = {isa = PBXFileReference; includeInIndex = 0; path = AgenticGlowEvent; sourceTree = BUILT_PRODUCTS_DIR; };
+		0CB928AEE9B3D0C394AA900B /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		0D36E4568D4C0C232DAC4F1B /* AgenticGlowEventSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenticGlowEventSmokeTests.swift; sourceTree = "<group>"; };
+		0DBC5398CA02E6A4C00D7A2B /* HookEventKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookEventKind.swift; sourceTree = "<group>"; };
+		166738A4E3CA52BF6BAA156A /* SessionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListView.swift; sourceTree = "<group>"; };
+		18B38C3F07561451BED08073 /* AgenticGlowEventTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgenticGlowEventTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		18E366BBA73A954436275513 /* NormalizedEventTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NormalizedEventTests.swift; sourceTree = "<group>"; };
+		1ACCD7381A4853B8E111A773 /* ProcessInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessInspector.swift; sourceTree = "<group>"; };
+		1B41BB5ACD7A89E1DC0660B9 /* ProcessIdentityResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessIdentityResolverTests.swift; sourceTree = "<group>"; };
+		1F16F21073C05BCF4BE52185 /* DiagnosticLoggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticLoggerTests.swift; sourceTree = "<group>"; };
+		216B6EA781EC14324868BEB0 /* TestSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestSupport.swift; sourceTree = "<group>"; };
+		21ED6440DC5F8BE0F0346AA2 /* ExecutableLocator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExecutableLocator.swift; sourceTree = "<group>"; };
+		281DE424930B0B861F4C4B20 /* NormalizedEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NormalizedEvent.swift; sourceTree = "<group>"; };
+		2C79BC8D0FB4DCC545F214B9 /* SetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupView.swift; sourceTree = "<group>"; };
+		2C88672709FBBE9C229FB665 /* AgenticGlowApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenticGlowApp.swift; sourceTree = "<group>"; };
+		30AD5E52FB58312BF6DF93A2 /* SetupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupViewModel.swift; sourceTree = "<group>"; };
+		3EAF9E00C138C15B698C03B4 /* HookDefinitionFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookDefinitionFactory.swift; sourceTree = "<group>"; };
+		404BC3AEDF8446564803A481 /* LaunchAtLoginService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginService.swift; sourceTree = "<group>"; };
+		4135907A526D059ECAB4872C /* StatusPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPresentation.swift; sourceTree = "<group>"; };
+		45A57C3729989A4F98DAEE89 /* pre-tool-use.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "pre-tool-use.json"; sourceTree = "<group>"; };
+		493FB20BB6159F16A52EFBAB /* SourceApplicationActivator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceApplicationActivator.swift; sourceTree = "<group>"; };
+		49964EE335B3F42FA70E989A /* stop.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = stop.json; sourceTree = "<group>"; };
+		4F50AE41D54AF0BBEA05DD1D /* SessionRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRowView.swift; sourceTree = "<group>"; };
+		523377D885E7D16EDB5BD471 /* SessionResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionResolverTests.swift; sourceTree = "<group>"; };
+		5431A7C2F1A4EF086D142B05 /* SessionStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStateStore.swift; sourceTree = "<group>"; };
+		543709F2AB86176074499CBB /* AgentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentProvider.swift; sourceTree = "<group>"; };
+		55191268A04D7DA3945A36B4 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		57FAAB171A3AF6CA945DE557 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
+		5AFB630BA9BD83DF76A64083 /* AgenticGlowLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenticGlowLaunchTests.swift; sourceTree = "<group>"; };
+		5EEBCA97BDCCEF19F99C91BA /* CodexIntegrationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexIntegrationManagerTests.swift; sourceTree = "<group>"; };
+		6DC217C0449B7AA3CFA3A1C0 /* HookNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookNormalizerTests.swift; sourceTree = "<group>"; };
+		6DF9B30242B649B5C6291047 /* SessionStateStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStateStoreTests.swift; sourceTree = "<group>"; };
+		705977BC1D4D77B2475CECD6 /* ProductMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductMetadata.swift; sourceTree = "<group>"; };
+		754C4DC98D278BCC32FCAF9A /* AgenticGlowCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgenticGlowCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7AB2F40E369FB0BBDFF5C36B /* SessionKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionKey.swift; sourceTree = "<group>"; };
+		7E9B2E99889D9DD3C4DA034D /* HookNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HookNormalizer.swift; sourceTree = "<group>"; };
+		7F88D47C441E780F8ADA4880 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		8104D5A1E6309BDA159B0EB3 /* permission-request.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "permission-request.json"; sourceTree = "<group>"; };
+		829A953919BF21B83C220FFE /* SyntheticEventService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticEventService.swift; sourceTree = "<group>"; };
+		82CB06FA8CA96570073A5931 /* IntegrationStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationStatus.swift; sourceTree = "<group>"; };
+		849DF0FB9E1B17DB2BCCB500 /* UpdateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateViewModel.swift; sourceTree = "<group>"; };
+		8926BBF020B1EC1C5537E5C5 /* ToolCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolCategory.swift; sourceTree = "<group>"; };
+		8F17758F92DA69BE48F7C3EC /* CodexIntegrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexIntegrationManager.swift; sourceTree = "<group>"; };
+		978BC98579D24733CBE3FF66 /* ProcessIdentityResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessIdentityResolver.swift; sourceTree = "<group>"; };
+		9E9076E66E6BF081096A0783 /* SetupViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupViewModelTests.swift; sourceTree = "<group>"; };
+		A0C39F4753E65D9704083133 /* AgenticGlowAppSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenticGlowAppSmokeTests.swift; sourceTree = "<group>"; };
+		A0D57322B8A0ACBB63DE7E49 /* SessionSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSnapshot.swift; sourceTree = "<group>"; };
+		A327A12847C06F26401FE779 /* AgenticGlowAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgenticGlowAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A3597CD22675B161FAB22C04 /* SessionResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionResolver.swift; sourceTree = "<group>"; };
+		A6D22C7FDD542B1FE8FA631C /* ProductMetadataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductMetadataTests.swift; sourceTree = "<group>"; };
+		A8B667D06BD88F4A105279CB /* AgenticGlowUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgenticGlowUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC01C9DC54834FCD2968551A /* JSONConfigEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONConfigEditor.swift; sourceTree = "<group>"; };
+		B2417216E5D617D9EDF73F87 /* UpdateCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCheckerTests.swift; sourceTree = "<group>"; };
+		B4EF183F02A6D2B64F64CAB2 /* AgenticGlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenticGlowUITests.swift; sourceTree = "<group>"; };
+		BAD0B9B8E1037AAFBDD11437 /* ClaudeIntegrationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeIntegrationManagerTests.swift; sourceTree = "<group>"; };
+		BB63ED78E1ADC4BD9D2714AE /* ProviderVersionDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderVersionDetector.swift; sourceTree = "<group>"; };
+		BCB240EE03BC6D945AB738F1 /* PreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStore.swift; sourceTree = "<group>"; };
+		BD7BD42FBB6DB455CECF203F /* AgenticGlowEventCommandTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenticGlowEventCommandTests.swift; sourceTree = "<group>"; };
+		BED7279C6D36CA5895560EF5 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		C2F95D3AB342520D942D092C /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		CA48A33A7F83D51545B46C58 /* JSONConfigEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONConfigEditorTests.swift; sourceTree = "<group>"; };
+		CB215EF226A2A930E51664A7 /* AgenticGlowCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = AgenticGlowCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		CBFF8B113BD5CCF602B1399C /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
+		D2F943F38C7970E829E11BD2 /* HelperInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperInstallerTests.swift; sourceTree = "<group>"; };
+		D80032B619FD4696E5CAEFA3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		DEFBEECE0CB8A09500C9CA31 /* ProcessIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessIdentity.swift; sourceTree = "<group>"; };
+		E2E98FF53E88A359B5C3E345 /* user-prompt-submit.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "user-prompt-submit.json"; sourceTree = "<group>"; };
+		E313842F848D743DD2A7F413 /* AgenticGlow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AgenticGlow.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E56337F47EF2714D05823D2E /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+		E7D5F748819AA3331177D6D4 /* DiagnosticLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticLogger.swift; sourceTree = "<group>"; };
+		E9D6527B9D899D9AE37E6513 /* AgenticGlowEventCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenticGlowEventCommand.swift; sourceTree = "<group>"; };
+		EF55C0928A839C5F09DD4F50 /* StatusPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPresentationTests.swift; sourceTree = "<group>"; };
+		F53617C3A4D3E6EE091A7876 /* ClaudeIntegrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeIntegrationManager.swift; sourceTree = "<group>"; };
+		FD71F7060C2532BA0590C9AE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FE2FBF576C59C9FADAEDD071 /* HelperInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperInstaller.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		58F8D1B4CA486B270B1AB273 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DCFB1626E45373461875416C /* AgenticGlowCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		76EB5DB4A75442EB8485F2D0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1BF7C5E67DF40811BADA4C16 /* AgenticGlowCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AD78828030B9F288A6BBD276 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0D626A999A92570603B3B9BF /* AgenticGlowCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B6CDBE77C9B57FC33357F386 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A721D354D59679998714572C /* AgenticGlowCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA8D5EDF132C913D142AD729 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1CFC2FEB95B85CA26F2769EC /* AgenticGlowCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1834A1494469BBBA5116DFD4 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				FBBB8BEF9D957001D1248FD7 /* claude */,
+				DFA8CD8A2670420684FE133C /* codex */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
+		21F0727A40A6DEAA4F7C0F4D /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				4F3B9B1C9FF9A0017ABE1152 /* AgenticGlowApp */,
+				6F847A57946B6B20585310F4 /* AgenticGlowCore */,
+				31B5B57AFB1F299DE713A496 /* AgenticGlowEvent */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		29E56E289CEDB02469991604 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				BCB240EE03BC6D945AB738F1 /* PreferencesStore.swift */,
+				7F88D47C441E780F8ADA4880 /* SettingsView.swift */,
+				849DF0FB9E1B17DB2BCCB500 /* UpdateViewModel.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		31B5B57AFB1F299DE713A496 /* AgenticGlowEvent */ = {
+			isa = PBXGroup;
+			children = (
+				55191268A04D7DA3945A36B4 /* main.swift */,
+			);
+			path = AgenticGlowEvent;
+			sourceTree = "<group>";
+		};
+		36C368C2EFE20F5D1DFC9093 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E313842F848D743DD2A7F413 /* AgenticGlow.app */,
+				A327A12847C06F26401FE779 /* AgenticGlowAppTests.xctest */,
+				CB215EF226A2A930E51664A7 /* AgenticGlowCore.framework */,
+				754C4DC98D278BCC32FCAF9A /* AgenticGlowCoreTests.xctest */,
+				0BA5EC4E6D06504DF5A657C9 /* AgenticGlowEvent */,
+				18B38C3F07561451BED08073 /* AgenticGlowEventTests.xctest */,
+				A8B667D06BD88F4A105279CB /* AgenticGlowUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3B8DE694BC8F0E7D6711F234 /* Setup */ = {
+			isa = PBXGroup;
+			children = (
+				2C79BC8D0FB4DCC545F214B9 /* SetupView.swift */,
+				30AD5E52FB58312BF6DF93A2 /* SetupViewModel.swift */,
+			);
+			path = Setup;
+			sourceTree = "<group>";
+		};
+		4F3B9B1C9FF9A0017ABE1152 /* AgenticGlowApp */ = {
+			isa = PBXGroup;
+			children = (
+				2C88672709FBBE9C229FB665 /* AgenticGlowApp.swift */,
+				D80032B619FD4696E5CAEFA3 /* AppDelegate.swift */,
+				0CB928AEE9B3D0C394AA900B /* AppModel.swift */,
+				FD418D84EBDBEB23CB0C5AA4 /* MenuBar */,
+				E5714EE878B80AB8D522A1E0 /* Resources */,
+				E0F35FBC295CCE702C1A91FC /* Services */,
+				29E56E289CEDB02469991604 /* Settings */,
+				3B8DE694BC8F0E7D6711F234 /* Setup */,
+				8C984851F9AF4534BB979FA5 /* UITesting */,
+			);
+			path = AgenticGlowApp;
+			sourceTree = "<group>";
+		};
+		558EE9A8397A70957B5B7802 /* Helper */ = {
+			isa = PBXGroup;
+			children = (
+				E9D6527B9D899D9AE37E6513 /* AgenticGlowEventCommand.swift */,
+			);
+			path = Helper;
+			sourceTree = "<group>";
+		};
+		5AF1C5C7D5E01D63BD74F1F1 /* AgenticGlowAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				A0C39F4753E65D9704083133 /* AgenticGlowAppSmokeTests.swift */,
+				CBFF8B113BD5CCF602B1399C /* AppModelTests.swift */,
+				04E752BA418FA3E0A5A56086 /* PreferencesStoreTests.swift */,
+				9E9076E66E6BF081096A0783 /* SetupViewModelTests.swift */,
+				EF55C0928A839C5F09DD4F50 /* StatusPresentationTests.swift */,
+			);
+			path = AgenticGlowAppTests;
+			sourceTree = "<group>";
+		};
+		5C577E72C56D6BDB939C4C73 /* Product */ = {
+			isa = PBXGroup;
+			children = (
+				705977BC1D4D77B2475CECD6 /* ProductMetadata.swift */,
+			);
+			path = Product;
+			sourceTree = "<group>";
+		};
+		5F3E8B40A60C05276E5A9DA0 /* TestSupport */ = {
+			isa = PBXGroup;
+			children = (
+				216B6EA781EC14324868BEB0 /* TestSupport.swift */,
+			);
+			path = TestSupport;
+			sourceTree = "<group>";
+		};
+		6F847A57946B6B20585310F4 /* AgenticGlowCore */ = {
+			isa = PBXGroup;
+			children = (
+				A9AE4778B633E5749EFAB3BD /* Events */,
+				558EE9A8397A70957B5B7802 /* Helper */,
+				E545A37F27C1EA46253386E9 /* Integrations */,
+				D62142F6F0A3DB29C07E6912 /* Logging */,
+				78053C5F46996B52B1C39D29 /* Processes */,
+				5C577E72C56D6BDB939C4C73 /* Product */,
+				B48068002357256CC88EAF91 /* State */,
+				E3E93B39932D0C6FE68FDE7B /* Updates */,
+			);
+			path = AgenticGlowCore;
+			sourceTree = "<group>";
+		};
+		7201A41F2B33D74E78790F88 = {
+			isa = PBXGroup;
+			children = (
+				C35A74BE230A23EDC65E3B7A /* Config */,
+				21F0727A40A6DEAA4F7C0F4D /* Sources */,
+				79731FAD3C514A457E036E05 /* Tests */,
+				36C368C2EFE20F5D1DFC9093 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		759B6600F96D022424DABAD1 /* AgenticGlowUITests */ = {
+			isa = PBXGroup;
+			children = (
+				5AFB630BA9BD83DF76A64083 /* AgenticGlowLaunchTests.swift */,
+				B4EF183F02A6D2B64F64CAB2 /* AgenticGlowUITests.swift */,
+			);
+			path = AgenticGlowUITests;
+			sourceTree = "<group>";
+		};
+		78053C5F46996B52B1C39D29 /* Processes */ = {
+			isa = PBXGroup;
+			children = (
+				DEFBEECE0CB8A09500C9CA31 /* ProcessIdentity.swift */,
+				978BC98579D24733CBE3FF66 /* ProcessIdentityResolver.swift */,
+				1ACCD7381A4853B8E111A773 /* ProcessInspector.swift */,
+				493FB20BB6159F16A52EFBAB /* SourceApplicationActivator.swift */,
+			);
+			path = Processes;
+			sourceTree = "<group>";
+		};
+		79731FAD3C514A457E036E05 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				5AF1C5C7D5E01D63BD74F1F1 /* AgenticGlowAppTests */,
+				DAFA047BB6BB11E3B0CECD6B /* AgenticGlowCoreTests */,
+				F4452B2C95D161A64BEF9489 /* AgenticGlowEventTests */,
+				759B6600F96D022424DABAD1 /* AgenticGlowUITests */,
+				1834A1494469BBBA5116DFD4 /* Fixtures */,
+				5F3E8B40A60C05276E5A9DA0 /* TestSupport */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		8C984851F9AF4534BB979FA5 /* UITesting */ = {
+			isa = PBXGroup;
+			children = (
+				0763AF5FB0C0D3034BE5AB2D /* UITestSessionStore.swift */,
+			);
+			path = UITesting;
+			sourceTree = "<group>";
+		};
+		A9AE4778B633E5749EFAB3BD /* Events */ = {
+			isa = PBXGroup;
+			children = (
+				543709F2AB86176074499CBB /* AgentProvider.swift */,
+				0DBC5398CA02E6A4C00D7A2B /* HookEventKind.swift */,
+				7E9B2E99889D9DD3C4DA034D /* HookNormalizer.swift */,
+				281DE424930B0B861F4C4B20 /* NormalizedEvent.swift */,
+				8926BBF020B1EC1C5537E5C5 /* ToolCategory.swift */,
+			);
+			path = Events;
+			sourceTree = "<group>";
+		};
+		B48068002357256CC88EAF91 /* State */ = {
+			isa = PBXGroup;
+			children = (
+				7AB2F40E369FB0BBDFF5C36B /* SessionKey.swift */,
+				A3597CD22675B161FAB22C04 /* SessionResolver.swift */,
+				A0D57322B8A0ACBB63DE7E49 /* SessionSnapshot.swift */,
+				5431A7C2F1A4EF086D142B05 /* SessionStateStore.swift */,
+			);
+			path = State;
+			sourceTree = "<group>";
+		};
+		C35A74BE230A23EDC65E3B7A /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				C2F95D3AB342520D942D092C /* Debug.xcconfig */,
+				BED7279C6D36CA5895560EF5 /* Release.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		D62142F6F0A3DB29C07E6912 /* Logging */ = {
+			isa = PBXGroup;
+			children = (
+				E7D5F748819AA3331177D6D4 /* DiagnosticLogger.swift */,
+			);
+			path = Logging;
+			sourceTree = "<group>";
+		};
+		DAFA047BB6BB11E3B0CECD6B /* AgenticGlowCoreTests */ = {
+			isa = PBXGroup;
+			children = (
+				BAD0B9B8E1037AAFBDD11437 /* ClaudeIntegrationManagerTests.swift */,
+				5EEBCA97BDCCEF19F99C91BA /* CodexIntegrationManagerTests.swift */,
+				1F16F21073C05BCF4BE52185 /* DiagnosticLoggerTests.swift */,
+				D2F943F38C7970E829E11BD2 /* HelperInstallerTests.swift */,
+				6DC217C0449B7AA3CFA3A1C0 /* HookNormalizerTests.swift */,
+				CA48A33A7F83D51545B46C58 /* JSONConfigEditorTests.swift */,
+				18E366BBA73A954436275513 /* NormalizedEventTests.swift */,
+				1B41BB5ACD7A89E1DC0660B9 /* ProcessIdentityResolverTests.swift */,
+				A6D22C7FDD542B1FE8FA631C /* ProductMetadataTests.swift */,
+				523377D885E7D16EDB5BD471 /* SessionResolverTests.swift */,
+				6DF9B30242B649B5C6291047 /* SessionStateStoreTests.swift */,
+				B2417216E5D617D9EDF73F87 /* UpdateCheckerTests.swift */,
+			);
+			path = AgenticGlowCoreTests;
+			sourceTree = "<group>";
+		};
+		DFA8CD8A2670420684FE133C /* codex */ = {
+			isa = PBXGroup;
+			children = (
+				45A57C3729989A4F98DAEE89 /* pre-tool-use.json */,
+				49964EE335B3F42FA70E989A /* stop.json */,
+			);
+			path = codex;
+			sourceTree = "<group>";
+		};
+		E0F35FBC295CCE702C1A91FC /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				404BC3AEDF8446564803A481 /* LaunchAtLoginService.swift */,
+				829A953919BF21B83C220FFE /* SyntheticEventService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		E3E93B39932D0C6FE68FDE7B /* Updates */ = {
+			isa = PBXGroup;
+			children = (
+				E56337F47EF2714D05823D2E /* UpdateChecker.swift */,
+			);
+			path = Updates;
+			sourceTree = "<group>";
+		};
+		E545A37F27C1EA46253386E9 /* Integrations */ = {
+			isa = PBXGroup;
+			children = (
+				F53617C3A4D3E6EE091A7876 /* ClaudeIntegrationManager.swift */,
+				8F17758F92DA69BE48F7C3EC /* CodexIntegrationManager.swift */,
+				21ED6440DC5F8BE0F0346AA2 /* ExecutableLocator.swift */,
+				FE2FBF576C59C9FADAEDD071 /* HelperInstaller.swift */,
+				3EAF9E00C138C15B698C03B4 /* HookDefinitionFactory.swift */,
+				82CB06FA8CA96570073A5931 /* IntegrationStatus.swift */,
+				AC01C9DC54834FCD2968551A /* JSONConfigEditor.swift */,
+				BB63ED78E1ADC4BD9D2714AE /* ProviderVersionDetector.swift */,
+			);
+			path = Integrations;
+			sourceTree = "<group>";
+		};
+		E5714EE878B80AB8D522A1E0 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				FD71F7060C2532BA0590C9AE /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		F4452B2C95D161A64BEF9489 /* AgenticGlowEventTests */ = {
+			isa = PBXGroup;
+			children = (
+				BD7BD42FBB6DB455CECF203F /* AgenticGlowEventCommandTests.swift */,
+				0D36E4568D4C0C232DAC4F1B /* AgenticGlowEventSmokeTests.swift */,
+			);
+			path = AgenticGlowEventTests;
+			sourceTree = "<group>";
+		};
+		FBBB8BEF9D957001D1248FD7 /* claude */ = {
+			isa = PBXGroup;
+			children = (
+				8104D5A1E6309BDA159B0EB3 /* permission-request.json */,
+				E2E98FF53E88A359B5C3E345 /* user-prompt-submit.json */,
+			);
+			path = claude;
+			sourceTree = "<group>";
+		};
+		FD418D84EBDBEB23CB0C5AA4 /* MenuBar */ = {
+			isa = PBXGroup;
+			children = (
+				166738A4E3CA52BF6BAA156A /* SessionListView.swift */,
+				4F50AE41D54AF0BBEA05DD1D /* SessionRowView.swift */,
+				57FAAB171A3AF6CA945DE557 /* StatusItemController.swift */,
+				4135907A526D059ECAB4872C /* StatusPresentation.swift */,
+			);
+			path = MenuBar;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0051B037A762B63699E54A23 /* AgenticGlowCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B8BE469430BEE03B6448D4AA /* Build configuration list for PBXNativeTarget "AgenticGlowCore" */;
+			buildPhases = (
+				EFC4D29DA877A4EEA12F5BAB /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AgenticGlowCore;
+			packageProductDependencies = (
+			);
+			productName = AgenticGlowCore;
+			productReference = CB215EF226A2A930E51664A7 /* AgenticGlowCore.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		34A7A5A7E96CE1F2D6FAF827 /* AgenticGlowEvent */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D1202BDF8B6CC612E6AE3D25 /* Build configuration list for PBXNativeTarget "AgenticGlowEvent" */;
+			buildPhases = (
+				AB4F2E39A698E3DD0E8A0E57 /* Sources */,
+				58F8D1B4CA486B270B1AB273 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				94E4E82EB03C68AA025A1C34 /* PBXTargetDependency */,
+			);
+			name = AgenticGlowEvent;
+			packageProductDependencies = (
+			);
+			productName = AgenticGlowEvent;
+			productReference = 0BA5EC4E6D06504DF5A657C9 /* AgenticGlowEvent */;
+			productType = "com.apple.product-type.tool";
+		};
+		482C4407D3C584FD88B050CF /* AgenticGlowUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 53E8B42D17B54B8F38ED9661 /* Build configuration list for PBXNativeTarget "AgenticGlowUITests" */;
+			buildPhases = (
+				5B4C0681D53DFF667420A9EC /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				42C4AA9D1463D49F9D03A022 /* PBXTargetDependency */,
+			);
+			name = AgenticGlowUITests;
+			packageProductDependencies = (
+			);
+			productName = AgenticGlowUITests;
+			productReference = A8B667D06BD88F4A105279CB /* AgenticGlowUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		D10853DB70ADAAD0E710A710 /* AgenticGlowEventTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 71E72CB5EC2CDCA8DD052BC0 /* Build configuration list for PBXNativeTarget "AgenticGlowEventTests" */;
+			buildPhases = (
+				FFCDA4649CE4D1E00C8D9E75 /* Sources */,
+				56C3E1F1139D9F960CFA38CD /* Resources */,
+				AD78828030B9F288A6BBD276 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FDE0A8B1FFDA1DFA7CF5C20F /* PBXTargetDependency */,
+			);
+			name = AgenticGlowEventTests;
+			packageProductDependencies = (
+			);
+			productName = AgenticGlowEventTests;
+			productReference = 18B38C3F07561451BED08073 /* AgenticGlowEventTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E2D99C5FCA5EA16B2777B0C1 /* AgenticGlow */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C43F66F9F3C6F4D2D2796EA2 /* Build configuration list for PBXNativeTarget "AgenticGlow" */;
+			buildPhases = (
+				3ABC09F242F9A09B0D711057 /* Sources */,
+				37353B46070EDA57C792FC35 /* Resources */,
+				B6CDBE77C9B57FC33357F386 /* Frameworks */,
+				A2D175711CD09DAAA5B1994E /* Embed AgenticGlow event helper */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				41E486080A1CDB51AB4DC6F9 /* PBXTargetDependency */,
+				551673181F5F6AAAC79411CC /* PBXTargetDependency */,
+			);
+			name = AgenticGlow;
+			packageProductDependencies = (
+			);
+			productName = AgenticGlow;
+			productReference = E313842F848D743DD2A7F413 /* AgenticGlow.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E576873FC98D763040A9B482 /* AgenticGlowCoreTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 10E23535114F4BC6DCE9558D /* Build configuration list for PBXNativeTarget "AgenticGlowCoreTests" */;
+			buildPhases = (
+				6EC8970C19CB8C3F7BB329B1 /* Sources */,
+				097D3B3D4FB5F9359E1F18F4 /* Resources */,
+				76EB5DB4A75442EB8485F2D0 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				ED6D91FB4957BD17A12113A0 /* PBXTargetDependency */,
+			);
+			name = AgenticGlowCoreTests;
+			packageProductDependencies = (
+			);
+			productName = AgenticGlowCoreTests;
+			productReference = 754C4DC98D278BCC32FCAF9A /* AgenticGlowCoreTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F256BCC90A88C98B94290197 /* AgenticGlowAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BD438BA5C61C04DAD98A2AEC /* Build configuration list for PBXNativeTarget "AgenticGlowAppTests" */;
+			buildPhases = (
+				366E9653C9524B3F91E6B131 /* Sources */,
+				CA8D5EDF132C913D142AD729 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F457B7006782C2647BB8F425 /* PBXTargetDependency */,
+				44CA694CC31466DEF24DAA5A /* PBXTargetDependency */,
+			);
+			name = AgenticGlowAppTests;
+			packageProductDependencies = (
+			);
+			productName = AgenticGlowAppTests;
+			productReference = A327A12847C06F26401FE779 /* AgenticGlowAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D9897CC5BFCC8F2D7D68CFD5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					482C4407D3C584FD88B050CF = {
+						TestTargetID = E2D99C5FCA5EA16B2777B0C1;
+					};
+				};
+			};
+			buildConfigurationList = 6FAA2847232857E3B141E31C /* Build configuration list for PBXProject "AgenticGlow" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7201A41F2B33D74E78790F88;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 36C368C2EFE20F5D1DFC9093 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E2D99C5FCA5EA16B2777B0C1 /* AgenticGlow */,
+				F256BCC90A88C98B94290197 /* AgenticGlowAppTests */,
+				0051B037A762B63699E54A23 /* AgenticGlowCore */,
+				E576873FC98D763040A9B482 /* AgenticGlowCoreTests */,
+				34A7A5A7E96CE1F2D6FAF827 /* AgenticGlowEvent */,
+				D10853DB70ADAAD0E710A710 /* AgenticGlowEventTests */,
+				482C4407D3C584FD88B050CF /* AgenticGlowUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		097D3B3D4FB5F9359E1F18F4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3AEB2F2987802D3F7A0CE8E8 /* permission-request.json in Resources */,
+				5E19FA68F706AA0263E045EC /* pre-tool-use.json in Resources */,
+				4640DBCDCB2B0C5695CE67DC /* stop.json in Resources */,
+				9D4145D344BA9CED64470B3E /* user-prompt-submit.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		37353B46070EDA57C792FC35 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C7C9B31CE60FA321C870674B /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		56C3E1F1139D9F960CFA38CD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3534BB8D6CF80DA4F68BD30C /* permission-request.json in Resources */,
+				1ECE8999E8900F3E024601D0 /* pre-tool-use.json in Resources */,
+				C55B3CBE83F8B46D216AB393 /* stop.json in Resources */,
+				632CCFF5BAF2E0060D5752CE /* user-prompt-submit.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A2D175711CD09DAAA5B1994E /* Embed AgenticGlow event helper */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed AgenticGlow event helper";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\ndestination=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/bin\"\nmkdir -p \"$destination\"\ncp \"$BUILT_PRODUCTS_DIR/agenticglow-event\" \"$destination/agenticglow-event\"\nchmod 755 \"$destination/agenticglow-event\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		366E9653C9524B3F91E6B131 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3C25322E93C645BEC611F7BF /* AgenticGlowAppSmokeTests.swift in Sources */,
+				09F035F92222190CA45A5054 /* AppModelTests.swift in Sources */,
+				DE08088A9510936ECA46CC1E /* PreferencesStoreTests.swift in Sources */,
+				B17BDD406240127E4F78FA04 /* SetupViewModelTests.swift in Sources */,
+				696D7565CE4E9845DE9823CD /* StatusPresentationTests.swift in Sources */,
+				560F13E337C8692F0D32C9DB /* TestSupport.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3ABC09F242F9A09B0D711057 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				18320558595D293EA74457AC /* AgenticGlowApp.swift in Sources */,
+				D8D4457FF742F561DB4F36F4 /* AppDelegate.swift in Sources */,
+				F286223DEB57DC70F9E27A0F /* AppModel.swift in Sources */,
+				66C47EDDEC29C3371EE1EE33 /* LaunchAtLoginService.swift in Sources */,
+				0DF282F51837E86223918BA8 /* PreferencesStore.swift in Sources */,
+				6D3752451B73567DAE129C70 /* SessionListView.swift in Sources */,
+				1B996A44F546B3858CC97BA3 /* SessionRowView.swift in Sources */,
+				D6EBA6BFF60DC6724AA3E151 /* SettingsView.swift in Sources */,
+				0CEAD218BEDA2994FB61450D /* SetupView.swift in Sources */,
+				662326058893BB21A7B04493 /* SetupViewModel.swift in Sources */,
+				9CB22BDA15491AD86835F8F8 /* StatusItemController.swift in Sources */,
+				6D012C9FDEFBC5DAF5AA7EB4 /* StatusPresentation.swift in Sources */,
+				BCA9D1F05EDB16D92A69737C /* SyntheticEventService.swift in Sources */,
+				AB79A0D58C5EE1D88CC599AF /* UITestSessionStore.swift in Sources */,
+				2D9E5212FAEF0047CA863CE0 /* UpdateViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5B4C0681D53DFF667420A9EC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5148B4D61979ABE2A235797F /* AgenticGlowLaunchTests.swift in Sources */,
+				5A5DCF454C17C45C0B1C3070 /* AgenticGlowUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6EC8970C19CB8C3F7BB329B1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F1682E6AE910E5B9A2A04E77 /* ClaudeIntegrationManagerTests.swift in Sources */,
+				B782EFFA66668A475E4B0622 /* CodexIntegrationManagerTests.swift in Sources */,
+				B9785B941DEDFFA28C9717BF /* DiagnosticLoggerTests.swift in Sources */,
+				CF57CE6B8A985B4A5BADC008 /* HelperInstallerTests.swift in Sources */,
+				737EBF36C88DC838672F4A62 /* HookNormalizerTests.swift in Sources */,
+				69DE5C69CA8074EC6AD913B5 /* JSONConfigEditorTests.swift in Sources */,
+				D90686462916B77A3593C55B /* NormalizedEventTests.swift in Sources */,
+				59B7064BC525BB9983969226 /* ProcessIdentityResolverTests.swift in Sources */,
+				7916C939D5FAFFD6DC0D4754 /* ProductMetadataTests.swift in Sources */,
+				813A3B80E6A8A1C4ADCF9D14 /* SessionResolverTests.swift in Sources */,
+				AA595E83E76DE8D9A39456D2 /* SessionStateStoreTests.swift in Sources */,
+				318F45DFD510AA2C5073D8EB /* TestSupport.swift in Sources */,
+				838AF383BE64791BD5538FCD /* UpdateCheckerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB4F2E39A698E3DD0E8A0E57 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				852D7ABAD149551CB9AC3BDA /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EFC4D29DA877A4EEA12F5BAB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E60681C5715B2578326BD81C /* AgentProvider.swift in Sources */,
+				0E0E6B37F4EB9D98BB5AEAA6 /* AgenticGlowEventCommand.swift in Sources */,
+				B9CB48CF2D51271CCA36D761 /* ClaudeIntegrationManager.swift in Sources */,
+				5EF1FDD618E19AA1B393CF18 /* CodexIntegrationManager.swift in Sources */,
+				D3E0C5B16827C452403E474A /* DiagnosticLogger.swift in Sources */,
+				3CC79689096A6B74FD70B83C /* ExecutableLocator.swift in Sources */,
+				919B0EC61D7CE4FDAD0D28A7 /* HelperInstaller.swift in Sources */,
+				A5626E95332C82CBC96A787D /* HookDefinitionFactory.swift in Sources */,
+				AEF2E424FB6EC7FDCF96373D /* HookEventKind.swift in Sources */,
+				4BA78FF28099354B057B2A2E /* HookNormalizer.swift in Sources */,
+				4ACCE55191A2EE2A2BDBA062 /* IntegrationStatus.swift in Sources */,
+				8C556B28E93AD5F008F7DB3A /* JSONConfigEditor.swift in Sources */,
+				2C261D41276EE035893827B4 /* NormalizedEvent.swift in Sources */,
+				A74B58C03AF64E6D5FD0EC4A /* ProcessIdentity.swift in Sources */,
+				72F090DE27777269AF8DB405 /* ProcessIdentityResolver.swift in Sources */,
+				9D54966B84C2C9C4A3FC2A13 /* ProcessInspector.swift in Sources */,
+				097C25276DAD34C5452388F2 /* ProductMetadata.swift in Sources */,
+				237D084CA3B597B8062E7DBB /* ProviderVersionDetector.swift in Sources */,
+				196226E7439686D8D2AEDF45 /* SessionKey.swift in Sources */,
+				89CF82D3F400F9A21AB3A46F /* SessionResolver.swift in Sources */,
+				41C304D8029BD3377846F53B /* SessionSnapshot.swift in Sources */,
+				462BEF211C63BA7995DFC677 /* SessionStateStore.swift in Sources */,
+				5A21DBBD0A80204E75FBA076 /* SourceApplicationActivator.swift in Sources */,
+				2456D0D90270016AB3D17E47 /* ToolCategory.swift in Sources */,
+				A66DCF1EE03BFF169A2E3F6B /* UpdateChecker.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FFCDA4649CE4D1E00C8D9E75 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4370510C2C61144C02233103 /* AgenticGlowEventCommandTests.swift in Sources */,
+				04D6F3C0A4D68B99003F6848 /* AgenticGlowEventSmokeTests.swift in Sources */,
+				3010D6F3DBA4EA7644895741 /* TestSupport.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		41E486080A1CDB51AB4DC6F9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0051B037A762B63699E54A23 /* AgenticGlowCore */;
+			targetProxy = 7921E913E56263DC5EA34156 /* PBXContainerItemProxy */;
+		};
+		42C4AA9D1463D49F9D03A022 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E2D99C5FCA5EA16B2777B0C1 /* AgenticGlow */;
+			targetProxy = 04EA03E389CD50CB9CB35BBD /* PBXContainerItemProxy */;
+		};
+		44CA694CC31466DEF24DAA5A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0051B037A762B63699E54A23 /* AgenticGlowCore */;
+			targetProxy = 639549B73CE680CF6B13A666 /* PBXContainerItemProxy */;
+		};
+		551673181F5F6AAAC79411CC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 34A7A5A7E96CE1F2D6FAF827 /* AgenticGlowEvent */;
+			targetProxy = F9A1005E176D57214B84170F /* PBXContainerItemProxy */;
+		};
+		94E4E82EB03C68AA025A1C34 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0051B037A762B63699E54A23 /* AgenticGlowCore */;
+			targetProxy = 49C201C606F05D9EC09D9106 /* PBXContainerItemProxy */;
+		};
+		ED6D91FB4957BD17A12113A0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0051B037A762B63699E54A23 /* AgenticGlowCore */;
+			targetProxy = 3C1CB2671C6D93430C22314B /* PBXContainerItemProxy */;
+		};
+		F457B7006782C2647BB8F425 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E2D99C5FCA5EA16B2777B0C1 /* AgenticGlow */;
+			targetProxy = 4B90C2CD5145388F5AD1D1D3 /* PBXContainerItemProxy */;
+		};
+		FDE0A8B1FFDA1DFA7CF5C20F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0051B037A762B63699E54A23 /* AgenticGlowCore */;
+			targetProxy = 989107E3CE5CD192D6882E69 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1FD5E4CF9EBFF5E02BAE1FB5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/AgenticGlow.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/AgenticGlow-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twodamax.agenticglow;
+				PRODUCT_NAME = AgenticGlow;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		2414720F4137F2208A5D2809 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twodamax.agenticglow.event-tests";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		3046C75D304C779AC38BCAAF /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = BED7279C6D36CA5895560EF5 /* Release.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		36D858442885407758B370F6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twodamax.agenticglow.app-tests";
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AgenticGlow.app/Contents/MacOS/AgenticGlow";
+			};
+			name = Debug;
+		};
+		3E46AFD57AA62B7EEE8DBDB1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twodamax.agenticglow.event-tests";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		43FB9CB36BA6FC868878477A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path",
+					"@loader_path/../Frameworks",
+					"@loader_path/../../Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twodamax.agenticglow.event;
+				PRODUCT_NAME = "agenticglow-event";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		67C02158A2BEB930B089027B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = C2F95D3AB342520D942D092C /* Debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		79E29157A503EBA7EB71879B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twodamax.agenticglow.core;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		7BA35D1182E79429A670A975 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twodamax.agenticglow.app-tests";
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AgenticGlow.app/Contents/MacOS/AgenticGlow";
+			};
+			name = Release;
+		};
+		8102317E21B537870F674ABD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/AgenticGlow.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Config/AgenticGlow-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twodamax.agenticglow;
+				PRODUCT_NAME = AgenticGlow;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		929AD3F9C92DBC5D891523BF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twodamax.agenticglow.ui-tests";
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = AgenticGlow;
+			};
+			name = Debug;
+		};
+		9CFDD468CA07A39291FF5F01 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twodamax.agenticglow.core-tests";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		9D1973FB769744EC2E24A294 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@loader_path",
+					"@loader_path/../Frameworks",
+					"@loader_path/../../Frameworks",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twodamax.agenticglow.event;
+				PRODUCT_NAME = "agenticglow-event";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		9E45004CC44EF8E006D0A1B5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twodamax.agenticglow.ui-tests";
+				SDKROOT = macosx;
+				TEST_TARGET_NAME = AgenticGlow;
+			};
+			name = Release;
+		};
+		C3AF351DF139C85D4A791D68 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.twodamax.agenticglow.core-tests";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		CBD77FBA61EB395D7B1F1F49 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACH_O_TYPE = staticlib;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.twodamax.agenticglow.core;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		10E23535114F4BC6DCE9558D /* Build configuration list for PBXNativeTarget "AgenticGlowCoreTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C3AF351DF139C85D4A791D68 /* Debug */,
+				9CFDD468CA07A39291FF5F01 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		53E8B42D17B54B8F38ED9661 /* Build configuration list for PBXNativeTarget "AgenticGlowUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				929AD3F9C92DBC5D891523BF /* Debug */,
+				9E45004CC44EF8E006D0A1B5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6FAA2847232857E3B141E31C /* Build configuration list for PBXProject "AgenticGlow" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				67C02158A2BEB930B089027B /* Debug */,
+				3046C75D304C779AC38BCAAF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		71E72CB5EC2CDCA8DD052BC0 /* Build configuration list for PBXNativeTarget "AgenticGlowEventTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2414720F4137F2208A5D2809 /* Debug */,
+				3E46AFD57AA62B7EEE8DBDB1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B8BE469430BEE03B6448D4AA /* Build configuration list for PBXNativeTarget "AgenticGlowCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CBD77FBA61EB395D7B1F1F49 /* Debug */,
+				79E29157A503EBA7EB71879B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BD438BA5C61C04DAD98A2AEC /* Build configuration list for PBXNativeTarget "AgenticGlowAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				36D858442885407758B370F6 /* Debug */,
+				7BA35D1182E79429A670A975 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C43F66F9F3C6F4D2D2796EA2 /* Build configuration list for PBXNativeTarget "AgenticGlow" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1FD5E4CF9EBFF5E02BAE1FB5 /* Debug */,
+				8102317E21B537870F674ABD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D1202BDF8B6CC612E6AE3D25 /* Build configuration list for PBXNativeTarget "AgenticGlowEvent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				43FB9CB36BA6FC868878477A /* Debug */,
+				9D1973FB769744EC2E24A294 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D9897CC5BFCC8F2D7D68CFD5 /* Project object */;
+}

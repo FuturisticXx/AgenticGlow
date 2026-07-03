@@ -1,6 +1,6 @@
-# Klarity Integrations
+# AgenticGlow Integrations
 
-Klarity integrates with AI coding providers by installing hooks that emit events to the `klarity-event` helper. This document describes exactly what Klarity installs, where, and how to remove it.
+AgenticGlow integrates with AI coding providers by installing hooks that emit events to the `agenticglow-event` helper. This document describes exactly what AgenticGlow installs, where, and how to remove it.
 
 ## Claude Integration
 
@@ -8,7 +8,7 @@ Klarity integrates with AI coding providers by installing hooks that emit events
 `~/.claude/settings.json`
 
 ### Installed Events
-Klarity installs hooks for the following events:
+AgenticGlow installs hooks for the following events:
 - `sessionStart`
 - `sessionEnd`
 - `userPromptSubmit`
@@ -19,17 +19,17 @@ Klarity installs hooks for the following events:
 - `stop`
 
 ### Hook Format
-Each hook entry is marked with `--klarity-hook` in the command string for identification. The command executes the `klarity-event` helper with the provider, event kind, and marker flag.
+Each hook entry is marked with `--agenticglow-hook` in the command string for identification. The command executes the `agenticglow-event` helper with the provider, event kind, and marker flag.
 
 ### Backup
-On first modification, Klarity creates a backup at:
-`~/.claude/settings.json.YYYYMMDD-HHmmss.bak-klarity`
+On first modification, AgenticGlow creates a backup at:
+`~/.claude/settings.json.YYYYMMDD-HHmmss.bak-agenticglow`
 
 ### Repair Behavior
-Running repair removes any existing Klarity hooks and reinstalls all supported events. This fixes partial or corrupted installations.
+Running repair removes any existing AgenticGlow hooks and reinstalls all supported events. This fixes partial or corrupted installations.
 
 ### Removal Behavior
-Running remove deletes only entries marked with `--klarity-hook`. All other hooks and settings are preserved.
+Running remove deletes only entries marked with `--agenticglow-hook`. All other hooks and settings are preserved.
 
 ## Codex Integration
 
@@ -37,7 +37,7 @@ Running remove deletes only entries marked with `--klarity-hook`. All other hook
 `~/.codex/hooks.json`
 
 ### Installed Events
-Klarity installs hooks for the following events:
+AgenticGlow installs hooks for the following events:
 - `sessionStart`
 - `userPromptSubmit`
 - `preToolUse`
@@ -46,22 +46,22 @@ Klarity installs hooks for the following events:
 - `stop`
 
 ### Hook Format
-Each hook entry is marked with `--klarity-hook` in the command string for identification. The command executes the `klarity-event` helper with the provider, event kind, and marker flag.
+Each hook entry is marked with `--agenticglow-hook` in the command string for identification. The command executes the `agenticglow-event` helper with the provider, event kind, and marker flag.
 
 ### Backup
-On first modification, Klarity creates a backup at:
-`~/.codex/hooks.json.YYYYMMDD-HHmmss.bak-klarity`
+On first modification, AgenticGlow creates a backup at:
+`~/.codex/hooks.json.YYYYMMDD-HHmmss.bak-agenticglow`
 
 ### Repair Behavior
-Running repair removes any existing Klarity hooks and reinstalls all supported events. This fixes partial or corrupted installations.
+Running repair removes any existing AgenticGlow hooks and reinstalls all supported events. This fixes partial or corrupted installations.
 
 ### Removal Behavior
-Running remove deletes only entries marked with `--klarity-hook`. All other hooks and settings are preserved.
+Running remove deletes only entries marked with `--agenticglow-hook`. All other hooks and settings are preserved.
 
 ## Helper Installation
 
 ### Destination Path
-`~/Library/Application Support/Klarity/bin/klarity-event`
+`~/Library/Application Support/AgenticGlow/bin/agenticglow-event`
 
 ### Permissions
 The helper binary is installed with `0o755` permissions (owner read/write/execute, group/others read/execute).
@@ -73,18 +73,18 @@ The parent directory is created with `0o700` permissions (owner read/write/execu
 Running repair copies the helper from the embedded bundle to the destination, replacing the existing file atomically.
 
 ### Removal Behavior
-Running remove deletes the entire `~/Library/Application Support/Klarity/bin` directory.
+Running remove deletes the entire `~/Library/Application Support/AgenticGlow/bin` directory.
 
 ## Clean Removal
 
-To completely remove Klarity without running the app:
+To completely remove AgenticGlow without running the app:
 
 ```bash
 # Remove integrations
-open -a Klarity.app --args --remove-integrations
+open -a AgenticGlow.app --args --remove-integrations
 
 # Or manually delete the helper directory
-rm -rf ~/Library/Application\ Support/Klarity/bin
+rm -rf ~/Library/Application\ Support/AgenticGlow/bin
 ```
 
-This removes only Klarity-marked hooks and Klarity-owned files. Your provider configurations remain intact.
+This removes only AgenticGlow-marked hooks and AgenticGlow-owned files. Your provider configurations remain intact.

@@ -5,7 +5,7 @@ func temporaryDirectory(
     line: UInt = #line
 ) -> URL {
     let url = FileManager.default.temporaryDirectory
-        .appendingPathComponent("KlarityTests-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("AgenticGlowTests-\(UUID().uuidString)", isDirectory: true)
     do {
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url

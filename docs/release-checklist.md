@@ -1,4 +1,4 @@
-# Klarity Release Checklist
+# AgenticGlow Release Checklist
 
 This checklist must be completed and documented with dated evidence before any release.
 
@@ -7,7 +7,7 @@ This checklist must be completed and documented with dated evidence before any r
 Recorded 2026-06-29 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 
 - Release script syntax checks passed.
-- Release gates intentionally fail while `KLARITY_NAME_CLEARED` remains unset.
+- Release gates intentionally fail while `AGENTICGLOW_NAME_CLEARED` remains unset.
 - The manual release workflow remains gated by repository variables and requires signing/notarization secrets before it can run.
 - Privacy contract verification passed.
 - The standalone installed helper regression passed without a bundled framework dependency.
@@ -17,36 +17,36 @@ Recorded 2026-06-29 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 - Full UI target and full scheme tests passed with `ENABLE_HARDENED_RUNTIME=NO`, the local beta-runner workaround confirmed by triage.
 - Default hardened-runtime UI automation remains a local beta-runner blocker.
 - Cask generation dry-run produced Ruby syntax OK with a dummy local DMG, then the placeholder output was removed.
-- Real `Cask/klarity.rb` generation, signed DMG, notarization, Gatekeeper, Homebrew installation, live-provider, and accessibility checks remain unverified.
+- Real `Cask/agenticglow.rb` generation, signed DMG, notarization, Gatekeeper, Homebrew installation, live-provider, and accessibility checks remain unverified.
 
 Recorded 2026-06-30 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 
 - Full scheme tests passed with `ENABLE_HARDENED_RUNTIME=NO`, the local beta-runner workaround confirmed by triage.
 - Privacy contract verification passed.
 - Release script syntax checks passed.
-- Release gates intentionally fail while `KLARITY_NAME_CLEARED` remains unset.
+- Release gates intentionally fail while `AGENTICGLOW_NAME_CLEARED` remains unset.
 - Unsigned Release build passed with `ARCHS="arm64 x86_64"` and `CODE_SIGNING_ALLOWED=NO`.
 - The unsigned Release app and helper both contain `arm64` and `x86_64` slices.
 - The embedded Release helper ran standalone without a bundled framework dependency.
 - The sanitized Claude and Codex fixture matrix produced two session files and no prohibited decoy text.
-- Preliminary web preflight found active Klarity AI businesses and repositories; this is not trademark clearance and the working name remains blocked for public release.
-- Homebrew's public cask list did not show an exact `klarity` token during preflight, but Cask availability is not brand clearance.
-- Real `Cask/klarity.rb` generation, signed DMG, notarization, Gatekeeper, Homebrew installation, live-provider, and accessibility checks remain unverified.
+- Preliminary practical preflight for AgenticGlow found no obvious exact-name web, GitHub repository, Homebrew cask/formula, Mac App Store, or domain DNS conflicts; this is not formal trademark clearance.
+- Homebrew's public cask list did not show an exact `agenticglow` token during preflight, but Cask availability is not brand clearance.
+- Real `Cask/agenticglow.rb` generation, signed DMG, notarization, Gatekeeper, Homebrew installation, live-provider, and accessibility checks remain unverified.
 
 ## Legal and Branding
 
 - [ ] **Trademark search completed** (date: ________)
-  - Search USPTO for "Klarity" and similar marks
+  - Search USPTO for "AgenticGlow" and similar marks
   - Search App Store for similar app names
   - Document any conflicts or clearance results
-  - Preliminary web preflight found active Klarity AI businesses; formal clearance remains required
+  - Preliminary practical preflight found no obvious exact-name conflict; formal clearance remains required
 
 - [ ] **Marketplace availability confirmed** (date: ________)
-  - GitHub repository available: https://github.com/jwright0180/Klarity
+  - GitHub repository available: https://github.com/jwright0180/AgenticGlow
   - GitHub organization available (if applicable)
-  - Homebrew cask name available: `klarity`
+  - Homebrew cask name available: `agenticglow`
   - Document any conflicts or reservation confirmations
-  - Preliminary Homebrew cask-list preflight found no exact `klarity` token; formal marketplace checks remain required
+  - Preliminary Homebrew cask-list preflight found no exact `agenticglow` token; formal marketplace checks remain required
 
 - [ ] **Domain and social handles secured** (date: ________)
   - Domain decision: ________ (registered or decision not to register)
@@ -69,7 +69,7 @@ Recorded 2026-06-30 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
   - Certificate valid and not expired
   - GitHub secret `DEVELOPER_ID_CERTIFICATE_BASE64` configured for workflow release builds, if using GitHub Actions
   - GitHub secret `DEVELOPER_ID_CERTIFICATE_PASSWORD` configured for workflow release builds, if using GitHub Actions
-  - GitHub secret `KLARITY_RELEASE_KEYCHAIN_PASSWORD` configured for workflow release builds, if using GitHub Actions
+  - GitHub secret `AGENTICGLOW_RELEASE_KEYCHAIN_PASSWORD` configured for workflow release builds, if using GitHub Actions
   - Document certificate name and expiration
 
 - [ ] **Notary profile configured** (date: ________)
@@ -100,7 +100,7 @@ Recorded 2026-06-30 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 
 - [ ] **Homebrew cask verified** (date: ________)
   - Cask formula builds successfully
-  - `brew install --cask klarity` installs correctly
+  - `brew install --cask agenticglow` installs correctly
   - App launches and functions correctly after install
   - Document cask version and test system
 
@@ -109,8 +109,8 @@ Recorded 2026-06-30 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 Before running the release build, set the following environment variables:
 
 ```bash
-export KLARITY_NAME_CLEARED=1
-export KLARITY_RELEASE_BUILD_APPROVED=1
+export AGENTICGLOW_NAME_CLEARED=1
+export AGENTICGLOW_RELEASE_BUILD_APPROVED=1
 export DEVELOPER_ID_APPLICATION="Developer ID Application: Your Name (TEAM_ID)"
 export NOTARY_PROFILE="your-notary-profile"
 ```
