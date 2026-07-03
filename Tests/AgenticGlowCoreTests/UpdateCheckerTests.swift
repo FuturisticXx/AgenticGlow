@@ -2,6 +2,13 @@ import XCTest
 @testable import AgenticGlowCore
 
 final class UpdateCheckerTests: XCTestCase {
+    func testReleaseTransportUsesCurrentRepositoryEndpoint() {
+        XCTAssertEqual(
+            GitHubReleaseTransport.latestReleaseURL.absoluteString,
+            "https://api.github.com/repos/FuturisticXx/AgenticGlow/releases/latest"
+        )
+    }
+
     func testDisabledAutomaticCheckDoesNotStartNetworkRequest() async throws {
         let transport = RecordingUpdateTransport(response: .init(tagName: "v9.9.9", htmlURL: URL(string: "https://example.com")!))
         let checker = GitHubUpdateChecker(transport: transport)

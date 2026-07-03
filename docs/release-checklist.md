@@ -46,10 +46,24 @@ Recorded 2026-07-03 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 - Codex allowance uses the supported local `account/rateLimits/read` RPC through the installed Codex app-server without copying credentials.
 - Claude allowance remains unavailable because Anthropic documents interactive `/usage`, but no supported third-party allowance endpoint or macOS Keychain reuse contract.
 - Accessibility tree and Light appearance were inspected.
-- No push, signing, notarization, DMG publication, GitHub release, Homebrew submission, or public release was completed in this verification pass.
+- Private branch push completed to `https://github.com/FuturisticXx/AgenticGlow` on `codex/klarity-release-baseline`.
+- No signing, notarization, DMG publication, GitHub release, Homebrew submission, or public release was completed.
 - Publication gates remain blocked beginning with `AGENTICGLOW_NAME_CLEARED`.
 - `docs/tasks/repository-consolidation.md` remains untracked and excluded from the release evidence commit by design.
 - Dark appearance was not separately screenshot-tested because the test host ignored forced Dark appearance overrides.
+
+## Current Goal
+
+Prepare AgenticGlow for a private signed release candidate without crossing public-publication gates.
+
+Next unblocked work:
+
+1. Keep the GitHub repo URL consistent across app update checks, generated Homebrew cask output, README links, and release documentation.
+2. Decide whether the private repo remains under `FuturisticXx/AgenticGlow` or moves before public release.
+3. Perform a fresh practical name-clearance screen, then set `AGENTICGLOW_NAME_CLEARED=1` only after explicit approval.
+4. Configure Developer ID signing and notary credentials.
+5. Build and verify a signed, notarized DMG.
+6. Verify Gatekeeper launch, generated Homebrew cask, and release artifact checksums before publication.
 
 ## Legal and Branding
 

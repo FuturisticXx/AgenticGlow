@@ -24,11 +24,12 @@ public protocol UpdateChecking: Sendable {
 }
 
 public struct GitHubReleaseTransport: UpdateTransporting {
+    public static let latestReleaseURL = URL(string: "https://api.github.com/repos/FuturisticXx/AgenticGlow/releases/latest")!
+
     public init() {}
 
     public func latestRelease() async throws -> ReleaseMetadata {
-        let url = URL(string: "https://api.github.com/repos/jwright0180/AgenticGlow/releases/latest")!
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: Self.latestReleaseURL)
         request.setValue("AgenticGlow", forHTTPHeaderField: "User-Agent")
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {

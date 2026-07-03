@@ -15,10 +15,10 @@ cask "agenticglow" do
   version "${version}"
   sha256 "${sha}"
 
-  url "https://github.com/jwright0180/AgenticGlow/releases/download/v#{version}/AgenticGlow-#{version}.dmg"
+  url "https://github.com/FuturisticXx/AgenticGlow/releases/download/v#{version}/AgenticGlow-#{version}.dmg"
   name "AgenticGlow"
   desc "Local Codex and Claude session status for the macOS menu bar"
-  homepage "https://github.com/jwright0180/AgenticGlow"
+  homepage "https://github.com/FuturisticXx/AgenticGlow"
 
   depends_on macos: ">= :sonoma"
   app "AgenticGlow.app"
