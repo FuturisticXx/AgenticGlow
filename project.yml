@@ -137,6 +137,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.ui-tests
         GENERATE_INFOPLIST_FILE: YES
+        ENABLE_HARDENED_RUNTIME: NO
 schemes:
   AgenticGlow:
     build:

@@ -19,7 +19,7 @@ struct StatusPresentation: Equatable {
             color = .systemYellow
             animates = false
         case .usingTool, .thinking:
-            symbolName = "sparkle"
+            symbolName = "circle.hexagongrid"
             let workingSession = resolved.sessions.first {
                 [.usingTool, .thinking].contains($0.phase)
             }
@@ -30,7 +30,7 @@ struct StatusPresentation: Equatable {
                 ? "AgenticGlow, 1 active session"
                 : "AgenticGlow, \(resolved.activeCount) active sessions"
             color = .controlAccentColor
-            animates = false
+            animates = !reduceMotion
         case .completed:
             symbolName = "checkmark.circle.fill"
             title = ""

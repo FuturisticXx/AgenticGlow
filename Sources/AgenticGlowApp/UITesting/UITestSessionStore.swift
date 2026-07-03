@@ -10,7 +10,7 @@ enum UITestFixtureFactory {
 
     static func events(arguments: [String]) -> [NormalizedEvent]? {
         switch name(arguments: arguments) {
-        case "empty", "setup-repair":
+        case "empty", "setup-repair", "allowance-unavailable":
             return []
         case "permission":
             return [

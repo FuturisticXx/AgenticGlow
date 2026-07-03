@@ -33,7 +33,7 @@ brew install --cask agenticglow
 
 ## Privacy
 
-AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks when you manually check for updates or enable automatic update checks.
+AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks and explicit, provider-specific subscription allowance access. Usage access is off by default. Codex allowance uses the installed local Codex app-server, which manages its own sign-in. Claude allowance remains unavailable until Anthropic publishes a supported programmatic interface.
 
 See [docs/privacy.md](docs/privacy.md) for the complete privacy contract.
 

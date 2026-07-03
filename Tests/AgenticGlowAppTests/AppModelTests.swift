@@ -143,6 +143,32 @@ final class AppModelTests: XCTestCase {
         )
     }
 
+    func testProviderUsageCanBeEnabledAndDisabledIndependently() async {
+        let cache = AppModelAllowanceCache()
+        let coordinator = AllowanceRefreshCoordinator(
+            adapters: [AppModelAllowanceAdapter(provider: .codex)],
+            cache: cache
+        )
+        let model = AppModel(
+            store: InMemorySessionStore(events: []),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            allowanceCoordinator: coordinator
+        )
+
+        await model.setUsageEnabled(true, provider: .codex)
+
+        guard case let .available(value, freshness) = model.allowanceState(for: .codex) else {
+            return XCTFail("Expected Codex allowance")
+        }
+        XCTAssertEqual(value.currentPercentLeft, 75)
+        XCTAssertEqual(freshness, .fresh)
+        XCTAssertEqual(model.allowanceState(for: .claude), .off)
+
+        await model.setUsageEnabled(false, provider: .codex)
+        XCTAssertEqual(model.allowanceState(for: .codex), .off)
+    }
+
     func testReduceMotionObserverUpdatesModelAndDisablesActiveAnimation() {
         let center = NotificationCenter()
         var reduceMotionEnabled = false
@@ -165,7 +191,7 @@ final class AppModelTests: XCTestCase {
             reduceMotionEnabled: { reduceMotionEnabled }
         )
         observer.start()
-        XCTAssertFalse(statusPresentation(for: model).animates)
+        XCTAssertTrue(statusPresentation(for: model).animates)
 
         reduceMotionEnabled = true
         center.post(name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
@@ -203,6 +229,28 @@ final class AppModelTests: XCTestCase {
             reduceMotion: model.reduceMotion
         )
     }
+}
+
+private struct AppModelAllowanceAdapter: AllowanceProviding {
+    let provider: AgentProvider
+    func fetch() async throws -> ProviderAllowance {
+        .init(
+            provider: provider,
+            currentWindowLabel: "5h",
+            currentPercentUsed: 25,
+            currentResetAt: nil,
+            weeklyPercentUsed: 10,
+            weeklyResetAt: nil,
+            fetchedAt: Date()
+        )
+    }
+}
+
+private final class AppModelAllowanceCache: AllowanceCaching, @unchecked Sendable {
+    private var values: [AgentProvider: ProviderAllowance] = [:]
+    func save(_ allowance: ProviderAllowance) throws { values[allowance.provider] = allowance }
+    func load(_ provider: AgentProvider) throws -> ProviderAllowance? { values[provider] }
+    func remove(_ provider: AgentProvider) throws { values.removeValue(forKey: provider) }
 }
 
 private final class InMemorySessionStore: SessionStateStoring {

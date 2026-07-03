@@ -1,4 +1,5 @@
 import AppKit
+import Network
 import SwiftUI
 import AgenticGlowCore
 
@@ -7,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var model: AppModel!
     private var statusItemController: StatusItemController!
     private var reduceMotionObserver: ReduceMotionObserver!
+    private var usageAvailabilityObserver: UsageAvailabilityObserver!
     private var setupWindow: NSWindow?
     private var uiTestSessionWindow: NSWindow?
     private var preferences = PreferencesStore()
@@ -22,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         NSApp.setActivationPolicy(.accessory)
+        let fixtureName = UITestFixtureFactory.name(arguments: CommandLine.arguments)
 
         // Check for UI test fixtures
         let store: SessionStateStoring
@@ -34,10 +37,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model = AppModel(
             store: store,
             processMonitor: DarwinProcessMonitor(),
-            activator: SourceApplicationActivator()
+            activator: SourceApplicationActivator(),
+            allowanceCoordinator: makeAllowanceCoordinator(isUITest: fixtureName != nil)
         )
+
+        if fixtureName != nil {
+            let suiteName = "\(ProductMetadata.bundleIdentifier).ui-tests.\(ProcessInfo.processInfo.processIdentifier)"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            defaults.removePersistentDomain(forName: suiteName)
+            if fixtureName == "allowance-unavailable" {
+                defaults.set(true, forKey: "codexUsageEnabled")
+            }
+            configurePreferences(defaults: defaults)
+        } else {
+            configurePreferences(defaults: .standard)
+        }
+
         statusItemController = StatusItemController(
             model: model,
+            preferences: preferences,
             openIntegrations: { [weak self] in self?.showSetupWindow() }
         )
         reduceMotionObserver = ReduceMotionObserver(
@@ -48,17 +66,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
         reduceMotionObserver.start()
+        usageAvailabilityObserver = UsageAvailabilityObserver(model: model)
+        usageAvailabilityObserver.start()
         model.start()
+        Task {
+            await model.setUsageEnabled(preferences.codexUsageEnabled, provider: .codex)
+            await model.setUsageEnabled(preferences.claudeUsageEnabled, provider: .claude)
+        }
 
-        let fixtureName = UITestFixtureFactory.name(arguments: CommandLine.arguments)
-        if fixtureName != nil {
-            let suiteName = "\(ProductMetadata.bundleIdentifier).ui-tests.\(ProcessInfo.processInfo.processIdentifier)"
-            let defaults = UserDefaults(suiteName: suiteName)!
-            defaults.removePersistentDomain(forName: suiteName)
-            configurePreferences(defaults: defaults)
-        } else {
-            let defaults = UserDefaults.standard
-            configurePreferences(defaults: defaults)
+        if fixtureName == nil {
             Task {
                 await updateViewModel.check(
                     manual: false,
@@ -85,6 +101,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.stop()
         statusItemController.stop()
         reduceMotionObserver.stop()
+        usageAvailabilityObserver.stop()
     }
 
     func makeSettingsView() -> some View {
@@ -129,7 +146,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 420),
+            contentRect: NSRect(x: 0, y: 0, width: 360, height: 520),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -139,6 +156,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.contentViewController = NSHostingController(
             rootView: SessionListView(
                 model: model,
+                preferences: preferences,
                 openIntegrations: { [weak self] in self?.showSetupWindow() }
             )
         )
@@ -247,6 +265,91 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         model.showTimer = preferences.showTimer
         updateViewModel = UpdateViewModel(defaults: defaults)
+    }
+
+    private func makeAllowanceCoordinator(isUITest: Bool) -> AllowanceRefreshCoordinator {
+        let base = FileManager.default.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first!
+        let directory = base
+            .appendingPathComponent(ProductMetadata.displayName, isDirectory: true)
+            .appendingPathComponent("Allowance", isDirectory: true)
+        let codexAdapter: any AllowanceProviding
+        if isUITest {
+            codexAdapter = UnavailableAllowanceAdapter(
+                provider: .codex,
+                reason: "Disabled in UI tests."
+            )
+        } else if let executable = ExecutableLocator.locate("codex") {
+            codexAdapter = CodexAllowanceAdapter(
+                requester: CodexAppServerClient(executableURL: executable)
+            )
+        } else {
+            codexAdapter = UnavailableAllowanceAdapter(
+                provider: .codex,
+                reason: "Sign in to the Codex app or CLI first."
+            )
+        }
+        return AllowanceRefreshCoordinator(
+            adapters: [codexAdapter, UnsupportedClaudeAllowanceAdapter()],
+            cache: FileAllowanceCache(directory: directory)
+        )
+    }
+}
+
+@MainActor
+final class UsageAvailabilityObserver: NSObject {
+    private let model: AppModel
+    private let monitor = NWPathMonitor()
+    private let notificationCenter = NSWorkspace.shared.notificationCenter
+    private var asleep = false
+    private var networkAvailable = true
+
+    init(model: AppModel) {
+        self.model = model
+    }
+
+    func start() {
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(willSleep),
+            name: NSWorkspace.willSleepNotification,
+            object: nil
+        )
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(didWake),
+            name: NSWorkspace.didWakeNotification,
+            object: nil
+        )
+        monitor.pathUpdateHandler = { [weak self] path in
+            Task { @MainActor in
+                self?.networkAvailable = path.status == .satisfied
+                self?.apply()
+            }
+        }
+        monitor.start(queue: DispatchQueue(label: "AgenticGlow.NetworkPath"))
+    }
+
+    func stop() {
+        monitor.cancel()
+        notificationCenter.removeObserver(self)
+    }
+
+    @objc private func willSleep() {
+        asleep = true
+        apply()
+    }
+
+    @objc private func didWake() {
+        asleep = false
+        apply()
+    }
+
+    private func apply() {
+        let suspended = asleep || !networkAvailable
+        Task { await model.setUsageSuspended(suspended) }
     }
 }
 

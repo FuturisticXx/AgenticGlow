@@ -18,4 +18,19 @@ final class PreferencesStoreTests: XCTestCase {
         XCTAssertTrue(defaults.bool(forKey: "showTimer"))
         XCTAssertEqual(observedValues, [true])
     }
+
+    func testUsageAccessDefaultsOffAndPersistsPerProvider() {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let preferences = PreferencesStore(defaults: defaults)
+
+        XCTAssertFalse(preferences.codexUsageEnabled)
+        XCTAssertFalse(preferences.claudeUsageEnabled)
+
+        preferences.codexUsageEnabled = true
+
+        XCTAssertTrue(defaults.bool(forKey: "codexUsageEnabled"))
+        XCTAssertFalse(defaults.bool(forKey: "claudeUsageEnabled"))
+    }
 }

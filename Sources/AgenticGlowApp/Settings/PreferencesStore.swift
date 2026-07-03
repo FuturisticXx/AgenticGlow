@@ -18,6 +18,12 @@ final class PreferencesStore {
     var diagnosticsEnabled: Bool {
         didSet { defaults.set(diagnosticsEnabled, forKey: "diagnosticsEnabled") }
     }
+    var codexUsageEnabled: Bool {
+        didSet { defaults.set(codexUsageEnabled, forKey: "codexUsageEnabled") }
+    }
+    var claudeUsageEnabled: Bool {
+        didSet { defaults.set(claudeUsageEnabled, forKey: "claudeUsageEnabled") }
+    }
 
     private let showTimerDidChange: (Bool) -> Void
 
@@ -30,5 +36,7 @@ final class PreferencesStore {
         self.showTimer = defaults.bool(forKey: "showTimer")
         self.automaticUpdateChecks = defaults.bool(forKey: "automaticUpdateChecks")
         self.diagnosticsEnabled = defaults.bool(forKey: "diagnosticsEnabled")
+        self.codexUsageEnabled = defaults.bool(forKey: "codexUsageEnabled")
+        self.claudeUsageEnabled = defaults.bool(forKey: "claudeUsageEnabled")
     }
 }

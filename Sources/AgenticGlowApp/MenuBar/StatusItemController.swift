@@ -1,5 +1,6 @@
 import AppKit
 import Observation
+import Symbols
 import SwiftUI
 
 @MainActor
@@ -7,10 +8,14 @@ final class StatusItemController: NSObject {
     private let model: AppModel
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
-    private var animationTimer: Timer?
+    private let symbolView = NSImageView()
     private var lastPresentation: StatusPresentation?
 
-    init(model: AppModel, openIntegrations: @escaping () -> Void) {
+    init(
+        model: AppModel,
+        preferences: PreferencesStore,
+        openIntegrations: @escaping () -> Void
+    ) {
         self.model = model
         super.init()
 
@@ -19,6 +24,7 @@ final class StatusItemController: NSObject {
         popover.contentViewController = NSHostingController(
             rootView: SessionListView(
                 model: model,
+                preferences: preferences,
                 openIntegrations: openIntegrations
             )
         )
@@ -27,12 +33,22 @@ final class StatusItemController: NSObject {
         item.button?.action = #selector(togglePopover)
         item.button?.identifier = NSUserInterfaceItemIdentifier("AgenticGlow.StatusItem")
         item.button?.setAccessibilityIdentifier("AgenticGlow.StatusItem")
+        if let button = item.button {
+            symbolView.translatesAutoresizingMaskIntoConstraints = false
+            symbolView.imageScaling = .scaleProportionallyDown
+            button.addSubview(symbolView)
+            NSLayoutConstraint.activate([
+                symbolView.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 3),
+                symbolView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+                symbolView.widthAnchor.constraint(equalToConstant: 18),
+                symbolView.heightAnchor.constraint(equalToConstant: 18)
+            ])
+        }
         observeModel()
     }
 
     func stop() {
-        animationTimer?.invalidate()
-        animationTimer = nil
+        symbolView.removeAllSymbolEffects()
     }
 
     @objc private func togglePopover() {
@@ -41,6 +57,7 @@ final class StatusItemController: NSObject {
             popover.performClose(nil)
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            Task { await model.refreshUsage(.popoverOpened) }
         }
     }
 
@@ -66,31 +83,31 @@ final class StatusItemController: NSObject {
             systemSymbolName: presentation.symbolName,
             accessibilityDescription: nil
         )
-        image?.isTemplate = false
-        item.button?.image = image
-        item.button?.contentTintColor = presentation.color
-        item.button?.title = presentation.title.isEmpty ? "" : " \(presentation.title)"
+        image?.isTemplate = true
+        symbolView.image = image
+        symbolView.contentTintColor = presentation.color
+        item.button?.image = nil
+        item.button?.title = presentation.title.isEmpty ? "" : "     \(presentation.title)"
+        item.length = presentation.title.isEmpty ? 24 : NSStatusItem.variableLength
         item.button?.setAccessibilityLabel(presentation.accessibilityLabel)
         configureAnimation(enabled: presentation.animates)
     }
 
     private func configureAnimation(enabled: Bool) {
-        guard enabled else {
-            animationTimer?.invalidate()
-            animationTimer = nil
-            item.button?.alphaValue = 1
-            return
+        symbolView.removeAllSymbolEffects()
+        if enabled, #available(macOS 15.0, *) {
+            let effect: RotateSymbolEffect = .rotate
+            addIndefiniteEffect(
+                effect,
+                options: .repeating.speed(0.25)
+            )
         }
-        guard animationTimer == nil else { return }
+    }
 
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 0.55, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let button = self?.item.button else { return }
-                NSAnimationContext.runAnimationGroup { context in
-                    context.duration = 0.25
-                    button.animator().alphaValue = button.alphaValue < 1 ? 1 : 0.55
-                }
-            }
-        }
+    private func addIndefiniteEffect<Effect>(
+        _ effect: Effect,
+        options: SymbolEffectOptions
+    ) where Effect: IndefiniteSymbolEffect & SymbolEffect {
+        symbolView.addSymbolEffect(effect, options: options)
     }
 }

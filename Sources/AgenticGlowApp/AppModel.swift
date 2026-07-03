@@ -14,9 +14,11 @@ final class AppModel {
     private let store: SessionStateStoring
     private let processMonitor: ProcessMonitoring
     private let activator: ApplicationActivating
+    private let allowanceCoordinator: AllowanceRefreshCoordinator?
     private let now: () -> Date
     private var timer: Timer?
     private var resolutionMemory = ResolutionMemory()
+    private var allowanceStates: [AgentProvider: AllowanceAvailability] = [:]
 
     private(set) var resolved: ResolvedSessions
     private(set) var storeErrorDescription: String?
@@ -34,11 +36,13 @@ final class AppModel {
         store: SessionStateStoring,
         processMonitor: ProcessMonitoring,
         activator: ApplicationActivating,
+        allowanceCoordinator: AllowanceRefreshCoordinator? = nil,
         now: @escaping () -> Date = Date.init
     ) {
         self.store = store
         self.processMonitor = processMonitor
         self.activator = activator
+        self.allowanceCoordinator = allowanceCoordinator
         self.now = now
         reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         showTimer = UserDefaults.standard.bool(forKey: "showTimer")
@@ -54,7 +58,7 @@ final class AppModel {
     func start() {
         stop()
         refresh()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.refresh()
             }
@@ -67,6 +71,7 @@ final class AppModel {
     }
 
     func refresh() {
+        let previousPhases = Dictionary(uniqueKeysWithValues: resolved.sessions.map { ($0.id, $0.phase) })
         let events: [NormalizedEvent]
         do {
             events = try store.loadAll()
@@ -101,9 +106,52 @@ final class AppModel {
                 processMonitor.isAlive(processID: processID, startedAt: startedAt)
             }
         )
+        if resolved.sessions.contains(where: {
+            $0.phase == .completed && previousPhases[$0.id] != .completed
+        }) {
+            Task { [weak self] in
+                try? await Task.sleep(for: .seconds(AllowanceRefreshPolicy.turnCompletionDebounce))
+                await self?.refreshUsage(.turnCompleted)
+            }
+        } else if [.thinking, .usingTool].contains(resolved.dominantPhase) {
+            Task { [weak self] in await self?.refreshUsage(.working) }
+        } else if resolved.dominantPhase == .idle {
+            Task { [weak self] in await self?.refreshUsage(.idle) }
+        }
     }
 
     func activate(_ session: SessionSnapshot) {
         activator.activate(bundleIdentifier: session.sourceBundleID)
+    }
+
+    func allowanceState(for provider: AgentProvider) -> AllowanceAvailability {
+        allowanceStates[provider] ?? .off
+    }
+
+    func setUsageEnabled(_ enabled: Bool, provider: AgentProvider) async {
+        guard let allowanceCoordinator else { return }
+        await allowanceCoordinator.setEnabled(enabled, provider: provider)
+        await syncAllowanceStates()
+    }
+
+    func refreshUsage(_ reason: AllowanceRefreshReason = .manual) async {
+        guard let allowanceCoordinator else { return }
+        await allowanceCoordinator.refresh(reason)
+        await syncAllowanceStates()
+    }
+
+    func setUsageSuspended(_ suspended: Bool) async {
+        guard let allowanceCoordinator else { return }
+        await allowanceCoordinator.setSuspended(suspended)
+        if !suspended {
+            await refreshUsage(.popoverOpened)
+        }
+    }
+
+    private func syncAllowanceStates() async {
+        guard let allowanceCoordinator else { return }
+        for provider in AgentProvider.allCases {
+            allowanceStates[provider] = await allowanceCoordinator.state(for: provider)
+        }
     }
 }

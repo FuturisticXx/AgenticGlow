@@ -16,6 +16,15 @@ for field in "${required_fields[@]}"; do
   rg -q "\\b${field}\\b" "$privacy"
 done
 
+if rg -n 'accessToken|refreshToken|authorizationHeader|OPENAI_API_KEY|ANTHROPIC_API_KEY' \
+  Sources/AgenticGlowCore/Allowance Sources/AgenticGlowApp/MenuBar; then
+  echo "Forbidden credential material in allowance implementation" >&2
+  exit 1
+fi
+
+rg -q 'No provider requests are being made' Sources/AgenticGlowApp/MenuBar/AllowanceSectionView.swift
+rg -Fq 'cache.remove(provider)' Sources/AgenticGlowCore/Allowance/AllowanceRefreshCoordinator.swift
+
 for forbidden in prompt assistantMessage command toolInput toolResponse transcriptContents; do
   if rg -q "public let ${forbidden}|public var ${forbidden}" "$schema"; then
     echo "Forbidden stored field: ${forbidden}" >&2

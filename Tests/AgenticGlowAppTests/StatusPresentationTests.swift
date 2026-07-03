@@ -28,7 +28,8 @@ final class StatusPresentationTests: XCTestCase {
         )
 
         XCTAssertEqual(presentation.title, "1m")
-        XCTAssertFalse(presentation.animates)
+        XCTAssertEqual(presentation.symbolName, "circle.hexagongrid")
+        XCTAssertTrue(presentation.animates)
 
         let later = StatusPresentation(
             resolved: resolved(phase: .thinking, elapsedSeconds: 66),
@@ -51,6 +52,7 @@ final class StatusPresentationTests: XCTestCase {
         )
 
         XCTAssertEqual(early.title, "")
+        XCTAssertTrue(early.animates)
         XCTAssertEqual(later, early)
     }
 
