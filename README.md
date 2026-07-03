@@ -14,9 +14,12 @@ AgenticGlow is a local macOS menu bar app that shows the status of your AI codin
 
 ## Installation
 
+No public release has been published yet. The commands below apply after the
+first signed and notarized release is available.
+
 ### DMG
 
-Download the latest DMG from the [Releases](https://github.com/jwright0180/AgenticGlow/releases) page and drag AgenticGlow to your Applications folder.
+Download the latest DMG from the [Releases](https://github.com/FuturisticXx/AgenticGlow/releases) page and drag AgenticGlow to your Applications folder.
 
 ### Homebrew
 

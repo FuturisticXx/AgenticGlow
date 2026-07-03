@@ -33,6 +33,24 @@ Recorded 2026-06-30 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 - Homebrew's public cask list did not show an exact `agenticglow` token during preflight, but Cask availability is not brand clearance.
 - Real `Cask/agenticglow.rb` generation, signed DMG, notarization, Gatekeeper, Homebrew installation, live-provider, and accessibility checks remain unverified.
 
+Recorded 2026-07-03 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
+
+- Latest implementation commit: `c2ca966` (`feat: add private provider allowance menu`).
+- Full unit and UI test suite passed.
+- Universal `arm64` and `x86_64` Release build passed.
+- Privacy and standalone-helper checks passed.
+- Working CPU averaged 0.223 percent; memory was approximately 100 MB.
+- XcodeGen regeneration was deterministic.
+- No provider allowance requests occur before explicit user opt-in.
+- Disabling provider allowance clears the cache and discards in-flight results.
+- Codex allowance uses the supported local `account/rateLimits/read` RPC through the installed Codex app-server without copying credentials.
+- Claude allowance remains unavailable because Anthropic documents interactive `/usage`, but no supported third-party allowance endpoint or macOS Keychain reuse contract.
+- Accessibility tree and Light appearance were inspected.
+- No push, signing, notarization, DMG publication, GitHub release, Homebrew submission, or public release was completed in this verification pass.
+- Publication gates remain blocked beginning with `AGENTICGLOW_NAME_CLEARED`.
+- `docs/tasks/repository-consolidation.md` remains untracked and excluded from the release evidence commit by design.
+- Dark appearance was not separately screenshot-tested because the test host ignored forced Dark appearance overrides.
+
 ## Legal and Branding
 
 - [ ] **Trademark search completed** (date: ________)
@@ -42,7 +60,7 @@ Recorded 2026-06-30 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
   - Preliminary practical preflight found no obvious exact-name conflict; formal clearance remains required
 
 - [ ] **Marketplace availability confirmed** (date: ________)
-  - GitHub repository available: https://github.com/jwright0180/AgenticGlow
+  - GitHub repository available: https://github.com/FuturisticXx/AgenticGlow
   - GitHub organization available (if applicable)
   - Homebrew cask name available: `agenticglow`
   - Document any conflicts or reservation confirmations
@@ -78,19 +96,26 @@ Recorded 2026-06-30 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
   - GitHub secrets `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_SPECIFIC_PASSWORD` configured for workflow release builds, if using GitHub Actions
   - Document profile name
 
-- [x] **Privacy review completed** (date: 2026-06-30)
+- [x] **Privacy review completed** (date: 2026-07-03)
   - `Scripts/verify-privacy.sh` passes
   - Privacy contract in `docs/privacy.md` reviewed
   - No sensitive data stored or transmitted by the app itself; opt-in update checks contact GitHub Releases only
+  - Provider allowance access remains opt-in, and Codex allowance is mediated by the installed Codex app-server
   - Findings: passed automated privacy contract verification
 
-- [ ] **Accessibility review completed** (date: ________)
+- [ ] **Accessibility review completed** (date: partial 2026-07-03)
   - VoiceOver navigation tested
   - Reduce motion preference respected
   - Timer text hidden from accessibility
   - Document accessibility test results
+  - Partial evidence: accessibility tree and Light appearance inspected; separate Dark appearance screenshot remains unverified
 
 ## Build Verification
+
+- [x] **Unsigned universal Release build verified** (date: 2026-07-03)
+  - Release build passed for `arm64` and `x86_64`
+  - Code signing disabled for local verification
+  - This does not replace signed DMG, notarization, or Gatekeeper verification
 
 - [ ] **DMG build verified** (date: ________)
   - DMG builds successfully with code signing
