@@ -70,6 +70,8 @@ Fresh release-readiness preflight recorded 2026-07-03:
 - macOS 27 reports `hdiutil` image creation and attachment as deprecated. The release scripts retain it for compatibility with the macOS 14 deployment floor and `macos-15` GitHub runner until the replacement is verified there.
 - A signed universal 0.1.0 app and DMG passed strict code-signature checks. Apple accepted notarization submission `ea62125b-5c96-4b32-8692-4d8f53c14d77`; the ticket was stapled and validated, and Gatekeeper accepted both artifacts as `Notarized Developer ID` software.
 - The generated DMG SHA-256 is `a04e076aa62f7617d116015d1a8b7af02207c342f5867ba34cf11b1e9dfcf51f`. The generated `Cask/agenticglow.rb` contains that checksum and passes Ruby syntax validation.
+- Private GitHub Actions run `28712769421` passed the full release-candidate workflow and uploaded artifact `AgenticGlow-0.1.0-private-rc` (artifact ID `8083510400`).
+- The downloaded CI artifact DMG SHA-256 is `d9e87b13353c6d9bacae2a431cdb89801026b7ee148a86b626c338e44572b038`; its generated cask contains the same checksum, and local post-download signature, stapler, and Gatekeeper checks passed.
 - No GitHub release, Homebrew installation, or public publication was performed.
 
 ## Current Goal
@@ -78,8 +80,7 @@ Prepare AgenticGlow for a private signed release candidate without crossing publ
 
 Next unblocked work:
 
-1. Run the private GitHub Actions release-candidate workflow.
-2. Verify a clean-system install and Homebrew installation before any publication decision.
+1. Verify a clean-system install and Homebrew installation before any publication decision.
 
 ## Legal and Branding
 
