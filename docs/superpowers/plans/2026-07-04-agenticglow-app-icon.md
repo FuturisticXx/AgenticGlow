@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Implement the exact A. Unified Spectrum design in `docs/superpowers/specs/2026-07-04-agenticglow-app-icon-design.md`.
-- Keep the centered blue ring and short slanted blue-amber-green signal.
+- Keep the centered blue ring and short horizontal segmented blue-amber-green signal.
 - Do not add glass, a waveform, orbit, status dots, ring-grid, text, or legacy radial blades.
 - Do not change menu-bar symbols, interface layout, or product behavior.
 - Preserve the untracked `docs/tasks/` directory and unrelated worktree content.
@@ -66,17 +66,16 @@ Create `Scripts/generate-app-icon.swift` using these locked values:
 let canvasSize: CGFloat = 1024
 let tileRect = CGRect(x: 32, y: 32, width: 960, height: 960)
 let tileRadius: CGFloat = 218
-let ringRect = CGRect(x: 271, y: 271, width: 482, height: 482)
+let ringRect = CGRect(x: 289, y: 289, width: 446, height: 446)
 let ringWidth: CGFloat = 58
-let signalRect = CGRect(x: 350, y: 483, width: 324, height: 58)
-let signalRotation = -8.0 * .pi / 180.0
+let signalRect = CGRect(x: 334, y: 479, width: 356, height: 66)
 
-let workingBlue = NSColor(srgbRed: 0.333, green: 0.667, blue: 1.000, alpha: 1)
-let attentionAmber = NSColor(srgbRed: 1.000, green: 0.698, blue: 0.200, alpha: 1)
-let completedGreen = NSColor(srgbRed: 0.208, green: 0.804, blue: 0.455, alpha: 1)
+let workingBlue = NSColor(srgbRed: 0.416, green: 0.663, blue: 0.984, alpha: 1)
+let attentionAmber = NSColor(srgbRed: 0.957, green: 0.710, blue: 0.271, alpha: 1)
+let completedGreen = NSColor(srgbRed: 0.400, green: 0.788, blue: 0.478, alpha: 1)
 ```
 
-Draw only: transparent canvas, deep-neutral tile, restrained three-color edge light, crisp blue ring, and one rounded signal bar filled blue to amber to green. Encode a 1024-pixel PNG to the first command-line argument.
+Draw only: transparent canvas, deep-neutral tile, blue upper-left halo, amber upper-right halo, green lower-left halo, crisp blue ring, and one horizontal rounded capsule clipped into a long blue leading region, angled amber middle region, and green trailing region. Encode a 1024-pixel PNG to the first command-line argument.
 
 - [ ] **Step 4: Generate the raster set**
 
