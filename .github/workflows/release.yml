@@ -17,7 +17,7 @@ jobs:
       NOTARY_PROFILE: agenticglow-notary
     steps:
       - uses: actions/checkout@v4
-      - run: brew install xcodegen
+      - run: brew install ripgrep xcodegen
       - name: Configure signing and notarization
         env:
           CERTIFICATE_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_BASE64 }}
