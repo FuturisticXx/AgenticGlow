@@ -52,18 +52,34 @@ Recorded 2026-07-03 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 - `docs/tasks/repository-consolidation.md` remains untracked and excluded from the release evidence commit by design.
 - Dark appearance was not separately screenshot-tested because the test host ignored forced Dark appearance overrides.
 
+Fresh release-readiness preflight recorded 2026-07-03:
+
+- Repository, update-check, README, generated-cask, and release-checklist URLs consistently use `https://github.com/FuturisticXx/AgenticGlow`.
+- Exact-name searches found no public GitHub repository, Homebrew formula or cask, or US Mac App Store listing named AgenticGlow.
+- Similar branding remains relevant: an existing product at `getglow.ai` markets agentic AI workflows under the name Glow.
+- `agenticglow.com` is registered to another party and resolves to a minimal holding page; it was created 2026-04-09.
+- Registry checks returned no current registration record for `agenticglow.app` or `agenticglow.dev`; `agenticglow.io` appeared unregistered. Availability must be confirmed with a registrar immediately before purchase.
+- Exact profile URLs for AgenticGlow returned not found on GitHub, X, and Mastodon, but no handles were reserved.
+- This practical screen is not formal trademark clearance. On 2026-07-03, the owner explicitly approved AgenticGlow as the release name and accepted the documented practical risks.
+- GitHub repository variables `AGENTICGLOW_NAME_CLEARED=1` and `AGENTICGLOW_RELEASE_BUILD_APPROVED=1` were configured for the private release-candidate workflow. `AGENTICGLOW_PUBLICATION_APPROVED` remains unset.
+- The login Keychain contains a valid `Developer ID Application: John Wright (Z52AX2BH7T)` identity, and notary profile `agenticglow-notary` is validated and saved.
+- The private release-candidate workflow now requires name clearance and release-build approval, but not public-publication approval; it only uploads a private Actions artifact.
+- The required private release variables, Apple notarization secrets, and Developer ID certificate-export secrets are configured in GitHub Actions.
+- A fresh unsigned universal Release build and temporary DMG packaging preflight passed; the mounted image contained the app and Applications link, and the generated cask passed Ruby syntax and exact-checksum verification.
+- Bundle inspection confirmed version 0.1.0, bundle identifier `com.twodamax.agenticglow`, macOS 14.0 minimum, hardened runtime enabled for Release, an empty entitlement set, no embedded third-party frameworks, and universal app and standalone-helper executables.
+- macOS 27 reports `hdiutil` image creation and attachment as deprecated. The release scripts retain it for compatibility with the macOS 14 deployment floor and `macos-15` GitHub runner until the replacement is verified there.
+- A signed universal 0.1.0 app and DMG passed strict code-signature checks. Apple accepted notarization submission `ea62125b-5c96-4b32-8692-4d8f53c14d77`; the ticket was stapled and validated, and Gatekeeper accepted both artifacts as `Notarized Developer ID` software.
+- The generated DMG SHA-256 is `a04e076aa62f7617d116015d1a8b7af02207c342f5867ba34cf11b1e9dfcf51f`. The generated `Cask/agenticglow.rb` contains that checksum and passes Ruby syntax validation.
+- No GitHub release, Homebrew installation, or public publication was performed.
+
 ## Current Goal
 
 Prepare AgenticGlow for a private signed release candidate without crossing public-publication gates.
 
 Next unblocked work:
 
-1. Keep the GitHub repo URL consistent across app update checks, generated Homebrew cask output, README links, and release documentation.
-2. Decide whether the private repo remains under `FuturisticXx/AgenticGlow` or moves before public release.
-3. Perform a fresh practical name-clearance screen, then set `AGENTICGLOW_NAME_CLEARED=1` only after explicit approval.
-4. Configure Developer ID signing and notary credentials.
-5. Build and verify a signed, notarized DMG.
-6. Verify Gatekeeper launch, generated Homebrew cask, and release artifact checksums before publication.
+1. Run the private GitHub Actions release-candidate workflow.
+2. Verify a clean-system install and Homebrew installation before any publication decision.
 
 ## Legal and Branding
 
@@ -71,7 +87,7 @@ Next unblocked work:
   - Search USPTO for "AgenticGlow" and similar marks
   - Search App Store for similar app names
   - Document any conflicts or clearance results
-  - Preliminary practical preflight found no obvious exact-name conflict; formal clearance remains required
+  - 2026-07-03 practical screen found no exact-name listing, but similar Glow branding exists in agentic AI software; formal clearance remains required
 
 - [ ] **Marketplace availability confirmed** (date: ________)
   - GitHub repository available: https://github.com/FuturisticXx/AgenticGlow
@@ -85,6 +101,7 @@ Next unblocked work:
   - Twitter/X handle: ________
   - Mastodon handle: ________
   - Document handle availability or reservation
+  - 2026-07-03 preflight: `.com` is registered to another party; `.app`, `.dev`, and `.io` had no confirmed registration; no social handles were reserved
 
 ## User Approval
 
@@ -93,22 +110,28 @@ Next unblocked work:
   - User has approved the version number
   - User has approved the release notes
   - Document approval method (email, chat, etc.)
+  - 2026-07-03 chat approval covers the AgenticGlow name and private release-candidate build only; public publication remains unapproved
 
 ## Technical Requirements
 
-- [ ] **Developer ID signing identity configured** (date: ________)
+- [x] **Developer ID signing identity configured locally** (date: 2026-07-03)
   - `DEVELOPER_ID_APPLICATION` environment variable set
   - Certificate valid and not expired
   - GitHub secret `DEVELOPER_ID_CERTIFICATE_BASE64` configured for workflow release builds, if using GitHub Actions
   - GitHub secret `DEVELOPER_ID_CERTIFICATE_PASSWORD` configured for workflow release builds, if using GitHub Actions
   - GitHub secret `AGENTICGLOW_RELEASE_KEYCHAIN_PASSWORD` configured for workflow release builds, if using GitHub Actions
-  - Document certificate name and expiration
+  - Certificate: `Developer ID Application: John Wright (Z52AX2BH7T)`
+  - SHA-256 fingerprint: `E8:1A:DD:DB:DF:1F:B1:FC:5C:49:EB:04:62:0B:37:4A:8F:CB:B3:75:15:19:9A:0D:DE:11:26:11:8E:49:45:60`
+  - Valid from 2026-07-03 23:58:58 CDT through 2031-07-04 23:58:57 CDT
+  - GitHub certificate export secrets configured 2026-07-04
 
-- [ ] **Notary profile configured** (date: ________)
+- [x] **Notary profile configured** (date: 2026-07-04)
   - `NOTARY_PROFILE` environment variable set
   - Apple Developer notary service access confirmed
   - GitHub secrets `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_SPECIFIC_PASSWORD` configured for workflow release builds, if using GitHub Actions
-  - Document profile name
+  - Profile: `agenticglow-notary`
+  - `notarytool history` authenticated successfully
+  - GitHub secrets `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_SPECIFIC_PASSWORD` configured
 
 - [x] **Privacy review completed** (date: 2026-07-03)
   - `Scripts/verify-privacy.sh` passes
@@ -131,17 +154,21 @@ Next unblocked work:
   - Code signing disabled for local verification
   - This does not replace signed DMG, notarization, or Gatekeeper verification
 
-- [ ] **DMG build verified** (date: ________)
+- [x] **Signed and notarized DMG build verified locally** (date: 2026-07-04)
   - DMG builds successfully with code signing
   - DMG installs correctly on clean macOS 14.0+ system
   - App launches and functions correctly
-  - Document build version and test system
+  - Version 0.1.0 built as universal `arm64` and `x86_64`
+  - Notarization submission `ea62125b-5c96-4b32-8692-4d8f53c14d77` accepted
+  - Stapler validation and Gatekeeper assessment passed for the app and DMG
+  - Clean-system installation and launch remain pending
 
 - [ ] **Homebrew cask verified** (date: ________)
   - Cask formula builds successfully
   - `brew install --cask agenticglow` installs correctly
   - App launches and functions correctly after install
   - Document cask version and test system
+  - 2026-07-04: generated cask version 0.1.0 passes Ruby syntax and contains the verified DMG SHA-256; installation remains blocked until a release URL exists
 
 ## Release Gates
 

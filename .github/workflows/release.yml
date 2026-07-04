@@ -1,4 +1,4 @@
-name: Release
+name: Private Release Candidate
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   package:
-    if: ${{ vars.AGENTICGLOW_PUBLICATION_APPROVED == '1' && vars.AGENTICGLOW_NAME_CLEARED == '1' && vars.AGENTICGLOW_RELEASE_BUILD_APPROVED == '1' }}
+    if: ${{ vars.AGENTICGLOW_NAME_CLEARED == '1' && vars.AGENTICGLOW_RELEASE_BUILD_APPROVED == '1' }}
     runs-on: macos-15
     env:
       AGENTICGLOW_NAME_CLEARED: ${{ vars.AGENTICGLOW_NAME_CLEARED }}
