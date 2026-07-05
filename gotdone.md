@@ -1,5 +1,15 @@
 # Got done
 
+## 2026-07-04 — Standalone repository consolidation
+
+- Replaced the linked AgenticGlow worktree with a self-contained repository at the same canonical path.
+- Archived superseded Task 9 source and tests on local branch `archive/task-9-superseded` at commit `77fe3bb` without merging it into `main`.
+- Preserved the old Devin work as a verified binary patch, a separate source archive, and local recovery branch `archive/devin-task-11-base`.
+- Created and verified a complete all-refs Git bundle at `/Volumes/Liquid/AgenticGlow-Migration-Backup/AgenticGlow-all.bundle`.
+- Removed the obsolete `AgenticGlow-task9`, `AgenticGlow-linked-backup`, and `AgenticGlow-devin-task-11` directories after all recovery gates passed.
+- Verified deterministic project generation, 151 tests with 0 failures, privacy and standalone-helper checks, icon assets, legacy-name removal, and universal `x86_64 arm64` Release binaries.
+- Kept the canonical repository on local `main`; no push, merge, tag, notarization, publication, or release occurred during consolidation.
+
 ## 2026-07-04 — Approved app icon, private release candidate, and canonical main
 
 - Replaced the rejected application artwork with the approved Unified Spectrum icon while preserving the existing monochrome menu-bar symbol.

@@ -1,6 +1,6 @@
 # AgenticGlow Repository Consolidation
 
-Status: In progress — canonical repository frozen for consolidation
+Status: Complete — standalone canonical repository verified 2026-07-04
 
 ## Goal
 
@@ -39,29 +39,29 @@ Neither historical worktree should be moved inside the canonical AgenticGlow dir
 
 ## Hard constraints
 
-- [ ] Do not begin while an AgenticGlow coding thread, Xcode build, test process, or app process is writing repository files.
-- [ ] Do not delete a dirty worktree before its required backup is verified.
-- [ ] Do not move either historical worktree inside the canonical repository.
-- [ ] Do not merge archived work into the canonical branch.
-- [ ] Do not push, publish, tag, release, notarize, or change publication gates.
-- [ ] Do not copy credentials, Keychain data, DerivedData, build products, or other generated artifacts into an archive commit.
-- [ ] Keep rollback possible until the new standalone repository passes every verification gate.
+- [x] Do not begin while an AgenticGlow coding thread, Xcode build, test process, or app process is writing repository files.
+- [x] Do not delete a dirty worktree before its required backup is verified.
+- [x] Do not move either historical worktree inside the canonical repository.
+- [x] Do not merge archived work into the canonical branch.
+- [x] Do not push, publish, tag, release, notarize, or change publication gates.
+- [x] Do not copy credentials, Keychain data, DerivedData, build products, or other generated artifacts into an archive commit.
+- [x] Keep rollback possible until the new standalone repository passes every verification gate.
 
 ## Phase 1: Finish and freeze active AgenticGlow work
 
-- [ ] Let the active AgenticGlow implementation goal finish.
-- [ ] Confirm its intended changes are committed locally.
-- [ ] Confirm the canonical worktree is clean.
-- [ ] Record the canonical branch and commit:
+- [x] Let the active AgenticGlow implementation goal finish.
+- [x] Confirm its intended changes are committed locally.
+- [x] Confirm the canonical worktree is clean.
+- [x] Record the canonical branch and commit:
 
 ```bash
 git -C "/Volumes/Liquid/2DaMax Development/AgenticGlow" status --short --branch
 git -C "/Volumes/Liquid/2DaMax Development/AgenticGlow" rev-parse HEAD
 ```
 
-- [ ] Run the project’s complete verification ladder before migration.
-- [ ] Pause all Codex threads working in the repository.
-- [ ] Close Xcode and stop any AgenticGlow build, test, or app process.
+- [x] Run the project’s complete verification ladder before migration.
+- [x] Pause all Codex threads working in the repository.
+- [x] Close Xcode and stop any AgenticGlow build, test, or app process.
 
 Verify:
 
@@ -72,8 +72,8 @@ Verify:
 
 ## Phase 2: Record repository and worktree state
 
-- [ ] Record all registered worktrees, branches, commit hashes, remotes, and tags.
-- [ ] Save dirty-file inventories for both historical worktrees.
+- [x] Record all registered worktrees, branches, commit hashes, remotes, and tags.
+- [x] Save dirty-file inventories for both historical worktrees.
 
 ```bash
 git -C "/Volumes/Liquid/2DaMax Development/AgenticGlow" worktree list --porcelain
@@ -91,17 +91,17 @@ Verify:
 
 ## Phase 3: Archive meaningful Task 9 work
 
-- [ ] Review every changed and untracked Task 9 source/test file.
-- [ ] Remove only generated AppleDouble sidecars, DerivedData, and build outputs.
-- [ ] Confirm the archive contains no secret, credential, cache, or user data.
-- [ ] Stage only meaningful source, tests, and project configuration.
-- [ ] Inspect the staged diff and create one archive-only commit:
+- [x] Review every changed and untracked Task 9 source/test file.
+- [x] Remove only generated AppleDouble sidecars, DerivedData, and build outputs.
+- [x] Confirm the archive contains no secret, credential, cache, or user data.
+- [x] Stage only meaningful source, tests, and project configuration.
+- [x] Inspect the staged diff and create one archive-only commit:
 
 ```text
 archive: preserve superseded task 9 work
 ```
 
-- [ ] Do not merge this commit into the canonical AgenticGlow branch.
+- [x] Do not merge this commit into the canonical AgenticGlow branch.
 
 Verify:
 
@@ -112,11 +112,11 @@ Verify:
 
 ## Phase 4: Back up the redundant Devin work
 
-- [ ] Export a binary patch of tracked Devin changes.
-- [ ] Archive any untracked source files separately.
-- [ ] Exclude DerivedData, build products, caches, and AppleDouble files.
-- [ ] Record the branch, base commit, and creation date beside the backup.
-- [ ] Do not create a redundant product commit from this dirty rename.
+- [x] Export a binary patch of tracked Devin changes.
+- [x] Archive any untracked source files separately.
+- [x] Exclude DerivedData, build products, caches, and AppleDouble files.
+- [x] Record the branch, base commit, and creation date beside the backup.
+- [x] Do not create a redundant product commit from this dirty rename.
 
 Suggested backup directory:
 
@@ -130,9 +130,9 @@ Verify:
 
 ## Phase 5: Create a complete Git bundle
 
-- [ ] Create a migration-backup directory outside all worktrees.
-- [ ] Create a bundle containing every branch and tag.
-- [ ] Verify the bundle and record its SHA-256 checksum.
+- [x] Create a migration-backup directory outside all worktrees.
+- [x] Create a bundle containing every branch and tag.
+- [x] Verify the bundle and record its SHA-256 checksum.
 
 Suggested artifact:
 
@@ -157,13 +157,13 @@ Verify:
 
 ## Phase 6: Build a standalone replacement repository
 
-- [ ] Create a temporary sibling clone from the verified bundle or existing repository:
+- [x] Create a temporary sibling clone from the verified bundle or existing repository:
 
 `/Volumes/Liquid/2DaMax Development/.AgenticGlow-migration`
 
-- [ ] Check out the canonical AgenticGlow branch.
-- [ ] Restore the original remote configuration. Do not leave the old local repository path as the permanent `origin`.
-- [ ] Confirm `.git` is a real directory, not a linked-worktree pointer file.
+- [x] Check out the canonical AgenticGlow branch.
+- [x] Restore the original remote configuration. Do not leave the old local repository path as the permanent `origin`.
+- [x] Confirm `.git` is a real directory, not a linked-worktree pointer file.
 
 Verify:
 
@@ -184,33 +184,33 @@ git -C "/Volumes/Liquid/2DaMax Development/.AgenticGlow-migration" remote -v
 
 Run the full project verification ladder in `.AgenticGlow-migration`:
 
-- [ ] Generate the Xcode project twice and prove byte-stable output.
-- [ ] Run the complete test suite, including UI tests.
-- [ ] Run the privacy verifier.
-- [ ] Run the standalone-helper verifier.
-- [ ] Build the universal Release app.
-- [ ] Confirm both app and helper contain `arm64` and `x86_64`.
-- [ ] Run the legacy-name scan required by the current project.
-- [ ] Confirm Git status remains clean.
+- [x] Generate the Xcode project twice and prove byte-stable output.
+- [x] Run the complete test suite, including UI tests.
+- [x] Run the privacy verifier.
+- [x] Run the standalone-helper verifier.
+- [x] Build the universal Release app.
+- [x] Confirm both app and helper contain `arm64` and `x86_64`.
+- [x] Run the legacy-name scan required by the current project.
+- [x] Confirm Git status remains clean.
 
 Stop the migration if the standalone clone differs from the frozen canonical repository or any gate fails.
 
 ## Phase 8: Perform the atomic directory swap
 
-- [ ] Reconfirm all AgenticGlow threads and processes are paused.
-- [ ] Rename the current linked worktree:
+- [x] Reconfirm all AgenticGlow threads and processes are paused.
+- [x] Rename the current linked worktree:
 
 ```text
 AgenticGlow → AgenticGlow-linked-backup
 ```
 
-- [ ] Rename the verified standalone clone:
+- [x] Rename the verified standalone clone:
 
 ```text
 .AgenticGlow-migration → AgenticGlow
 ```
 
-- [ ] Do not delete the linked backup yet.
+- [x] Do not delete the linked backup yet.
 
 Verify:
 
@@ -230,10 +230,10 @@ If verification fails, rename the new directory back to `.AgenticGlow-migration`
 
 Only proceed after the standalone repository passes Phase 8.
 
-- [ ] Use the old repository administration directory to unregister `AgenticGlow-linked-backup` cleanly.
-- [ ] Unregister `AgenticGlow-task9` after confirming its archive commit and bundle backup.
-- [ ] Prune stale worktree registrations.
-- [ ] Do not use raw Finder deletion before Git unregisters linked worktrees.
+- [x] Use the old repository administration directory to unregister `AgenticGlow-linked-backup` cleanly.
+- [x] Unregister `AgenticGlow-task9` after confirming its archive commit and bundle backup.
+- [x] Prune stale worktree registrations.
+- [x] Do not use raw Finder deletion before Git unregisters linked worktrees.
 
 Verify:
 
@@ -243,10 +243,10 @@ Verify:
 
 ## Phase 10: Retire the old Devin repository
 
-- [ ] Reverify the Devin patch and untracked-source archive.
-- [ ] Reverify the complete Git bundle.
-- [ ] Confirm the standalone repository has the canonical branch and required historical refs.
-- [ ] Remove `AgenticGlow-devin-task-11` only after all linked worktrees have been unregistered.
+- [x] Reverify the Devin patch and untracked-source archive.
+- [x] Reverify the complete Git bundle.
+- [x] Confirm the standalone repository has the canonical branch and required historical refs.
+- [x] Remove `AgenticGlow-devin-task-11` only after all linked worktrees have been unregistered.
 
 Verify:
 
@@ -256,27 +256,43 @@ Verify:
 
 ## Phase 11: Final cleanup
 
-- [ ] Confirm the only active visible product repository is:
+- [x] Confirm the only active visible product repository is:
 
 `/Volumes/Liquid/2DaMax Development/AgenticGlow`
 
-- [ ] Remove obsolete generated build directories.
-- [ ] Update the Codex saved project to the canonical path.
-- [ ] Update local scripts, shortcuts, and workspace references containing retired paths.
-- [ ] Resume the AgenticGlow implementation thread at the canonical path.
-- [ ] Keep the migration bundle until John approves permanent backup removal.
+- [x] Remove obsolete generated build directories.
+- [x] Update the Codex saved project to the canonical path.
+- [x] Update local scripts, shortcuts, and workspace references containing retired paths.
+- [x] Resume the AgenticGlow implementation thread at the canonical path.
+- [x] Keep the migration bundle until John approves permanent backup removal.
 
 ## Completion gate
 
 This task is complete only when:
 
-- [ ] AgenticGlow is one standalone repository at the canonical path.
-- [ ] Its `.git` directory is self-contained.
-- [ ] No nested worktree exists inside AgenticGlow.
-- [ ] No obsolete top-level AgenticGlow worktree folder remains.
-- [ ] Canonical branch, commit, remotes, and tags are preserved.
-- [ ] Task 9 work is recoverable from its archive commit.
-- [ ] Devin changes are recoverable from the defensive backup.
-- [ ] The complete Git bundle verifies successfully.
-- [ ] Full tests, privacy/helper checks, deterministic generation, and universal Release build pass after consolidation.
-- [ ] No push, merge, tag, publication, or release occurred during consolidation.
+- [x] AgenticGlow is one standalone repository at the canonical path.
+- [x] Its `.git` directory is self-contained.
+- [x] No nested worktree exists inside AgenticGlow.
+- [x] No obsolete top-level AgenticGlow worktree folder remains.
+- [x] Canonical branch, commit, remotes, and tags are preserved.
+- [x] Task 9 work is recoverable from its archive commit.
+- [x] Devin changes are recoverable from the defensive backup.
+- [x] The complete Git bundle verifies successfully.
+- [x] Full tests, privacy/helper checks, deterministic generation, and universal Release build pass after consolidation.
+- [x] No push, merge, tag, publication, or release occurred during consolidation.
+
+## Completion evidence
+
+- Canonical standalone repository: `/Volumes/Liquid/2DaMax Development/AgenticGlow`
+- Frozen and final product commit before this completion record: `ef84c9f2b7f0d1385d8ab12ddf5b79fe08195af3`
+- Task 9 archive commit and local recovery branch: `77fe3bbc56df31c9e4f01d3b8831dafc0439a3f0` (`archive/task-9-superseded`)
+- Devin base recovery branch: `768e989d0865f015ad73618b262e52f9c2a29adf` (`archive/devin-task-11-base`)
+- Verified complete bundle: `/Volumes/Liquid/AgenticGlow-Migration-Backup/AgenticGlow-all.bundle`
+- Bundle SHA-256: `0b3dc2e6916545b87d36ffd25d8aa16b6bd7399cdd1c7e5e5c911a1687e600ed`
+- Devin tracked-change patch SHA-256: `848adb857c2b32a1d77f5974731801871c2daa588e2200bed31e115fe8fd2e2f`
+- Devin untracked-source archive SHA-256: `10f60781286aee0624d68848965507be0a0bddba21a6239655aca64e0d7a01e8`
+- Final full test suite: 151 tests passed with 0 failures using the documented local beta-runner workaround.
+- Final project generation was byte-stable at SHA-256 `476a7ad55e7883dffbf87db9f3ab3676b082bcd3ef9ee52bc28a47ccedfbf4d3`.
+- Final Release app and helper both contain `x86_64 arm64` slices.
+- Privacy, standalone-helper, app-icon, and legacy-name checks passed.
+- No push, merge, tag, notarization, publication, or release occurred during consolidation.
