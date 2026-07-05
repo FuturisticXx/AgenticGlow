@@ -1,13 +1,18 @@
 cask "agenticglow" do
   version "0.1.0"
-  sha256 "6d58aa7693336c3c2deb9343b3f9b33a300bb7f69551a81c809ce6dc800debdc"
+  sha256 "ff4ddf497d24312794f2646545f55d040e248cb82aedd02657b0d339c20b6185"
 
   url "https://github.com/FuturisticXx/AgenticGlow/releases/download/v#{version}/AgenticGlow-#{version}.dmg"
   name "AgenticGlow"
   desc "Local Codex and Claude session status for the macOS menu bar"
   homepage "https://github.com/FuturisticXx/AgenticGlow"
 
-  depends_on macos: ">= :sonoma"
+  livecheck do
+    url :url
+    strategy :github_latest
+  end
+
+  depends_on macos: :sonoma
   app "AgenticGlow.app"
 
   uninstall quit: "com.twodamax.agenticglow",

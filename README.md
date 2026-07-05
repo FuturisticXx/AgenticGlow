@@ -24,7 +24,7 @@ Download the latest DMG from the [Releases](https://github.com/FuturisticXx/Agen
 ### Homebrew
 
 ```bash
-brew install --cask agenticglow
+brew install --cask FuturisticXx/agenticglow/agenticglow
 ```
 
 ## Setup

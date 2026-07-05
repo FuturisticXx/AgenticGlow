@@ -19,8 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Support noninteractive clean-removal mode
         if CommandLine.arguments.contains("--remove-integrations") {
             performCleanRemoval()
-            NSApp.terminate(nil)
-            return
+            exit(EXIT_SUCCESS)
         }
 
         NSApp.setActivationPolicy(.accessory)
