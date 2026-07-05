@@ -1,5 +1,15 @@
 # Got done
 
+## 2026-07-05 — Public release and Homebrew distribution
+
+- Published the AgenticGlow repository and releases `v0.1.0` and `v0.1.1` publicly.
+- Verified the public signed and notarized v0.1.1 DMG at SHA-256 `ead3891c296770f8e455c9495f68987530e24a96197539287dbbd2bcf14aec35`.
+- Reproduced and fixed the Homebrew uninstall hang caused by command-mode cleanup not exiting.
+- Added `Scripts/verify-uninstall-command.sh` and verified it against the signed release app.
+- Published the official Homebrew tap at `FuturisticXx/homebrew-agenticglow`.
+- Verified Homebrew install, launch, uninstall, integration cleanup, removal, reinstall, signature, Gatekeeper status, and relaunch for version 0.1.1.
+- Documented that an upstream `homebrew/homebrew-cask` PR is deferred until AgenticGlow meets Homebrew's self-submission notability threshold.
+
 ## 2026-07-04 — Standalone repository consolidation
 
 - Replaced the linked AgenticGlow worktree with a self-contained repository at the same canonical path.

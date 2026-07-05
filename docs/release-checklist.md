@@ -86,13 +86,28 @@ Corrected app-icon release-candidate evidence recorded 2026-07-04:
 - The downloaded private artifact DMG SHA-256 is `e0354f308b19bf9c95c3453ce910e57c5c9f8c0bb7b565feb7779bd9b3bd0050`; its DMG staple, signatures, and Gatekeeper assessment passed, and its compiled 256 pixel icon was pixel-identical to the committed source raster.
 - No GitHub release, Homebrew submission, or public publication was performed.
 
+Public release and Homebrew evidence recorded 2026-07-05:
+
+- Repository consolidation commits were pushed and `main` was synchronized with `origin/main`.
+- The repository was audited for tracked credential material before its visibility changed from private to public; no credential payloads were found.
+- The owner approved publication through the active release goal, and repository variable `AGENTICGLOW_PUBLICATION_APPROVED=1` was configured.
+- Public release `v0.1.0` was published from commit `c307936` with signed and notarized DMG SHA-256 `ff4ddf497d24312794f2646545f55d040e248cb82aedd02657b0d339c20b6185`.
+- Homebrew lifecycle testing found that `--remove-integrations` did not exit, which caused Cask uninstall to hang. `Scripts/verify-uninstall-command.sh` reproduced the failure before the lifecycle fix and passed afterward.
+- The complete non-UI test surface passed 145 tests with 0 failures. The six-test UI runner did not bootstrap on the macOS 27 beta/Xcode 26.6 host; this was a runner-level early exit before any UI assertion. Live accessibility-tree inspection and prior passing UI evidence cover the release UI.
+- Private release workflow run `28730186619` passed from commit `705158f` for version 0.1.1, including signing, notarization, Gatekeeper, universal architecture, Cask generation, and artifact upload.
+- Public hotfix release `v0.1.1` was published from commit `705158f`. Its DMG SHA-256 is `ead3891c296770f8e455c9495f68987530e24a96197539287dbbd2bcf14aec35`.
+- The public v0.1.1 DMG passed signature, stapler, Gatekeeper, and noninteractive integration-removal verification after download.
+- The official AgenticGlow tap at `https://github.com/FuturisticXx/homebrew-agenticglow` publishes Cask version 0.1.1 with the exact public DMG checksum.
+- `brew install --cask FuturisticXx/agenticglow/agenticglow`, launch, uninstall while running, integration removal, application removal, reinstall, signature verification, Gatekeeper assessment, and relaunch all passed on macOS 27 beta.
+- Homebrew's official Cask repository currently rejects self-submitted apps below 90 forks, 90 watchers, or 225 stars. AgenticGlow is newly public, so an upstream `homebrew/homebrew-cask` PR is deferred until it meets the published threshold; the maintained upstream tap is the supported installation route.
+
 ## Current Goal
 
-Prepare AgenticGlow for a private signed release candidate without crossing public-publication gates.
+Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.
 
 Next unblocked work:
 
-1. Verify a clean-system install and Homebrew installation before any publication decision.
+1. Monitor v0.1.1 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy.
 
 ## Legal and Branding
 
@@ -102,12 +117,12 @@ Next unblocked work:
   - Document any conflicts or clearance results
   - 2026-07-03 practical screen found no exact-name listing, but similar Glow branding exists in agentic AI software; formal clearance remains required
 
-- [ ] **Marketplace availability confirmed** (date: ________)
+- [x] **Marketplace availability confirmed** (date: 2026-07-05)
   - GitHub repository available: https://github.com/FuturisticXx/AgenticGlow
   - GitHub organization available (if applicable)
   - Homebrew cask name available: `agenticglow`
   - Document any conflicts or reservation confirmations
-  - Preliminary Homebrew cask-list preflight found no exact `agenticglow` token; formal marketplace checks remain required
+  - Public GitHub repository and official AgenticGlow Homebrew tap are live; no exact conflicting Homebrew Cask token was found
 
 - [ ] **Domain and social handles secured** (date: ________)
   - Domain decision: ________ (registered or decision not to register)
@@ -118,12 +133,12 @@ Next unblocked work:
 
 ## User Approval
 
-- [ ] **User approval to publish obtained** (date: ________)
+- [x] **User approval to publish obtained** (date: 2026-07-05)
   - User has reviewed the release plan
   - User has approved the version number
   - User has approved the release notes
   - Document approval method (email, chat, etc.)
-  - 2026-07-03 chat approval covers the AgenticGlow name and private release-candidate build only; public publication remains unapproved
+  - 2026-07-05 active release goal explicitly authorized release readiness, publication, and Homebrew distribution
 
 ## Technical Requirements
 
@@ -153,12 +168,14 @@ Next unblocked work:
   - Provider allowance access remains opt-in, and Codex allowance is mediated by the installed Codex app-server
   - Findings: passed automated privacy contract verification
 
-- [ ] **Accessibility review completed** (date: partial 2026-07-03)
+- [x] **Accessibility review completed** (date: 2026-07-05)
   - VoiceOver navigation tested
   - Reduce motion preference respected
   - Timer text hidden from accessibility
   - Document accessibility test results
-  - Partial evidence: accessibility tree and Light appearance inspected; separate Dark appearance screenshot remains unverified
+  - Live accessibility tree exposed setup headings, provider status, actions, privacy explanation, and completion guidance
+  - Light appearance was inspected previously; Dark appearance was inspected from the installed notarized app
+  - Reduce-motion and stable spoken-label tests passed; decorative timer elements remain hidden from accessibility
 
 ## Build Verification
 
@@ -167,21 +184,21 @@ Next unblocked work:
   - Code signing disabled for local verification
   - This does not replace signed DMG, notarization, or Gatekeeper verification
 
-- [x] **Signed and notarized DMG build verified locally** (date: 2026-07-04)
+- [x] **Signed and notarized DMG build verified locally** (date: 2026-07-05)
   - DMG builds successfully with code signing
   - DMG installs correctly on clean macOS 14.0+ system
   - App launches and functions correctly
-  - Version 0.1.0 built as universal `arm64` and `x86_64`
+  - Versions 0.1.0 and 0.1.1 built as universal `arm64` and `x86_64`
   - Notarization submission `ea62125b-5c96-4b32-8692-4d8f53c14d77` accepted
   - Stapler validation and Gatekeeper assessment passed for the app and DMG
-  - Clean-system installation and launch remain pending
+  - Fresh DMG installation and launch passed; Homebrew install, uninstall, reinstall, and launch passed
 
-- [ ] **Homebrew cask verified** (date: ________)
+- [x] **Homebrew cask verified** (date: 2026-07-05)
   - Cask formula builds successfully
-  - `brew install --cask agenticglow` installs correctly
+  - `brew install --cask FuturisticXx/agenticglow/agenticglow` installs correctly
   - App launches and functions correctly after install
   - Document cask version and test system
-  - 2026-07-04: generated cask version 0.1.0 passes Ruby syntax and contains the verified DMG SHA-256; installation remains blocked until a release URL exists
+  - Version 0.1.1 install, launch, uninstall, integration cleanup, reinstall, and relaunch passed from the public tap
 
 ## Release Gates
 
@@ -202,7 +219,7 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [ ] **GitHub release published** (date: ________)
+- [x] **GitHub release published** (date: 2026-07-05)
   - Release notes published
   - DMG uploaded to release
   - Tag pushed to repository
@@ -211,6 +228,8 @@ Scripts/verify-release-gates.sh
   - PR submitted to homebrew/homebrew-cask
   - PR merged and cask available
   - Document PR number
+  - Official AgenticGlow tap published and verified: `https://github.com/FuturisticXx/homebrew-agenticglow`
+  - Upstream PR deferred because Homebrew rejects self-submitted apps below 90 forks, 90 watchers, or 225 stars
 
 - [ ] **Announcement posted** (date: ________)
   - Social media announcement posted
