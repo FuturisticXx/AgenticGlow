@@ -74,6 +74,16 @@ Fresh release-readiness preflight recorded 2026-07-03:
 - The downloaded CI artifact DMG SHA-256 is `d9e87b13353c6d9bacae2a431cdb89801026b7ee148a86b626c338e44572b038`; its generated cask contains the same checksum, and local post-download signature, stapler, and Gatekeeper checks passed.
 - No GitHub release, Homebrew installation, or public publication was performed.
 
+Corrected app-icon release-candidate evidence recorded 2026-07-04:
+
+- The approved icon source is `docs/superpowers/specs/2026-07-04-agenticglow-app-icon-design.md`; deterministic master SHA-256 is `9a2c00d4bc8b1c3fb4a65af2c902b04d48e109555b406c593c362c068885bb97`.
+- The 1024, 128, 32, and 16 pixel variants were inspected; all ten asset-catalog dimensions passed `Scripts/verify-app-icon.sh`.
+- An isolated unsigned Release build passed, and the compiled Finder/Dock representation from `AppIcon.icns` was inspected with the corrected ring, halo, and segmented signal.
+- `StatusPresentationTests` passed 7 tests with 0 failures, confirming the menu-bar presentation remains unchanged.
+- The signed universal app contains `arm64` and `x86_64` slices. Apple accepted notarization submission `983c9801-8261-4cbf-a404-c0fd12aefb11`; staple validation and Gatekeeper checks passed for the app and DMG.
+- The corrected DMG SHA-256 is `6d58aa7693336c3c2deb9343b3f9b33a300bb7f69551a81c809ce6dc800debdc`; `Cask/agenticglow.rb` contains the same checksum and passes Ruby syntax validation.
+- No GitHub release, Homebrew submission, or public publication was performed.
+
 ## Current Goal
 
 Prepare AgenticGlow for a private signed release candidate without crossing public-publication gates.
