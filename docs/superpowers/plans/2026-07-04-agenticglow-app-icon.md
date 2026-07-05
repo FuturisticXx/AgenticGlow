@@ -31,7 +31,7 @@
 - Consumes: approved geometry and colors from the design specification.
 - Produces: `Scripts/generate-app-icon.swift <output-path>`, a reproducible master, and all required raster sizes.
 
-- [ ] **Step 1: Add the failing verifier**
+- [x] **Step 1: Add the failing verifier**
 
 Create `Scripts/verify-app-icon.sh` with `set -euo pipefail`. It must:
 
@@ -52,13 +52,13 @@ icon_512x512.png=512
 icon_512x512@2x.png=1024
 ```
 
-- [ ] **Step 2: Prove the verifier fails**
+- [x] **Step 2: Prove the verifier fails**
 
 Run `Scripts/verify-app-icon.sh`.
 
 Expected: nonzero exit because the current master has the rejected hash.
 
-- [ ] **Step 3: Create the minimal renderer**
+- [x] **Step 3: Create the minimal renderer**
 
 Create `Scripts/generate-app-icon.swift` using these locked values:
 
@@ -77,19 +77,19 @@ let completedGreen = NSColor(srgbRed: 0.400, green: 0.788, blue: 0.478, alpha: 1
 
 Draw only: transparent canvas, deep-neutral tile, blue upper-left halo, amber upper-right halo, green lower-left halo, crisp blue ring, and one horizontal rounded capsule clipped into a long blue leading region, angled amber middle region, and green trailing region. Encode a 1024-pixel PNG to the first command-line argument.
 
-- [ ] **Step 4: Generate the raster set**
+- [x] **Step 4: Generate the raster set**
 
 Run the renderer for `Design/AgenticGlowIcon-1024.png`, then use `sips -z` to generate each exact size listed in Step 1.
 
 Expected: the master and all ten asset-catalog PNG files change.
 
-- [ ] **Step 5: Verify and inspect**
+- [x] **Step 5: Verify and inspect**
 
 Run `Scripts/verify-app-icon.sh`. Open the 1024, 128, 32, and 16 pixel files together.
 
 Expected: exit 0; centered ring and signal; legible small sizes; no rejected geometry.
 
-- [ ] **Step 6: Commit Task 1**
+- [x] **Step 6: Commit Task 1**
 
 ```bash
 git add Scripts/generate-app-icon.swift Scripts/verify-app-icon.sh Design/AgenticGlowIcon-1024.png Sources/AgenticGlowApp/Resources/Assets.xcassets/AppIcon.appiconset
@@ -108,13 +108,13 @@ git commit -m "Replace app artwork with approved Unified Spectrum icon"
 - Consumes: Task 1 asset catalog.
 - Produces: a Release app bundle with the approved application icon and unchanged menu-bar identity.
 
-- [ ] **Step 1: Verify deterministic project generation**
+- [x] **Step 1: Verify deterministic project generation**
 
 Run `xcodegen generate`, then `git diff --exit-code -- AgenticGlow.xcodeproj/project.pbxproj`.
 
 Expected: no project-file diff.
 
-- [ ] **Step 2: Build an isolated unsigned Release app**
+- [x] **Step 2: Build an isolated unsigned Release app**
 
 ```bash
 rm -rf /tmp/agenticglow-icon-derived
@@ -123,11 +123,11 @@ xcodebuild -project AgenticGlow.xcodeproj -scheme AgenticGlow -configuration Rel
 
 Expected: `BUILD SUCCEEDED`.
 
-- [ ] **Step 3: Verify compiled resources**
+- [x] **Step 3: Verify compiled resources**
 
 Confirm `AppIcon.icns` and `Assets.car` exist in the built app, and `CFBundleIconFile` equals `AppIcon`.
 
-- [ ] **Step 4: Verify menu-bar behavior is unchanged**
+- [x] **Step 4: Verify menu-bar behavior is unchanged**
 
 ```bash
 xcodebuild test -project AgenticGlow.xcodeproj -scheme AgenticGlow -destination 'platform=macOS' -only-testing:AgenticGlowAppTests/StatusPresentationTests
@@ -135,7 +135,7 @@ xcodebuild test -project AgenticGlow.xcodeproj -scheme AgenticGlow -destination 
 
 Expected: tests pass; idle and working still use `circle.hexagongrid`.
 
-- [ ] **Step 5: Inspect Finder and Dock**
+- [x] **Step 5: Inspect Finder and Dock**
 
 Copy the isolated app to a temporary Applications folder, register it with Launch Services, and inspect Finder plus Dock at normal and magnified sizes. Remove only the temporary copy after inspection.
 
@@ -152,7 +152,7 @@ Expected: the approved geometry is centered and recognizable at every displayed 
 - Consumes: Task 2 compiled icon and configured Developer ID/notary credentials.
 - Produces: corrected signed/notarized DMG and passing private CI artifact.
 
-- [ ] **Step 1: Build the signed installer**
+- [x] **Step 1: Build the signed installer**
 
 ```bash
 export AGENTICGLOW_NAME_CLEARED=1
@@ -168,24 +168,24 @@ Scripts/generate-cask.sh 0.1.0 build/AgenticGlow-0.1.0.dmg
 
 Expected: universal build, accepted notarization, valid staple, valid signatures, and Gatekeeper acceptance.
 
-- [ ] **Step 2: Verify checksum and cask**
+- [x] **Step 2: Verify checksum and cask**
 
 Run `shasum -a 256 build/AgenticGlow-0.1.0.dmg` and `ruby -c Cask/agenticglow.rb`.
 
 Expected: cask checksum equals the DMG hash and Ruby reports `Syntax OK`.
 
-- [ ] **Step 3: Record evidence**
+- [x] **Step 3: Record evidence**
 
 Update `docs/release-checklist.md` with the design-spec path, compiled Finder/Dock result, notarization submission ID, and corrected DMG checksum. State explicitly that no public release was created.
 
-- [ ] **Step 4: Commit release metadata**
+- [x] **Step 4: Commit release metadata**
 
 ```bash
 git add Cask/agenticglow.rb docs/release-checklist.md
 git commit -m "Record corrected AgenticGlow icon release candidate"
 ```
 
-- [ ] **Step 5: Push and run private CI**
+- [x] **Step 5: Push and run private CI**
 
 ```bash
 git push origin HEAD
@@ -197,13 +197,13 @@ gh run watch "$run_id" --exit-status --interval 10
 
 Expected: signing, notarization, verification, cask generation, and private artifact upload pass.
 
-- [ ] **Step 6: Independently verify the artifact**
+- [x] **Step 6: Independently verify the artifact**
 
 Download `AgenticGlow-0.1.0-private-rc` to `/tmp/agenticglow-icon-rc`; run `codesign --verify`, `xcrun stapler validate`, and `spctl -a -t open --context context:primary-signature` against its DMG.
 
 Expected: valid signature, valid staple, and `source=Notarized Developer ID`.
 
-- [ ] **Step 7: Final review**
+- [x] **Step 7: Final review**
 
 Remove the temporary artifact, run `git diff --check`, `git status --short --branch`, and `gh release list --limit 5`.
 

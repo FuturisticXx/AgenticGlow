@@ -4108,7 +4108,7 @@ Task {
 }
 ```
 
-- [ ] **Step 7: Create the app icon and asset catalog**
+- [x] **Step 7: Create the app icon and asset catalog**
 
 Invoke `$imagegen` with this exact prompt during implementation:
 
@@ -4127,7 +4127,7 @@ test "$(sips -g pixelHeight Design/AgenticGlowIcon-1024.png | awk '/pixelHeight/
 
 Expected: both checks exit `0`.
 
-**Note:** App icon creation was skipped due to lack of $imagegen tool access.
+**Completion note (2026-07-04):** The original icon direction was superseded by the approved Unified Spectrum design in `docs/superpowers/specs/2026-07-04-agenticglow-app-icon-design.md`. The deterministic renderer, complete asset catalog, compiled Finder/Dock icon, signed installer, and private CI artifact were verified through `docs/superpowers/plans/2026-07-04-agenticglow-app-icon.md`.
 
 - [x] **Step 8: Add deterministic UI-test fixtures and XCUITests**
 
@@ -4284,7 +4284,7 @@ git add Sources Design Tests project.yml
 git commit -m "feat: add preferences updates branding and accessibility"
 ```
 
-**Note:** Task 10 originated on branch `devin/task-10`. The consolidated baseline now includes launch-at-login, shared preferences, diagnostics, update checks, and deterministic UI fixtures. App icon creation and full XCUITest verification remain open.
+**Note:** Task 10 originated on branch `devin/task-10`. The consolidated baseline now includes launch-at-login, shared preferences, diagnostics, update checks, deterministic UI fixtures, the approved app icon, and passing full XCUITest verification with the documented local beta-runner workaround.
 
 ---
 
