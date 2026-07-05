@@ -82,6 +82,8 @@ Corrected app-icon release-candidate evidence recorded 2026-07-04:
 - `StatusPresentationTests` passed 7 tests with 0 failures, confirming the menu-bar presentation remains unchanged.
 - The signed universal app contains `arm64` and `x86_64` slices. Apple accepted notarization submission `983c9801-8261-4cbf-a404-c0fd12aefb11`; staple validation and Gatekeeper checks passed for the app and DMG.
 - The corrected DMG SHA-256 is `6d58aa7693336c3c2deb9343b3f9b33a300bb7f69551a81c809ce6dc800debdc`; `Cask/agenticglow.rb` contains the same checksum and passes Ruby syntax validation.
+- Private GitHub Actions run `28723986453` passed on commit `d33c20e` and uploaded `AgenticGlow-0.1.0-private-rc` as artifact `8086624800`.
+- The downloaded private artifact DMG SHA-256 is `e0354f308b19bf9c95c3453ce910e57c5c9f8c0bb7b565feb7779bd9b3bd0050`; its DMG staple, signatures, and Gatekeeper assessment passed, and its compiled 256 pixel icon was pixel-identical to the committed source raster.
 - No GitHub release, Homebrew submission, or public publication was performed.
 
 ## Current Goal
