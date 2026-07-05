@@ -16,7 +16,7 @@ jobs:
       AGENTICGLOW_RELEASE_BUILD_APPROVED: ${{ vars.AGENTICGLOW_RELEASE_BUILD_APPROVED }}
       NOTARY_PROFILE: agenticglow-notary
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: brew install ripgrep xcodegen
       - name: Configure signing and notarization
         env:
