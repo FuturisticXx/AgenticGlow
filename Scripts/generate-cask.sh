@@ -20,7 +20,12 @@ cask "agenticglow" do
   desc "Local Codex and Claude session status for the macOS menu bar"
   homepage "https://github.com/FuturisticXx/AgenticGlow"
 
-  depends_on macos: ">= :sonoma"
+  livecheck do
+    url :url
+    strategy :github_latest
+  end
+
+  depends_on macos: :sonoma
   app "AgenticGlow.app"
 
   uninstall quit: "com.twodamax.agenticglow",
