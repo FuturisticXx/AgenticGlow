@@ -28,10 +28,20 @@ public struct CodexAllowanceAdapter: AllowanceProviding {
 }
 
 public enum CodexAppServerProtocol {
-    public static let rateLimitRequest = Data(
+    public static let initializeRequest = Data(
         """
         {"method":"initialize","id":1,"params":{"clientInfo":{"name":"agenticglow","title":"AgenticGlow","version":"1.0"}}}
+
+        """.utf8
+    )
+    public static let initializedNotification = Data(
+        """
         {"method":"initialized","params":{}}
+
+        """.utf8
+    )
+    public static let rateLimitRequest = Data(
+        """
         {"method":"account/rateLimits/read","id":7,"params":{}}
 
         """.utf8
@@ -55,6 +65,26 @@ public enum CodexAppServerProtocol {
             }
         }
         throw AllowanceAdapterError.invalidResponse
+    }
+}
+
+public struct CodexAppServerConversation {
+    private var initialized = false
+
+    public init() {}
+
+    public mutating func start() -> Data {
+        CodexAppServerProtocol.initializeRequest
+    }
+
+    public mutating func receive(_ line: Data) throws -> Data? {
+        guard !initialized,
+              let object = try? JSONSerialization.jsonObject(with: line) as? [String: Any],
+              (object["id"] as? NSNumber)?.intValue == 1
+        else { return nil }
+        initialized = true
+        return CodexAppServerProtocol.initializedNotification
+            + CodexAppServerProtocol.rateLimitRequest
     }
 }
 
@@ -90,13 +120,37 @@ public struct CodexAppServerClient: CodexRateLimitRequesting {
                 deadline: .now() + 15,
                 execute: timeout
             )
-            defer { timeout.cancel() }
+            defer {
+                timeout.cancel()
+                try? input.fileHandleForWriting.close()
+                if process.isRunning { process.terminate() }
+            }
 
-            try input.fileHandleForWriting.write(contentsOf: CodexAppServerProtocol.rateLimitRequest)
-            try input.fileHandleForWriting.close()
-            let response = try output.fileHandleForReading.readToEnd() ?? Data()
-            process.waitUntilExit()
-            return try CodexAppServerProtocol.extractRateLimitResponse(from: response)
+            var conversation = CodexAppServerConversation()
+            try input.fileHandleForWriting.write(contentsOf: conversation.start())
+            while let line = try output.fileHandleForReading.readLine() {
+                if let nextRequest = try conversation.receive(line) {
+                    try input.fileHandleForWriting.write(contentsOf: nextRequest)
+                    continue
+                }
+                do {
+                    return try CodexAppServerProtocol.extractRateLimitResponse(from: line)
+                } catch AllowanceAdapterError.invalidResponse {
+                    continue
+                }
+            }
+            throw AllowanceAdapterError.invalidResponse
         }.value
+    }
+}
+
+private extension FileHandle {
+    func readLine() throws -> Data? {
+        var line = Data()
+        while let byte = try read(upToCount: 1), !byte.isEmpty {
+            line.append(byte)
+            if byte[byte.startIndex] == UInt8(ascii: "\n") { return line }
+        }
+        return line.isEmpty ? nil : line
     }
 }

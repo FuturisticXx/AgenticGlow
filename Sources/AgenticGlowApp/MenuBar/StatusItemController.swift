@@ -14,6 +14,7 @@ final class StatusItemController: NSObject {
     init(
         model: AppModel,
         preferences: PreferencesStore,
+        claudeCredentialStore: any ClaudeSessionCredentialStoring,
         openIntegrations: @escaping () -> Void
     ) {
         self.model = model
@@ -25,6 +26,7 @@ final class StatusItemController: NSObject {
             rootView: SessionListView(
                 model: model,
                 preferences: preferences,
+                claudeCredentialStore: claudeCredentialStore,
                 openIntegrations: openIntegrations
             )
         )

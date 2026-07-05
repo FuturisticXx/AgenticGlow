@@ -34,9 +34,25 @@ brew install --cask FuturisticXx/agenticglow/agenticglow
 3. For Codex, open Codex, run `/hooks`, review the AgenticGlow entries, and choose "Trust"
 4. Click "Done" when complete
 
+### Optional subscription allowance
+
+Open the AgenticGlow menu, choose **Usage Access…**, and enable providers
+individually. Codex uses the installed local Codex app-server and its existing
+sign-in. Claude uses an unofficial private `claude.ai` connection because
+Anthropic does not publish a supported usage API:
+
+1. Open `claude.ai` and go to **Settings > Usage**.
+2. Open the browser developer tools and refresh the page.
+3. Select the `usage` network request.
+4. Copy the complete `Cookie` request header value.
+5. Paste it into AgenticGlow's Claude session cookie field.
+
+AgenticGlow stores the Claude cookie only in macOS Keychain. Disabling Claude
+usage deletes it. If Claude reports that the cookie expired, repeat these steps.
+
 ## Privacy
 
-AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks and explicit, provider-specific subscription allowance access. Usage access is off by default. Codex allowance uses the installed local Codex app-server, which manages its own sign-in. Claude allowance remains unavailable until Anthropic publishes a supported programmatic interface.
+AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks and explicit, provider-specific subscription allowance access. Usage access is off by default. Codex allowance uses the installed local Codex app-server, which manages its own sign-in. Optional Claude allowance uses an explicitly disclosed private `claude.ai` endpoint and a user-supplied session cookie stored only in macOS Keychain.
 
 See [docs/privacy.md](docs/privacy.md) for the complete privacy contract.
 

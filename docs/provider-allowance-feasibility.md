@@ -1,7 +1,7 @@
 # Provider Allowance Feasibility
 
-Reviewed July 3, 2026. This review uses current provider-owned documentation and
-the locally installed provider clients. No live credential request was made.
+Reviewed July 5, 2026. This review uses provider-owned documentation, locally
+installed provider clients, and credential-safe live validation on this Mac.
 
 ## OpenAI Codex
 
@@ -34,14 +34,24 @@ subscription-allowance endpoint for third-party apps:
 - [Claude Pro usage limits](https://support.claude.com/en/articles/8325606-what-is-the-pro-plan)
 - [Claude Code authentication and credential management](https://code.claude.com/docs/en/iam)
 
-On macOS, Anthropic documents that Claude Code credentials are stored in the
-encrypted macOS Keychain. AgenticGlow does not weaken that protection, request
-the Claude Code Keychain secret, invoke or scrape the interactive `/usage`
-screen, copy OAuth tokens, or call an undocumented endpoint. The Claude adapter
-therefore reports a clear unsupported state and performs no network request.
+AgenticGlow offers an explicitly unofficial connection for users who choose it.
+The user supplies the full Cookie request header from `claude.ai` Settings >
+Usage. AgenticGlow stores it as a generic password in macOS Keychain, extracts
+the `lastActiveOrg` cookie field, and requests:
+
+`https://claude.ai/api/organizations/{organization}/usage`
+
+The response currently exposes `five_hour` and `seven_day` windows with
+`utilization` and `resets_at`. A live Foundation `URLSession` check returned
+HTTP 200 on July 5, 2026 and matched the separately installed ClaudeUsageBar
+display. AgenticGlow stores only normalized percentages, reset times, and fetch
+time. It does not store the raw response or cookie outside Keychain.
+
+This is a private web endpoint, not a supported Anthropic API. It can change or
+stop working without notice. HTTP 401 or 403 is treated as an expired cookie and
+the UI instructs the user to update Usage Access.
 
 ## Revisit condition
 
-The Claude adapter can be implemented when Anthropic publishes a supported
-programmatic allowance interface and credential-use contract suitable for a
-local third-party macOS app.
+Replace the private Claude connection if Anthropic publishes a supported
+programmatic allowance interface and credential-use contract for local apps.

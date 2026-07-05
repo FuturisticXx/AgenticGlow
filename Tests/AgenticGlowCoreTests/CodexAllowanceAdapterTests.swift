@@ -20,14 +20,31 @@ final class CodexAllowanceAdapterTests: XCTestCase {
     }
 
     func testAppServerWireRequestContainsNoCredentialMaterial() throws {
-        let request = CodexAppServerProtocol.rateLimitRequest
-        let text = String(decoding: request, as: UTF8.self)
+        let initialize = String(decoding: CodexAppServerProtocol.initializeRequest, as: UTF8.self)
+        let initialized = String(decoding: CodexAppServerProtocol.initializedNotification, as: UTF8.self)
+        let rateLimits = String(decoding: CodexAppServerProtocol.rateLimitRequest, as: UTF8.self)
+        let text = initialize + initialized + rateLimits
 
         XCTAssertTrue(text.contains("account/rateLimits/read"))
         XCTAssertTrue(text.contains("initialize"))
         XCTAssertFalse(text.localizedCaseInsensitiveContains("token"))
         XCTAssertFalse(text.localizedCaseInsensitiveContains("authorization"))
         XCTAssertFalse(text.localizedCaseInsensitiveContains("password"))
+    }
+
+    func testAppServerConversationWaitsForInitializeResponseBeforeRateLimitRequest() throws {
+        var conversation = CodexAppServerConversation()
+
+        XCTAssertEqual(conversation.start(), CodexAppServerProtocol.initializeRequest)
+        XCTAssertNil(try conversation.receive(Data("{\"method\":\"configWarning\"}\n".utf8)))
+
+        let nextRequest = try XCTUnwrap(
+            conversation.receive(Data("{\"id\":1,\"result\":{}}\n".utf8))
+        )
+        XCTAssertEqual(
+            nextRequest,
+            CodexAppServerProtocol.initializedNotification + CodexAppServerProtocol.rateLimitRequest
+        )
     }
 
     func testAppServerProtocolExtractsOnlyMatchingResponseLine() throws {
@@ -48,6 +65,36 @@ final class CodexAllowanceAdapterTests: XCTestCase {
         ) { error in
             XCTAssertEqual(error as? AllowanceAdapterError, .rateLimited(retryAfter: 120))
         }
+    }
+
+    func testClientKeepsInputOpenUntilRateLimitResponseArrives() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let executable = directory.appendingPathComponent("fake-codex")
+        let script = """
+        #!/usr/bin/python3
+        import json, select, sys
+        json.loads(sys.stdin.readline())
+        print('{"id":1,"result":{}}', flush=True)
+        json.loads(sys.stdin.readline())
+        request = json.loads(sys.stdin.readline())
+        ready, _, _ = select.select([sys.stdin], [], [], 0.2)
+        if ready and sys.stdin.read(1) == '':
+            sys.exit(2)
+        print(json.dumps({"id":request["id"],"result":{"rateLimits":{"primary":{"usedPercent":25,"windowDurationMins":300,"resetsAt":1783244717}}}}), flush=True)
+        """
+        try Data(script.utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let client = CodexAppServerClient(executableURL: executable)
+
+        let response = try await client.readRateLimits()
+
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: response) as? [String: Any]
+        )
+        XCTAssertEqual((object["id"] as? NSNumber)?.intValue, 7)
     }
 
     private func fixtureData() throws -> Data {

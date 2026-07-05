@@ -1,0 +1,14 @@
+{
+  "extra_usage": {
+    "utilization": null
+  },
+  "five_hour": {
+    "resets_at": "2026-07-05T08:30:00.084859+00:00",
+    "utilization": 90
+  },
+  "seven_day": {
+    "resets_at": "2026-07-12T01:00:00.084883+00:00",
+    "utilization": 9
+  },
+  "spend": {}
+}

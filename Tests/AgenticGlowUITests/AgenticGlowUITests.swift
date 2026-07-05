@@ -35,6 +35,9 @@ final class AgenticGlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Requests go only to providers you select."].exists)
         XCTAssertTrue(app.checkBoxes["OpenAI Codex"].exists)
         XCTAssertTrue(app.checkBoxes["Anthropic Claude"].exists)
+        app.checkBoxes["Anthropic Claude"].click()
+        XCTAssertTrue(app.secureTextFields["Claude session cookie"].exists)
+        XCTAssertTrue(app.staticTexts["Unofficial Claude connection"].exists)
         XCTAssertTrue(app.buttons["Enable Usage"].exists)
         XCTAssertTrue(app.buttons["Not Now"].exists)
     }

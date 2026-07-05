@@ -14,6 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var preferences = PreferencesStore()
     private var updateViewModel = UpdateViewModel()
     private let launchAtLogin = LaunchAtLoginService()
+    private var claudeCredentialStore: any ClaudeSessionCredentialStoring =
+        ClaudeSessionCredentialStore()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Support noninteractive clean-removal mode
@@ -24,6 +26,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         NSApp.setActivationPolicy(.accessory)
         let fixtureName = UITestFixtureFactory.name(arguments: CommandLine.arguments)
+        if fixtureName != nil {
+            claudeCredentialStore = InMemoryClaudeSessionCredentialStore()
+        }
 
         // Check for UI test fixtures
         let store: SessionStateStoring
@@ -55,6 +60,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItemController = StatusItemController(
             model: model,
             preferences: preferences,
+            claudeCredentialStore: claudeCredentialStore,
             openIntegrations: { [weak self] in self?.showSetupWindow() }
         )
         reduceMotionObserver = ReduceMotionObserver(
@@ -156,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: SessionListView(
                 model: model,
                 preferences: preferences,
+                claudeCredentialStore: claudeCredentialStore,
                 openIntegrations: { [weak self] in self?.showSetupWindow() }
             )
         )
@@ -290,8 +297,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 reason: "Sign in to the Codex app or CLI first."
             )
         }
+        let claudeCredentialStore = self.claudeCredentialStore
+        let claudeAdapter = ClaudeAllowanceAdapter(
+            sessionCookie: { try claudeCredentialStore.load() ?? "" }
+        )
         return AllowanceRefreshCoordinator(
-            adapters: [codexAdapter, UnsupportedClaudeAllowanceAdapter()],
+            adapters: [codexAdapter, claudeAdapter],
             cache: FileAllowanceCache(directory: directory)
         )
     }

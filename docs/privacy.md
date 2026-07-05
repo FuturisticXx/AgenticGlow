@@ -36,9 +36,14 @@ for Codex and Claude. After Codex opt-in, AgenticGlow asks the installed local
 Codex manages its own existing sign-in. AgenticGlow never reads, copies, logs,
 or stores Codex credentials or authorization headers.
 
-Anthropic does not currently document a supported programmatic subscription
-allowance endpoint. Enabling Claude therefore shows an unavailable state and
-makes no Claude request.
+Anthropic does not currently document a supported public subscription allowance
+API. If the user explicitly enables the unofficial Claude connection and pastes
+their full `claude.ai` Cookie request header, AgenticGlow stores that cookie only
+as a generic password in macOS Keychain. It extracts the active organization and
+requests the private `claude.ai` organization usage endpoint. The connection may
+stop working if Anthropic changes its web API. AgenticGlow never writes the
+cookie to UserDefaults, logs, session files, allowance cache files, or source.
+Disabling Claude deletes both its normalized cache and Keychain cookie.
 
 ## Stored allowance fields
 
@@ -51,4 +56,6 @@ For each enabled provider, AgenticGlow stores only the latest normalized value:
 
 Disabling a provider immediately deletes its cached allowance. AgenticGlow does
 not store raw provider responses, usage history, token history, cost history,
-credentials, or authorization headers.
+credentials, cookies, or authorization headers. The optional Claude session
+cookie is stored separately in macOS Keychain and is never part of allowance
+cache data.

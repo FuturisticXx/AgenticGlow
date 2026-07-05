@@ -5,6 +5,7 @@ import SwiftUI
 struct SessionListView: View {
     @Bindable var model: AppModel
     @Bindable var preferences: PreferencesStore
+    let claudeCredentialStore: any ClaudeSessionCredentialStoring
     let openIntegrations: () -> Void
     @State private var showingUsageConsent = false
 
@@ -63,6 +64,7 @@ struct SessionListView: View {
             UsageConsentView(
                 codexEnabled: preferences.codexUsageEnabled,
                 claudeEnabled: preferences.claudeUsageEnabled,
+                claudeCredentialConfigured: (try? claudeCredentialStore.load()) != nil,
                 apply: applyUsageConsent
             )
         }
@@ -129,7 +131,16 @@ struct SessionListView: View {
         }
     }
 
-    private func applyUsageConsent(codex: Bool, claude: Bool) {
+    private func applyUsageConsent(codex: Bool, claude: Bool, cookie: String) throws {
+        if claude {
+            if !cookie.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                try claudeCredentialStore.save(cookie)
+            } else if try claudeCredentialStore.load() == nil {
+                throw ClaudeCredentialError(message: "Paste the full Claude session cookie.")
+            }
+        } else {
+            try claudeCredentialStore.delete()
+        }
         preferences.codexUsageEnabled = codex
         preferences.claudeUsageEnabled = claude
         Task {
