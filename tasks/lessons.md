@@ -15,3 +15,15 @@ Rules learned from real mistakes in this project. Read in full at session start.
 ## Keep GitHub Actions on current major versions (2026-07-05)
 
 `actions/checkout@v4` triggered Node deprecation warnings on every run. Bumped to `@v5` in both `ci.yml` and `release.yml`. When a CI annotation warns about a deprecated action or runtime, bump it promptly; warnings become failures when GitHub removes the old runtime.
+
+## Show elapsed seconds below one minute (2026-07-05)
+
+John prefers exact elapsed seconds for active sessions under one minute. Display `54s`, for example, instead of `<1m`.
+
+## Ambient animation must be visibly alive (2026-07-05)
+
+The first popover aura drifted at 70 seconds per revolution and John reported "I can't see any animations" even though pixel diffing proved it was moving. Rule: ambient motion should show a clearly noticeable change within about 5 seconds of watching, while each individual moment still looks calm. Verify by capturing frames a few seconds apart, not just by confirming the animation code runs.
+
+## Present design options as labeled visual variants in chat (2026-07-05)
+
+When John dislikes a look, do not guess a single replacement. Render 3 or 4 labeled variants (A, B, C, D) he can see directly in the conversation and let him pick. File attachments did not display for him; inline widgets did. Also: keep color in one element per row. He asked to remove the tinted percentage text so only the bars carry the provider color.
