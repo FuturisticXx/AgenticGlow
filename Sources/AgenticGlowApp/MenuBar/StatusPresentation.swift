@@ -53,6 +53,6 @@ struct StatusPresentation: Equatable {
     }
 
     private static func format(_ seconds: Int) -> String {
-        seconds < 60 ? "<1m" : "\(seconds / 60)m"
+        seconds < 60 ? "\(seconds)s" : "\(seconds / 60)m"
     }
 }

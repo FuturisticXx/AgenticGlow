@@ -39,6 +39,16 @@ final class StatusPresentationTests: XCTestCase {
         XCTAssertEqual(later, presentation)
     }
 
+    func testWorkingPresentationShowsSecondsBelowOneMinute() {
+        let presentation = StatusPresentation(
+            resolved: resolved(phase: .thinking, elapsedSeconds: 54),
+            showTimer: true,
+            reduceMotion: false
+        )
+
+        XCTAssertEqual(presentation.title, "54s")
+    }
+
     func testWorkingPresentationHidesTimerWhenDisabled() {
         let early = StatusPresentation(
             resolved: resolved(phase: .usingTool, elapsedSeconds: 65),
