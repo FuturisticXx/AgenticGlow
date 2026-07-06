@@ -1,5 +1,10 @@
 # Got done
 
+## 2026-07-06 - Cleaned up 0.2.0 release bookkeeping
+
+- Updated the current release goal to monitor v0.2.0 instead of v0.1.1.
+- Ignored AppleDouble metadata files so external-drive filesystem artifacts do not dirty the repository.
+
 ## 2026-07-05 - Released 0.2.0 publicly with the Dark Mode fix
 
 - Built, signed, and notarized the universal 0.2.0 release; Apple accepted the submission and Gatekeeper accepts the app and DMG as Notarized Developer ID.

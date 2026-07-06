@@ -118,7 +118,7 @@ Maintain the public AgenticGlow release and graduate its Cask from the official 
 
 Next unblocked work:
 
-1. Monitor v0.1.1 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy.
+1. Monitor v0.2.0 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy.
 
 ## Legal and Branding
 
