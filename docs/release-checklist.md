@@ -101,6 +101,17 @@ Public release and Homebrew evidence recorded 2026-07-05:
 - `brew install --cask FuturisticXx/agenticglow/agenticglow`, launch, uninstall while running, integration removal, application removal, reinstall, signature verification, Gatekeeper assessment, and relaunch all passed on macOS 27 beta.
 - Homebrew's official Cask repository currently rejects self-submitted apps below 90 forks, 90 watchers, or 225 stars. AgenticGlow is newly public, so an upstream `homebrew/homebrew-cask` PR is deferred until it meets the published threshold; the maintained upstream tap is the supported installation route.
 
+Public release 0.2.0 evidence recorded 2026-07-05:
+
+- Released from commit `09dabd6` (tag `v0.2.0`) containing the popover aura, redesigned allowance bars, exact elapsed seconds under one minute, refreshed app icon, the bundled Codex binary allowance fix, and the Dark Mode popover fix (0.45 scrim plus unified aura palette).
+- The Dark Mode fix was screenshot-verified live on macOS 27.0 from the rebuilt app and again from the installed notarized 0.2.0 app; John approved the scrim strength from three labeled live captures.
+- 154 non-UI tests passed and the privacy contract verification passed on the release commit; CI run `28765533939` passed on push.
+- Signed universal `arm64` and `x86_64` build passed strict code-signature checks. Apple accepted the notarization submission; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- The released DMG SHA-256 is `9b990455fa7155d13bb4df61137e0fd6cf614e62fe08cd6547b96b901d7ed512`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.2.0 checksum, passed Ruby syntax validation, and was pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `5c21667`).
+- The installed /Applications app was replaced with the notarized 0.2.0 build and relaunched.
+- Known appearance note: the Dark Mode scrim applies on macOS 26+ only; macOS 14 to 25 keep the more opaque `.regularMaterial` background.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.

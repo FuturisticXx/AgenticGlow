@@ -1,5 +1,13 @@
 # Got done
 
+## 2026-07-05 - Released 0.2.0 publicly with the Dark Mode fix
+
+- Built, signed, and notarized the universal 0.2.0 release; Apple accepted the submission and Gatekeeper accepts the app and DMG as Notarized Developer ID.
+- Published GitHub release `v0.2.0` with the DMG (SHA-256 `9b990455...7ed512`), verified the uploaded asset round-trips with matching checksum, staple, and Gatekeeper checks.
+- Bumped `Cask/agenticglow.rb` to 0.2.0 on main and pushed the same cask to the official Homebrew tap, so `brew upgrade` serves 0.2.0.
+- Replaced the installed v0.1.1 in /Applications with the notarized 0.2.0 and verified the dark popover from the installed app.
+- Recorded full evidence in `docs/release-checklist.md`.
+
 ## 2026-07-05 - Fixed washed-out Dark Mode popover
 
 - Reproduced John's "Dark Mode is too light" report with live popover screenshots: on macOS 26+ the background was Color.clear over Liquid Glass, letting desktop content bleed through.
