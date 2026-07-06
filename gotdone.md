@@ -1,5 +1,12 @@
 # Got done
 
+## 2026-07-05 - Fixed Codex allowance from macOS GUI launches
+
+- Diagnosed Codex allowance as unavailable because AgenticGlow preferred the Homebrew Node launcher while macOS GUI launches omit Homebrew from `PATH`.
+- Changed executable discovery to prefer the self-contained Codex.app binary while preserving existing command-line fallbacks.
+- Added a regression test for candidate ordering and verified live allowance refresh under the restricted GUI `PATH`.
+- Passed 154 non-UI tests, privacy verification, standalone-helper verification, and a universal local build.
+
 ## 2026-07-05 — Public release and Homebrew distribution
 
 - Published the AgenticGlow repository and releases `v0.1.0` and `v0.1.1` publicly.

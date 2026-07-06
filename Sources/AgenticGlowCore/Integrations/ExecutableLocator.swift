@@ -4,14 +4,7 @@ public enum ExecutableLocator {
     public static func locate(_ name: String) -> URL? {
         guard ["codex", "claude"].contains(name) else { return nil }
         let home = FileManager.default.homeDirectoryForCurrentUser.path
-        let candidates = [
-            "/opt/homebrew/bin/\(name)",
-            "/usr/local/bin/\(name)",
-            "/usr/bin/\(name)",
-            "\(home)/.local/bin/\(name)",
-            "\(home)/bin/\(name)"
-        ]
-        if let direct = candidates
+        if let direct = candidatePaths(for: name, homeDirectory: home)
             .map(URL.init(fileURLWithPath:))
             .first(where: { FileManager.default.isExecutableFile(atPath: $0.path) }) {
             return direct
@@ -32,5 +25,18 @@ public enum ExecutableLocator {
         guard process.terminationStatus == 0,
               FileManager.default.isExecutableFile(atPath: path) else { return nil }
         return URL(fileURLWithPath: path)
+    }
+
+    static func candidatePaths(for name: String, homeDirectory: String) -> [String] {
+        let appBinary = name == "codex"
+            ? ["/Applications/Codex.app/Contents/Resources/codex"]
+            : []
+        return appBinary + [
+            "/opt/homebrew/bin/\(name)",
+            "/usr/local/bin/\(name)",
+            "/usr/bin/\(name)",
+            "\(homeDirectory)/.local/bin/\(name)",
+            "\(homeDirectory)/bin/\(name)"
+        ]
     }
 }
