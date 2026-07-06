@@ -63,3 +63,10 @@
 - The aura push failed CI: `ConcentricRectangle` does not exist in Xcode 16.4's macOS 15.5 SDK, and `#available` alone does not guard compile-time symbols. Wrapped it in `#if compiler(>=6.2)` with the rounded-rectangle fallback for older toolchains.
 - Note: CI-built binaries (Xcode 16.4) always use the fallback shape, so a release built there will not use ConcentricRectangle on macOS 26. Revisit when CI moves to Xcode 26.
 - Local tests green (25/25). Pushed and confirmed the CI run passed.
+
+## 2026-07-05 — Built 0.2.0 private release candidate
+
+- Verified release readiness first: forced the pre-Xcode 26 fallback corner shape locally on macOS 26 and confirmed the shipped aura looks identical to the approved version.
+- Triggered the Private Release Candidate workflow for 0.2.0 (run 28761194156). All steps passed: gates, signed build, DMG packaging, verification, notarization, and Cask generation.
+- Artifact `AgenticGlow-0.2.0-private-rc` (DMG + Cask, ~4 MB) is attached to the run. No public GitHub release or Homebrew submission was created.
+- 0.2.0 contents since v0.1.1: glowing popover aura, redesigned allowance bars in Claude orange and Codex azure, exact seconds for young sessions, refreshed app icon.
