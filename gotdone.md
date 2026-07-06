@@ -1,5 +1,13 @@
 # Got done
 
+## 2026-07-05 - Fixed washed-out Dark Mode popover
+
+- Reproduced John's "Dark Mode is too light" report with live popover screenshots: on macOS 26+ the background was Color.clear over Liquid Glass, letting desktop content bleed through.
+- Added a Dark Mode scrim (black at 0.45, named constant) behind the popover content; John picked strength B from three labeled live captures.
+- Unified the popover aura to the light-mode palette with normal blending after John clarified the dark aura's bleached border glow was the real complaint.
+- Ran /code-review (8 finder angles, 2 verifiers): fixed the magic-number findings; documented that pre-macOS-26 dark mode intentionally keeps plain regularMaterial.
+- Verified with a rebuilt-app screenshot in Dark Mode, 154/154 tests, and the privacy gate. John approved the live build, then committed as `98e5b26` and pushed to main.
+
 ## 2026-07-05 - Approved task-aware session title design
 
 - Approved primary session labels based on provider thread titles, with a locally generated task description and project-folder fallback.
