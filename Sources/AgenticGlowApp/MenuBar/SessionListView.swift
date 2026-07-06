@@ -192,6 +192,7 @@ private struct PopoverAura: View {
 
     private func edgeBand(width: CGFloat, blur: CGFloat) -> some View {
         Group {
+            #if compiler(>=6.2)
             if #available(macOS 26.0, *) {
                 ConcentricRectangle()
                     .stroke(Color.white, lineWidth: width)
@@ -199,6 +200,10 @@ private struct PopoverAura: View {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(Color.white, lineWidth: width)
             }
+            #else
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.white, lineWidth: width)
+            #endif
         }
         .padding(width / 2)
         .blur(radius: blur)

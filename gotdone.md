@@ -57,3 +57,9 @@
 - Elapsed time for active sessions under one minute now shows exact seconds (54s instead of <1m), with a unit test.
 - Refreshed the full app icon set.
 - Committed as 3862dac (seconds), 09d4185 (icons), 1af60c0 (aura + bars), plus this docs commit; pushed to main.
+
+## 2026-07-05 — Fixed CI break from macOS 26-only API
+
+- The aura push failed CI: `ConcentricRectangle` does not exist in Xcode 16.4's macOS 15.5 SDK, and `#available` alone does not guard compile-time symbols. Wrapped it in `#if compiler(>=6.2)` with the rounded-rectangle fallback for older toolchains.
+- Note: CI-built binaries (Xcode 16.4) always use the fallback shape, so a release built there will not use ConcentricRectangle on macOS 26. Revisit when CI moves to Xcode 26.
+- Local tests green (25/25). Pushed and confirmed the CI run passed.

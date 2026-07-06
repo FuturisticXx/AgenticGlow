@@ -27,3 +27,7 @@ The first popover aura drifted at 70 seconds per revolution and John reported "I
 ## Present design options as labeled visual variants in chat (2026-07-05)
 
 When John dislikes a look, do not guess a single replacement. Render 3 or 4 labeled variants (A, B, C, D) he can see directly in the conversation and let him pick. File attachments did not display for him; inline widgets did. Also: keep color in one element per row. He asked to remove the tinted percentage text so only the bars carry the provider color.
+
+## Guard new-SDK symbols with compiler checks, not just #available (2026-07-05)
+
+`ConcentricRectangle` (macOS 26 SDK) compiled locally on Xcode 26 but broke CI, which builds with Xcode 16.4. `if #available(macOS 26.0, *)` only guards at runtime; the symbol must also exist at compile time. Wrap any API newer than the CI toolchain's SDK in `#if compiler(>=6.2)` (or the matching version) with a fallback branch. Local green is not proof: CI's Xcode is older than the local beta.
