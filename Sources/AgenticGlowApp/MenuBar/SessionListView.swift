@@ -3,6 +3,7 @@ import AgenticGlowCore
 import SwiftUI
 
 struct SessionListView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Bindable var model: AppModel
     @Bindable var preferences: PreferencesStore
     @Bindable var popoverState: PopoverState
@@ -56,7 +57,7 @@ struct SessionListView: View {
         .frame(width: 360)
         .background {
             if #available(macOS 26.0, *) {
-                Color.clear
+                darkModeScrim
             } else {
                 Rectangle().fill(.regularMaterial)
             }
@@ -71,6 +72,17 @@ struct SessionListView: View {
                 claudeCredentialConfigured: (try? claudeCredentialStore.load()) != nil,
                 apply: applyUsageConsent
             )
+        }
+    }
+
+    /// The Liquid Glass popover material lets bright desktop content wash out
+    /// Dark Mode, so a dim layer sits between the glass and the content.
+    private static let darkScrimOpacity = 0.45
+
+    @ViewBuilder
+    private var darkModeScrim: some View {
+        if colorScheme == .dark {
+            Color.black.opacity(Self.darkScrimOpacity)
         }
     }
 
@@ -159,7 +171,6 @@ struct SessionListView: View {
 /// masked twice, as a wide blurred halo and as a thin filament on the outline.
 private struct PopoverAura: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.colorScheme) private var colorScheme
     let active: Bool
     @State private var driftAngle = 0.0
     @State private var breath = 0.6
@@ -176,7 +187,6 @@ private struct PopoverAura: View {
                 .mask(edgeBand(width: 2, blur: 0.8))
                 .opacity(filamentOpacity * (0.85 + 0.15 * breath))
         }
-        .blendMode(colorScheme == .dark ? .plusLighter : .normal)
         .opacity(active ? 1 : 0)
         .animation(.easeOut(duration: 0.6), value: active)
         .allowsHitTesting(false)
@@ -210,21 +220,10 @@ private struct PopoverAura: View {
     }
 
     private var stops: [Gradient.Stop] {
-        let azure: Color
-        let ice: Color
-        let gold: Color
-        let green: Color
-        if colorScheme == .dark {
-            azure = Color(red: 0.42, green: 0.65, blue: 1.00)
-            ice = Color(red: 0.75, green: 0.88, blue: 1.00)
-            gold = Color(red: 1.00, green: 0.78, blue: 0.48)
-            green = Color(red: 0.50, green: 0.87, blue: 0.62)
-        } else {
-            azure = Color(red: 0.15, green: 0.44, blue: 0.95)
-            ice = Color(red: 0.35, green: 0.60, blue: 0.98)
-            gold = Color(red: 0.90, green: 0.58, blue: 0.16)
-            green = Color(red: 0.10, green: 0.62, blue: 0.40)
-        }
+        let azure = Color(red: 0.15, green: 0.44, blue: 0.95)
+        let ice = Color(red: 0.35, green: 0.60, blue: 0.98)
+        let gold = Color(red: 0.90, green: 0.58, blue: 0.16)
+        let green = Color(red: 0.10, green: 0.62, blue: 0.40)
         return [
             .init(color: gold, location: 0.00),
             .init(color: azure, location: 0.22),
@@ -236,9 +235,9 @@ private struct PopoverAura: View {
         ]
     }
 
-    private var haloOpacity: Double { colorScheme == .dark ? 0.65 : 0.55 }
-    private var midOpacity: Double { colorScheme == .dark ? 0.60 : 0.50 }
-    private var filamentOpacity: Double { colorScheme == .dark ? 0.95 : 0.90 }
+    private let haloOpacity = 0.55
+    private let midOpacity = 0.50
+    private let filamentOpacity = 0.90
 
     private func updateMotion() {
         var still = Transaction()

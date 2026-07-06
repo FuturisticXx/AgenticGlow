@@ -1,15 +1,20 @@
-# Popover Aura + Allowance Bars (2026-07-05) — DONE
+# Fix: Dark Mode popover too light (2026-07-05)
 
-Goal: premium, restrained glowing aura around the menu-bar popover matching the app icon palette (azure blue, warm gold, soft green), plus redesigned allowance bars.
+Bug report from John: "Dark Mode is too light." Reproduced on macOS 27 in Dark Mode:
+the popover glass is nearly transparent, desktop content bleeds through, and the
+popover reads light gray instead of dark.
 
-Technique: NSPopover windows are a hard clipping boundary, so the aura renders inside the popover content as a masked, slowly rotating angular gradient (halo, mid diffusion, and edge filament layers). Native popover behavior untouched. On macOS 26 the edge shape uses ConcentricRectangle to match the Liquid Glass corners; older systems fall back to a rounded rectangle.
+Root cause: on macOS 26+ `SessionListView` uses `Color.clear` as the background,
+relying only on the system Liquid Glass popover material. No dark tint exists for
+Dark Mode.
 
-- [x] Replace AgenticGlowBorder with PopoverAura in SessionListView.swift -> verified: build succeeds
-- [x] Gate motion on PopoverState.isPresented and Reduce Motion -> verified: 0.0% CPU with popover closed, ~7% open
-- [x] Screenshot real popover in dark and light -> verified: aura visible, diffused, palette matches icon
-- [x] Iterate: v1 too faint, v2 flooded content, v3 restrained edge light (approved direction)
-- [x] Speed up motion after John could not perceive it: 28s drift, 4s breath at 55-100% -> verified: pixel diff shows 13% change over 4s, calm at any instant
-- [x] Allowance bars: 4pt capsules, gradient + glow, Claude in Claude Code orange, Codex azure -> John picked style C from A/B/C/D variants
-- [x] Uncolor percentage text; bars alone carry provider color
-- [x] Tests green (25/25 app tests, core tests, UI tests skipped like CI)
-- [x] Commit, push, confirm CI
+Plan (bug fix, autonomous path):
+
+- [x] Reproduce with screenshot of live popover in Dark Mode
+- [x] Add a Dark Mode scrim layer behind the popover content in SessionListView
+- [x] Build three scrim strengths (A: 0.30, B: 0.45, C: 0.60), screenshot each on the real popover -> verified: side-by-side captures, signed test builds with John's Developer ID so keychain access stayed silent
+- [x] Present labeled variants A/B/C to John, with recommendation B
+- [x] John picked B (0.45) and clarified "too light" meant the aura border glow: he wants dark mode's aura to match light mode
+- [x] Unify PopoverAura: light palette, light opacities, no blend mode, drop unused colorScheme -> verified: rebuilt app screenshot shows saturated azure/gold edges over the dark scrim
+- [x] Run /code-review (8 finders + 2 verifiers) -> 2 confirmed findings: pre-macOS-26 dark mode has no scrim (reported, intentionally out of scope, cannot visually verify on this machine); magic numbers -> fixed with named constants
+- [x] Tests 154/154 pass, privacy gate passes, committed locally (push pending John's OK)
