@@ -1,5 +1,11 @@
 # Got done
 
+## 2026-07-05 - Approved task-aware session title design
+
+- Approved primary session labels based on provider thread titles, with a locally generated task description and project-folder fallback.
+- Preserved the project folder as secondary context and kept raw prompts, responses, and transcripts outside persistent state.
+- Documented deterministic on-device title generation, precedence, compatibility, privacy, failure behavior, and verification requirements.
+
 ## 2026-07-05 - Fixed Codex allowance from macOS GUI launches
 
 - Diagnosed Codex allowance as unavailable because AgenticGlow preferred the Homebrew Node launcher while macOS GUI launches omit Homebrew from `PATH`.
