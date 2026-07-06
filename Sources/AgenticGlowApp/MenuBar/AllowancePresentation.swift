@@ -2,6 +2,11 @@ import Foundation
 import AgenticGlowCore
 
 struct AllowancePresentation {
+    let currentLeftPercent: String?
+    let currentUsedPercent: String?
+    let weeklyLeftPercent: String?
+    let weeklyUsedPercent: String?
+    let weeklyResetValue: String?
     let currentValue: String
     let currentDetail: String
     let weeklyValue: String
@@ -11,8 +16,13 @@ struct AllowancePresentation {
     let accessibilityWeekly: String?
 
     init(allowance: ProviderAllowance, now: Date) {
-        let currentLeft = allowance.currentPercentLeft.map(Self.percent) ?? "Unavailable"
-        let currentUsed = allowance.currentPercentUsed.map(Self.percent)
+        currentLeftPercent = allowance.currentPercentLeft.map(Self.percent)
+        currentUsedPercent = allowance.currentPercentUsed.map(Self.percent)
+        weeklyLeftPercent = allowance.weeklyPercentLeft.map(Self.percent)
+        weeklyUsedPercent = allowance.weeklyPercentUsed.map(Self.percent)
+        weeklyResetValue = allowance.weeklyResetAt.map(Self.weeklyReset)
+        let currentLeft = currentLeftPercent ?? "Unavailable"
+        let currentUsed = currentUsedPercent
         if allowance.provider == .claude, let currentUsed {
             currentValue = "\(currentLeft)% left · \(currentUsed)% used"
         } else {
@@ -29,8 +39,8 @@ struct AllowancePresentation {
             if allowance.provider == .claude, let used = allowance.weeklyPercentUsed {
                 parts[0] += " · \(Self.percent(used))% used"
             }
-            if let reset = allowance.weeklyResetAt {
-                parts.append(Self.weeklyReset(reset))
+            if let weeklyResetValue {
+                parts.append(weeklyResetValue)
             }
             weeklyValue = parts.joined(separator: " · ")
             weeklyProgress = weeklyLeft / 100

@@ -4,11 +4,12 @@ import Symbols
 import SwiftUI
 
 @MainActor
-final class StatusItemController: NSObject {
+final class StatusItemController: NSObject, NSPopoverDelegate {
     private let model: AppModel
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
     private let symbolView = NSImageView()
+    private let popoverState = PopoverState()
     private var lastPresentation: StatusPresentation?
 
     init(
@@ -21,11 +22,13 @@ final class StatusItemController: NSObject {
         super.init()
 
         popover.behavior = .transient
+        popover.delegate = self
         popover.contentSize = NSSize(width: 360, height: 420)
         popover.contentViewController = NSHostingController(
             rootView: SessionListView(
                 model: model,
                 preferences: preferences,
+                popoverState: popoverState,
                 claudeCredentialStore: claudeCredentialStore,
                 openIntegrations: openIntegrations
             )
@@ -53,12 +56,19 @@ final class StatusItemController: NSObject {
         symbolView.removeAllSymbolEffects()
     }
 
+    func popoverDidClose(_ notification: Notification) {
+        popoverState.isPresented = false
+    }
+
     @objc private func togglePopover() {
         guard let button = item.button else { return }
         if popover.isShown {
             popover.performClose(nil)
+            popoverState.isPresented = false
         } else {
+            NSApp.activate(ignoringOtherApps: true)
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            popoverState.isPresented = true
             Task { await model.refreshUsage(.popoverOpened) }
         }
     }
@@ -112,4 +122,10 @@ final class StatusItemController: NSObject {
     ) where Effect: IndefiniteSymbolEffect & SymbolEffect {
         symbolView.addSymbolEffect(effect, options: options)
     }
+}
+
+@MainActor
+@Observable
+final class PopoverState {
+    var isPresented = false
 }

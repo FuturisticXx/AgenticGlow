@@ -44,6 +44,7 @@ private struct ProviderAllowanceRow: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(provider == .codex ? "Codex" : "Claude")
                 .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .center)
             switch state {
             case .off:
                 EmptyView()
@@ -72,21 +73,19 @@ private struct ProviderAllowanceRow: View {
         freshness: AllowanceFreshness
     ) -> some View {
         let presentation = AllowancePresentation(allowance: allowance, now: Date())
-        Text(presentation.currentValue)
+        currentValueText(presentation)
             .font(.callout.weight(.medium))
             .monospacedDigit()
         Text(presentation.currentDetail)
             .font(.caption)
             .foregroundStyle(.secondary)
-        ProgressView(value: presentation.currentProgress)
-            .tint(provider == .codex ? .blue : .purple)
+        AllowanceBar(value: presentation.currentProgress, tint: tint)
             .accessibilityLabel(presentation.accessibilityCurrent)
-        Text(presentation.weeklyValue)
+        weeklyValueText(presentation)
             .font(.caption)
             .monospacedDigit()
         if let weeklyProgress = presentation.weeklyProgress {
-            ProgressView(value: weeklyProgress)
-                .tint(provider == .codex ? .blue : .purple)
+            AllowanceBar(value: weeklyProgress, tint: tint)
                 .accessibilityLabel(presentation.accessibilityWeekly ?? "Weekly allowance")
         }
         if freshness == .stale {
@@ -96,5 +95,62 @@ private struct ProviderAllowanceRow: View {
         }
     }
 
+    private func currentValueText(_ presentation: AllowancePresentation) -> Text {
+        guard let left = presentation.currentLeftPercent else {
+            return Text(presentation.currentValue)
+        }
+        var text = Text("\(left)% left")
+        if provider == .claude, let used = presentation.currentUsedPercent {
+            text = text + Text(" · \(used)% used")
+        }
+        return text
+    }
+
+    private func weeklyValueText(_ presentation: AllowancePresentation) -> Text {
+        guard let left = presentation.weeklyLeftPercent else {
+            return Text(presentation.weeklyValue)
+        }
+        var text = Text("Week \(left)%")
+        if provider == .claude, let used = presentation.weeklyUsedPercent {
+            text = text + Text(" · \(used)% used")
+        }
+        if let reset = presentation.weeklyResetValue {
+            text = text + Text(" · \(reset)")
+        }
+        return text
+    }
+
+    private var tint: Color {
+        provider == .codex
+            ? Color(red: 0.25, green: 0.55, blue: 1.00)
+            : Color(red: 0.85, green: 0.47, blue: 0.34)
+    }
+
     private var providerName: String { provider == .codex ? "Codex" : "Claude" }
+}
+
+/// Slim capsule allowance bar: quiet track, gradient fill in the provider
+/// color, and a faint glow so it reads as lit rather than painted.
+private struct AllowanceBar: View {
+    let value: Double
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(.quaternary)
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [tint.opacity(0.65), tint],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: max(4, geo.size.width * min(max(value, 0), 1)))
+                    .shadow(color: tint.opacity(0.45), radius: 2.5, y: 0.5)
+            }
+        }
+        .frame(height: 4)
+    }
 }

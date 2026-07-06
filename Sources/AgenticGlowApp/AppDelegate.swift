@@ -162,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             rootView: SessionListView(
                 model: model,
                 preferences: preferences,
+                popoverState: PopoverState(),
                 claudeCredentialStore: claudeCredentialStore,
                 openIntegrations: { [weak self] in self?.showSetupWindow() }
             )

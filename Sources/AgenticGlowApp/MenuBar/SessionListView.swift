@@ -5,6 +5,7 @@ import SwiftUI
 struct SessionListView: View {
     @Bindable var model: AppModel
     @Bindable var preferences: PreferencesStore
+    @Bindable var popoverState: PopoverState
     let claudeCredentialStore: any ClaudeSessionCredentialStoring
     let openIntegrations: () -> Void
     @State private var showingUsageConsent = false
@@ -59,6 +60,9 @@ struct SessionListView: View {
             } else {
                 Rectangle().fill(.regularMaterial)
             }
+        }
+        .overlay {
+            PopoverAura(active: popoverState.isPresented)
         }
         .sheet(isPresented: $showingUsageConsent) {
             UsageConsentView(
@@ -146,6 +150,110 @@ struct SessionListView: View {
         Task {
             await model.setUsageEnabled(codex, provider: .codex)
             await model.setUsageEnabled(claude, provider: .claude)
+        }
+    }
+}
+
+/// A soft illuminated edge in the app icon's palette. Rendered as light
+/// diffused into the popover material: one slowly rotating angular gradient
+/// masked twice, as a wide blurred halo and as a thin filament on the outline.
+private struct PopoverAura: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
+    let active: Bool
+    @State private var driftAngle = 0.0
+    @State private var breath = 0.6
+
+    var body: some View {
+        ZStack {
+            auraLight
+                .mask(edgeBand(width: 14, blur: 12))
+                .opacity(haloOpacity * (0.55 + 0.45 * breath))
+            auraLight
+                .mask(edgeBand(width: 5, blur: 3))
+                .opacity(midOpacity * (0.7 + 0.3 * breath))
+            auraLight
+                .mask(edgeBand(width: 2, blur: 0.8))
+                .opacity(filamentOpacity * (0.85 + 0.15 * breath))
+        }
+        .blendMode(colorScheme == .dark ? .plusLighter : .normal)
+        .opacity(active ? 1 : 0)
+        .animation(.easeOut(duration: 0.6), value: active)
+        .allowsHitTesting(false)
+        .task(id: "\(active)-\(reduceMotion)") { updateMotion() }
+    }
+
+    private var auraLight: some View {
+        Rectangle()
+            .fill(AngularGradient(gradient: Gradient(stops: stops), center: .center))
+            .scaleEffect(2.5)
+            .rotationEffect(.degrees(driftAngle))
+    }
+
+    private func edgeBand(width: CGFloat, blur: CGFloat) -> some View {
+        Group {
+            if #available(macOS 26.0, *) {
+                ConcentricRectangle()
+                    .stroke(Color.white, lineWidth: width)
+            } else {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.white, lineWidth: width)
+            }
+        }
+        .padding(width / 2)
+        .blur(radius: blur)
+    }
+
+    private var stops: [Gradient.Stop] {
+        let azure: Color
+        let ice: Color
+        let gold: Color
+        let green: Color
+        if colorScheme == .dark {
+            azure = Color(red: 0.42, green: 0.65, blue: 1.00)
+            ice = Color(red: 0.75, green: 0.88, blue: 1.00)
+            gold = Color(red: 1.00, green: 0.78, blue: 0.48)
+            green = Color(red: 0.50, green: 0.87, blue: 0.62)
+        } else {
+            azure = Color(red: 0.15, green: 0.44, blue: 0.95)
+            ice = Color(red: 0.35, green: 0.60, blue: 0.98)
+            gold = Color(red: 0.90, green: 0.58, blue: 0.16)
+            green = Color(red: 0.10, green: 0.62, blue: 0.40)
+        }
+        return [
+            .init(color: gold, location: 0.00),
+            .init(color: azure, location: 0.22),
+            .init(color: ice, location: 0.40),
+            .init(color: azure, location: 0.55),
+            .init(color: green, location: 0.75),
+            .init(color: azure, location: 0.90),
+            .init(color: gold, location: 1.00)
+        ]
+    }
+
+    private var haloOpacity: Double { colorScheme == .dark ? 0.65 : 0.55 }
+    private var midOpacity: Double { colorScheme == .dark ? 0.60 : 0.50 }
+    private var filamentOpacity: Double { colorScheme == .dark ? 0.95 : 0.90 }
+
+    private func updateMotion() {
+        var still = Transaction()
+        still.disablesAnimations = true
+        if active && !reduceMotion {
+            withTransaction(still) {
+                driftAngle = 0
+                breath = 0
+            }
+            withAnimation(.linear(duration: 28).repeatForever(autoreverses: false)) {
+                driftAngle = 360
+            }
+            withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
+                breath = 1
+            }
+        } else {
+            withTransaction(still) {
+                driftAngle = 0
+                breath = 0.6
+            }
         }
     }
 }
