@@ -41,7 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let activator = SourceApplicationActivator()
-        if fixtureName == nil {
+        if fixtureName == nil || fixtureName == "signals" {
             notificationClient.activate()
             notificationService = AgentNotificationService(
                 scheduler: notificationClient,
@@ -50,13 +50,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 activate: { activator.activate(bundleIdentifier: $0) }
             )
         }
+        let statusMonitor: ProviderStatusMonitor? = switch fixtureName {
+        case nil: ProviderStatusMonitor()
+        case "signals": ProviderStatusMonitor(requester: UITestStatusRequester())
+        default: nil
+        }
         model = AppModel(
             store: store,
             processMonitor: DarwinProcessMonitor(),
             activator: activator,
-            allowanceCoordinator: makeAllowanceCoordinator(isUITest: fixtureName != nil),
+            allowanceCoordinator: makeAllowanceCoordinator(fixtureName: fixtureName),
             notifier: notificationService,
-            statusMonitor: fixtureName == nil ? ProviderStatusMonitor() : nil
+            statusMonitor: statusMonitor
         )
 
         if fixtureName != nil {
@@ -65,6 +70,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             defaults.removePersistentDomain(forName: suiteName)
             if fixtureName == "allowance-unavailable" {
                 defaults.set(true, forKey: "codexUsageEnabled")
+            }
+            if fixtureName == "signals" {
+                defaults.set(true, forKey: "codexUsageEnabled")
+                defaults.set(true, forKey: "serviceStatusEnabled")
             }
             configurePreferences(defaults: defaults)
         } else {
@@ -116,6 +125,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.showUITestSessionWindow()
             }
         }
+        if CommandLine.arguments.contains("--ui-test-celebrate") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+                self?.model.triggerWeeklyResetForUITest()
+            }
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -130,7 +144,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences: preferences,
             updates: updateViewModel,
             launchAtLogin: launchAtLogin,
-            openIntegrations: { [weak self] in self?.showSetupWindow() }
+            openIntegrations: { [weak self] in self?.showSetupWindow() },
+            serviceStatusChanged: { [weak self] enabled in
+                Task { await self?.model.setServiceStatusEnabled(enabled) }
+            },
+            notificationsDenied: { [notificationClient] in
+                await notificationClient.isDenied()
+            }
         )
     }
 
@@ -290,7 +310,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updateViewModel = UpdateViewModel(defaults: defaults)
     }
 
-    private func makeAllowanceCoordinator(isUITest: Bool) -> AllowanceRefreshCoordinator {
+    private func makeAllowanceCoordinator(fixtureName: String?) -> AllowanceRefreshCoordinator {
         let base = FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
@@ -299,7 +319,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .appendingPathComponent(ProductMetadata.displayName, isDirectory: true)
             .appendingPathComponent("Allowance", isDirectory: true)
         let codexAdapter: any AllowanceProviding
-        if isUITest {
+        if fixtureName == "signals" {
+            codexAdapter = UITestAllowanceAdapter(provider: .codex)
+        } else if fixtureName != nil {
             codexAdapter = UnavailableAllowanceAdapter(
                 provider: .codex,
                 reason: "Disabled in UI tests."

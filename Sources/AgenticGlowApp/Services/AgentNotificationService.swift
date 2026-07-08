@@ -155,6 +155,11 @@ extension UserNotificationCenterClient: UserNotificationScheduling {
         return settings.authorizationStatus == .authorized
     }
 
+    func isDenied() async -> Bool {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        return settings.authorizationStatus == .denied
+    }
+
     func add(id: String, title: String, body: String, userInfo: [String: String]) async {
         let content = UNMutableNotificationContent()
         content.title = title

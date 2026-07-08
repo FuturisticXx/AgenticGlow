@@ -16,7 +16,7 @@ struct AllowanceSectionView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Usage access is off")
                         .font(.subheadline.weight(.medium))
-                    Text("No provider requests are being made.")
+                    Text("No usage requests are being made.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Button("Enable…", action: enable)

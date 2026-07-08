@@ -166,6 +166,12 @@ final class AppModel {
         }
     }
 
+    /// Drives the celebration deterministically for visual verification.
+    /// Only reachable via the --ui-test-celebrate launch argument.
+    func triggerWeeklyResetForUITest() {
+        weeklyResetCount += 1
+    }
+
     func refreshServiceStatus() async {
         guard let statusMonitor else { return }
         await statusMonitor.refreshIfStale()

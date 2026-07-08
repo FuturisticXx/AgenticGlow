@@ -12,7 +12,7 @@ enum UITestFixtureFactory {
         switch name(arguments: arguments) {
         case "empty", "setup-repair", "allowance-unavailable":
             return []
-        case "permission":
+        case "permission", "signals":
             return [
                 .init(
                     schemaVersion: 1,
@@ -106,6 +106,35 @@ private final class UITestSetupRecorder:
             installedEvents: HookEventKind.allCases,
             issue: nil
         )
+    }
+}
+
+/// Deterministic low allowance for the "signals" fixture: 8% left in the
+/// current window and 5% left in the week, so badge and bars are provable.
+struct UITestAllowanceAdapter: AllowanceProviding {
+    let provider: AgentProvider
+
+    func fetch() async throws -> ProviderAllowance {
+        ProviderAllowance(
+            provider: provider,
+            currentWindowLabel: "5h",
+            currentPercentUsed: 92,
+            currentResetAt: Date().addingTimeInterval(2 * 3_600),
+            weeklyPercentUsed: 95,
+            weeklyResetAt: Date().addingTimeInterval(3 * 86_400),
+            fetchedAt: Date()
+        )
+    }
+}
+
+/// Canned status payloads for the "signals" fixture: Claude reports an
+/// incident, Codex reports operational.
+struct UITestStatusRequester: ProviderStatusRequesting {
+    func fetchStatus(for provider: AgentProvider) async throws -> Data {
+        if provider == .claude {
+            return Data(#"{"status":{"indicator":"minor","description":"Elevated errors on Claude"}}"#.utf8)
+        }
+        return Data(#"{"status":{"indicator":"none","description":"All Systems Operational"}}"#.utf8)
     }
 }
 

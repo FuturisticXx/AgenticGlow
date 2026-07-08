@@ -19,6 +19,8 @@ struct SessionListView: View {
                 .accessibilityValue(summary)
                 .accessibilityIdentifier("AgenticGlow.SessionSummary")
 
+            incidentContent
+
             sessionContent
 
             Divider()
@@ -84,6 +86,28 @@ struct SessionListView: View {
         if colorScheme == .dark {
             Color.black.opacity(Self.darkScrimOpacity)
         }
+    }
+
+    /// One quiet line per provider with an active status-page incident, so a
+    /// stalled agent can be blamed on the service instead of the setup.
+    @ViewBuilder
+    private var incidentContent: some View {
+        ForEach(AgentProvider.allCases, id: \.rawValue) { provider in
+            if case let .incident(description) = model.serviceStatus(for: provider) {
+                Label(
+                    "\(providerName(provider)): \(description)",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .font(.caption)
+                .foregroundStyle(.orange)
+                .accessibilityLabel("\(providerName(provider)) service incident. \(description)")
+                .accessibilityIdentifier("AgenticGlow.Incident.\(provider.rawValue)")
+            }
+        }
+    }
+
+    private func providerName(_ provider: AgentProvider) -> String {
+        provider == .codex ? "Codex" : "Claude"
     }
 
     @ViewBuilder

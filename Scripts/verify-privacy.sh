@@ -22,7 +22,7 @@ if grep -rnE 'accessToken|refreshToken|authorizationHeader|OPENAI_API_KEY|ANTHRO
   exit 1
 fi
 
-grep -q 'No provider requests are being made' Sources/AgenticGlowApp/MenuBar/AllowanceSectionView.swift
+grep -q 'No usage requests are being made' Sources/AgenticGlowApp/MenuBar/AllowanceSectionView.swift
 grep -Fq 'cache.remove(provider)' Sources/AgenticGlowCore/Allowance/AllowanceRefreshCoordinator.swift
 grep -q 'kSecClassGenericPassword' Sources/AgenticGlowApp/Settings/ClaudeSessionCredentialStore.swift
 grep -q 'kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly' Sources/AgenticGlowApp/Settings/ClaudeSessionCredentialStore.swift
