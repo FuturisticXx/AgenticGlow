@@ -24,6 +24,15 @@ final class PreferencesStore {
     var claudeUsageEnabled: Bool {
         didSet { defaults.set(claudeUsageEnabled, forKey: "claudeUsageEnabled") }
     }
+    var notifyPermission: Bool {
+        didSet { defaults.set(notifyPermission, forKey: "notifyPermission") }
+    }
+    var notifyQuotaLow: Bool {
+        didSet { defaults.set(notifyQuotaLow, forKey: "notifyQuotaLow") }
+    }
+    var serviceStatusEnabled: Bool {
+        didSet { defaults.set(serviceStatusEnabled, forKey: "serviceStatusEnabled") }
+    }
 
     private let showTimerDidChange: (Bool) -> Void
 
@@ -38,5 +47,9 @@ final class PreferencesStore {
         self.diagnosticsEnabled = defaults.bool(forKey: "diagnosticsEnabled")
         self.codexUsageEnabled = defaults.bool(forKey: "codexUsageEnabled")
         self.claudeUsageEnabled = defaults.bool(forKey: "claudeUsageEnabled")
+        // Notification toggles default on; absence of a stored value means true.
+        self.notifyPermission = defaults.object(forKey: "notifyPermission") as? Bool ?? true
+        self.notifyQuotaLow = defaults.object(forKey: "notifyQuotaLow") as? Bool ?? true
+        self.serviceStatusEnabled = defaults.bool(forKey: "serviceStatusEnabled")
     }
 }

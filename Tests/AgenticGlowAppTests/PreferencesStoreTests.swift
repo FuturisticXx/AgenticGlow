@@ -19,6 +19,35 @@ final class PreferencesStoreTests: XCTestCase {
         XCTAssertEqual(observedValues, [true])
     }
 
+    func testNotificationTogglesDefaultOnAndPersist() {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let preferences = PreferencesStore(defaults: defaults)
+
+        XCTAssertTrue(preferences.notifyPermission)
+        XCTAssertTrue(preferences.notifyQuotaLow)
+
+        preferences.notifyPermission = false
+
+        XCTAssertEqual(defaults.object(forKey: "notifyPermission") as? Bool, false)
+        XCTAssertFalse(PreferencesStore(defaults: defaults).notifyPermission)
+        XCTAssertTrue(PreferencesStore(defaults: defaults).notifyQuotaLow)
+    }
+
+    func testServiceStatusDefaultsOffAndPersists() {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let preferences = PreferencesStore(defaults: defaults)
+
+        XCTAssertFalse(preferences.serviceStatusEnabled)
+
+        preferences.serviceStatusEnabled = true
+
+        XCTAssertTrue(defaults.bool(forKey: "serviceStatusEnabled"))
+    }
+
     func testUsageAccessDefaultsOffAndPersistsPerProvider() {
         let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
