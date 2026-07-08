@@ -5,7 +5,7 @@ public protocol ProviderStatusRequesting: Sendable {
 }
 
 /// Fetches the public, unauthenticated Statuspage summary for a provider.
-/// No cookies, credentials, or identifiers are sent; the request is a plain
+/// Nothing account-related or identifying is sent; the request is a plain
 /// GET to a documented public endpoint.
 public struct StatusPageClient: ProviderStatusRequesting {
     private let session: URLSession

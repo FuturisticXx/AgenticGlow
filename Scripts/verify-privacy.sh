@@ -40,6 +40,16 @@ if grep -n 'UserDefaults' Sources/AgenticGlowApp/Settings/ClaudeSessionCredentia
   exit 1
 fi
 
+# Provider status checks must stay credential-free and fully documented.
+grep -q 'status.claude.com' Sources/AgenticGlowCore/Status/StatusPageClient.swift
+grep -q 'status.openai.com' Sources/AgenticGlowCore/Status/StatusPageClient.swift
+grep -q 'status.claude.com' "$privacy"
+grep -q 'status.openai.com' "$privacy"
+if grep -rniE 'cookie|credential|authorization' Sources/AgenticGlowCore/Status; then
+  echo "Forbidden credential material in provider status implementation" >&2
+  exit 1
+fi
+
 for forbidden in prompt assistantMessage command toolInput toolResponse transcriptContents; do
   if grep -qE "public let ${forbidden}|public var ${forbidden}" "$schema"; then
     echo "Forbidden stored field: ${forbidden}" >&2

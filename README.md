@@ -1,6 +1,6 @@
 # AgenticGlow
 
-AgenticGlow is a local macOS menu bar app that shows the status of your AI coding agent sessions.
+AgenticGlow is a local macOS menu bar app that shows the status of your AI coding agent sessions. It notifies you when an agent needs your permission or your usage allowance runs low, hints low allowance on the menu bar icon, and can optionally show provider service incidents.
 
 ## Requirements
 
@@ -52,7 +52,7 @@ usage deletes it. If Claude reports that the cookie expired, repeat these steps.
 
 ## Privacy
 
-AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks and explicit, provider-specific subscription allowance access. Usage access is off by default. Codex allowance uses the installed local Codex app-server, which manages its own sign-in. Optional Claude allowance uses an explicitly disclosed private `claude.ai` endpoint and a user-supplied session cookie stored only in macOS Keychain.
+AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks, explicit provider-specific subscription allowance access, and optional provider status checks. Usage access is off by default. Codex allowance uses the installed local Codex app-server, which manages its own sign-in. Optional Claude allowance uses an explicitly disclosed private `claude.ai` endpoint and a user-supplied session cookie stored only in macOS Keychain. Optional provider incident display (off by default) fetches only the public, unauthenticated Anthropic and OpenAI status pages.
 
 See [docs/privacy.md](docs/privacy.md) for the complete privacy contract.
 

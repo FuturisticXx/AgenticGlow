@@ -45,6 +45,28 @@ stop working if Anthropic changes its web API. AgenticGlow never writes the
 cookie to UserDefaults, logs, session files, allowance cache files, or source.
 Disabling Claude deletes both its normalized cache and Keychain cookie.
 
+## Provider service status (optional)
+
+Provider incident display is off by default. When the user enables "Show
+provider incidents" in Settings, AgenticGlow fetches the public, unauthenticated
+status summary for each provider when the popover opens, at most once per ten
+minutes:
+
+- Claude: `https://status.claude.com/api/v2/status.json`
+- Codex: `https://status.openai.com/api/v2/status.json`
+
+These are plain GET requests to public status pages. No cookies, credentials,
+account data, or identifiers are sent. The normalized result (operational or
+incident description) is held in memory only, never written to disk, and is
+discarded when the toggle is turned off or the app quits.
+
+## Notifications
+
+Optional notifications (agent needs permission, usage running low) are composed
+and delivered locally through macOS Notification Center. They contain only the
+provider name, project name, and allowance percentages, and involve no network
+request.
+
 ## Stored allowance fields
 
 For each enabled provider, AgenticGlow stores only the latest normalized value:
