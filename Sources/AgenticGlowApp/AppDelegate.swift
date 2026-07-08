@@ -16,6 +16,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let launchAtLogin = LaunchAtLoginService()
     private var claudeCredentialStore: any ClaudeSessionCredentialStoring =
         ClaudeSessionCredentialStore()
+    private var notificationService: AgentNotificationService?
+    private let notificationClient = UserNotificationCenterClient()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Support noninteractive clean-removal mode
@@ -38,11 +40,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             store = FileSessionStateStore(directory: FileSessionStateStore.defaultDirectory)
         }
 
+        let activator = SourceApplicationActivator()
+        if fixtureName == nil {
+            notificationClient.activate()
+            notificationService = AgentNotificationService(
+                scheduler: notificationClient,
+                permissionEnabled: { [weak self] in self?.preferences.notifyPermission ?? false },
+                quotaEnabled: { [weak self] in self?.preferences.notifyQuotaLow ?? false },
+                activate: { activator.activate(bundleIdentifier: $0) }
+            )
+        }
         model = AppModel(
             store: store,
             processMonitor: DarwinProcessMonitor(),
-            activator: SourceApplicationActivator(),
-            allowanceCoordinator: makeAllowanceCoordinator(isUITest: fixtureName != nil)
+            activator: activator,
+            allowanceCoordinator: makeAllowanceCoordinator(isUITest: fixtureName != nil),
+            notifier: notificationService,
+            statusMonitor: fixtureName == nil ? ProviderStatusMonitor() : nil
         )
 
         if fixtureName != nil {
@@ -74,9 +88,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         usageAvailabilityObserver = UsageAvailabilityObserver(model: model)
         usageAvailabilityObserver.start()
         model.start()
+        notificationService?.start()
         Task {
             await model.setUsageEnabled(preferences.codexUsageEnabled, provider: .codex)
             await model.setUsageEnabled(preferences.claudeUsageEnabled, provider: .claude)
+            await model.setServiceStatusEnabled(preferences.serviceStatusEnabled)
         }
 
         if fixtureName == nil {

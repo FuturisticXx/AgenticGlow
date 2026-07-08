@@ -222,12 +222,180 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(model.reduceMotion)
     }
 
+    func testPermissionTransitionNotifiesExactlyOnce() {
+        let event = NormalizedEvent.testEvent(
+            provider: .claude,
+            phase: .thinking,
+            turnStartedAt: Date(timeIntervalSince1970: 90)
+        )
+        let store = InMemorySessionStore(events: [event])
+        let notifier = RecordingNotifier()
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            notifier: notifier,
+            now: { Date(timeIntervalSince1970: 100) }
+        )
+
+        model.refresh()
+        XCTAssertEqual(notifier.permissionBatches, [])
+
+        store.write(.testEvent(
+            provider: .claude,
+            phase: .permission,
+            turnStartedAt: Date(timeIntervalSince1970: 90)
+        ))
+        model.refresh()
+        model.refresh()
+
+        XCTAssertEqual(notifier.permissionBatches.count, 1)
+        XCTAssertEqual(notifier.permissionBatches.first?.map(\.phase), [.permission])
+    }
+
+    func testAllowanceUpdatesReachNotifierAndLowAllowanceFlag() async {
+        let adapter = MutableAllowanceAdapter(
+            provider: .codex,
+            allowance: appModelAllowance(currentUsed: 92, weeklyResetAt: nil)
+        )
+        let notifier = RecordingNotifier()
+        let model = AppModel(
+            store: InMemorySessionStore(events: []),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            allowanceCoordinator: AllowanceRefreshCoordinator(
+                adapters: [adapter],
+                cache: AppModelAllowanceCache()
+            ),
+            notifier: notifier,
+            now: { Date(timeIntervalSince1970: 1_783_099_000) }
+        )
+
+        await model.setUsageEnabled(true, provider: .codex)
+
+        XCTAssertEqual(notifier.allowanceUpdates.map(\.0), [.codex])
+        XCTAssertTrue(model.hasLowAllowance)
+    }
+
+    func testWeeklyRolloverIncrementsResetCount() async {
+        let now = Date(timeIntervalSince1970: 1_783_099_000)
+        let adapter = MutableAllowanceAdapter(
+            provider: .codex,
+            allowance: appModelAllowance(
+                currentUsed: 20,
+                weeklyResetAt: now.addingTimeInterval(-60)
+            )
+        )
+        let model = AppModel(
+            store: InMemorySessionStore(events: []),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            allowanceCoordinator: AllowanceRefreshCoordinator(
+                adapters: [adapter],
+                cache: AppModelAllowanceCache()
+            ),
+            now: { now }
+        )
+
+        await model.setUsageEnabled(true, provider: .codex)
+        XCTAssertEqual(model.weeklyResetCount, 0)
+
+        adapter.update(appModelAllowance(
+            currentUsed: 1,
+            weeklyResetAt: now.addingTimeInterval(6 * 86_400)
+        ))
+        await model.refreshUsage(.manual)
+
+        XCTAssertEqual(model.weeklyResetCount, 1)
+    }
+
+    func testServiceStatusFlowsFromMonitor() async {
+        let monitor = ProviderStatusMonitor(
+            requester: IncidentStatusRequester(),
+            ttl: 600,
+            now: { Date(timeIntervalSince1970: 1_783_099_000) }
+        )
+        let model = AppModel(
+            store: InMemorySessionStore(events: []),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            statusMonitor: monitor
+        )
+
+        XCTAssertNil(model.serviceStatus(for: .claude))
+
+        await model.setServiceStatusEnabled(true)
+
+        XCTAssertEqual(
+            model.serviceStatus(for: .claude),
+            .incident("Partial System Degradation")
+        )
+
+        await model.setServiceStatusEnabled(false)
+
+        XCTAssertNil(model.serviceStatus(for: .claude))
+    }
+
+    private func appModelAllowance(
+        currentUsed: Double?,
+        weeklyResetAt: Date?
+    ) -> ProviderAllowance {
+        ProviderAllowance(
+            provider: .codex,
+            currentWindowLabel: "5h",
+            currentPercentUsed: currentUsed,
+            currentResetAt: nil,
+            weeklyPercentUsed: 20,
+            weeklyResetAt: weeklyResetAt,
+            fetchedAt: Date(timeIntervalSince1970: 1_783_099_000)
+        )
+    }
+
     private func statusPresentation(for model: AppModel) -> StatusPresentation {
         StatusPresentation(
             resolved: model.resolved,
             showTimer: model.showTimer,
             reduceMotion: model.reduceMotion
         )
+    }
+}
+
+@MainActor
+private final class RecordingNotifier: AgentNotifying {
+    private(set) var permissionBatches: [[SessionSnapshot]] = []
+    private(set) var allowanceUpdates: [(AgentProvider, ProviderAllowance)] = []
+
+    func sessionsNeedPermission(_ sessions: [SessionSnapshot]) {
+        permissionBatches.append(sessions)
+    }
+
+    func allowanceUpdated(provider: AgentProvider, allowance: ProviderAllowance) {
+        allowanceUpdates.append((provider, allowance))
+    }
+}
+
+private final class MutableAllowanceAdapter: AllowanceProviding, @unchecked Sendable {
+    let provider: AgentProvider
+    private let lock = NSLock()
+    private var allowance: ProviderAllowance
+
+    init(provider: AgentProvider, allowance: ProviderAllowance) {
+        self.provider = provider
+        self.allowance = allowance
+    }
+
+    func update(_ allowance: ProviderAllowance) {
+        lock.withLock { self.allowance = allowance }
+    }
+
+    func fetch() async throws -> ProviderAllowance {
+        lock.withLock { allowance }
+    }
+}
+
+private struct IncidentStatusRequester: ProviderStatusRequesting {
+    func fetchStatus(for provider: AgentProvider) async throws -> Data {
+        Data(#"{"status":{"indicator":"minor","description":"Partial System Degradation"}}"#.utf8)
     }
 }
 

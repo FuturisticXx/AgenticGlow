@@ -70,6 +70,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
             popoverState.isPresented = true
             Task { await model.refreshUsage(.popoverOpened) }
+            Task { await model.refreshServiceStatus() }
         }
     }
 

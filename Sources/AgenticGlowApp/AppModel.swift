@@ -15,13 +15,17 @@ final class AppModel {
     private let processMonitor: ProcessMonitoring
     private let activator: ApplicationActivating
     private let allowanceCoordinator: AllowanceRefreshCoordinator?
+    private let notifier: (any AgentNotifying)?
+    private let statusMonitor: ProviderStatusMonitor?
     private let now: () -> Date
     private var timer: Timer?
     private var resolutionMemory = ResolutionMemory()
     private var allowanceStates: [AgentProvider: AllowanceAvailability] = [:]
+    private var serviceStatuses: [AgentProvider: ProviderServiceStatus] = [:]
 
     private(set) var resolved: ResolvedSessions
     private(set) var storeErrorDescription: String?
+    private(set) var weeklyResetCount = 0
     var showTimer = false
     var reduceMotion = false
     var sessionDataErrorPresentation: SessionDataErrorPresentation? {
@@ -37,12 +41,16 @@ final class AppModel {
         processMonitor: ProcessMonitoring,
         activator: ApplicationActivating,
         allowanceCoordinator: AllowanceRefreshCoordinator? = nil,
+        notifier: (any AgentNotifying)? = nil,
+        statusMonitor: ProviderStatusMonitor? = nil,
         now: @escaping () -> Date = Date.init
     ) {
         self.store = store
         self.processMonitor = processMonitor
         self.activator = activator
         self.allowanceCoordinator = allowanceCoordinator
+        self.notifier = notifier
+        self.statusMonitor = statusMonitor
         self.now = now
         reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         showTimer = UserDefaults.standard.bool(forKey: "showTimer")
@@ -106,6 +114,15 @@ final class AppModel {
                 processMonitor.isAlive(processID: processID, startedAt: startedAt)
             }
         )
+        if let notifier {
+            let newlyWaiting = NotificationPolicy.newlyAwaitingPermission(
+                previousPhases: previousPhases,
+                sessions: resolved.sessions
+            )
+            if !newlyWaiting.isEmpty {
+                notifier.sessionsNeedPermission(newlyWaiting)
+            }
+        }
         if resolved.sessions.contains(where: {
             $0.phase == .completed && previousPhases[$0.id] != .completed
         }) {
@@ -126,6 +143,37 @@ final class AppModel {
 
     func allowanceState(for provider: AgentProvider) -> AllowanceAvailability {
         allowanceStates[provider] ?? .off
+    }
+
+    var hasLowAllowance: Bool {
+        allowanceStates.values.contains { state in
+            guard case let .available(allowance, _) = state else { return false }
+            return !AllowanceWarning.lowWindows(in: allowance).isEmpty
+        }
+    }
+
+    func serviceStatus(for provider: AgentProvider) -> ProviderServiceStatus? {
+        serviceStatuses[provider]
+    }
+
+    func setServiceStatusEnabled(_ enabled: Bool) async {
+        guard let statusMonitor else { return }
+        await statusMonitor.setEnabled(enabled)
+        if enabled {
+            await refreshServiceStatus()
+        } else {
+            serviceStatuses = [:]
+        }
+    }
+
+    func refreshServiceStatus() async {
+        guard let statusMonitor else { return }
+        await statusMonitor.refreshIfStale()
+        var statuses: [AgentProvider: ProviderServiceStatus] = [:]
+        for provider in AgentProvider.allCases {
+            statuses[provider] = await statusMonitor.status(for: provider)
+        }
+        serviceStatuses = statuses
     }
 
     func setUsageEnabled(_ enabled: Bool, provider: AgentProvider) async {
@@ -151,7 +199,22 @@ final class AppModel {
     private func syncAllowanceStates() async {
         guard let allowanceCoordinator else { return }
         for provider in AgentProvider.allCases {
-            allowanceStates[provider] = await allowanceCoordinator.state(for: provider)
+            let previous = allowanceStates[provider]
+            let state = await allowanceCoordinator.state(for: provider)
+            allowanceStates[provider] = state
+            guard case let .available(allowance, _) = state else { continue }
+            notifier?.allowanceUpdated(provider: provider, allowance: allowance)
+            var previousAllowance: ProviderAllowance?
+            if case let .available(value, _)? = previous {
+                previousAllowance = value
+            }
+            if WeeklyResetDetector.didReset(
+                previous: previousAllowance,
+                current: allowance,
+                now: now()
+            ) {
+                weeklyResetCount += 1
+            }
         }
     }
 }
