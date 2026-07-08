@@ -127,6 +127,45 @@ final class StatusPresentationTests: XCTestCase {
         XCTAssertFalse(laterLabel.contains("1m 5s"))
     }
 
+    func testLowAllowanceShowsBadgeAndExtendsAccessibility() {
+        let presentation = StatusPresentation(
+            resolved: resolved(phase: .idle, elapsedSeconds: nil),
+            showTimer: false,
+            reduceMotion: false,
+            lowAllowance: true
+        )
+
+        XCTAssertTrue(presentation.showsAllowanceBadge)
+        XCTAssertEqual(presentation.accessibilityLabel, "AgenticGlow, idle, usage low")
+    }
+
+    func testHealthyAllowanceShowsNoBadgeByDefault() {
+        let presentation = StatusPresentation(
+            resolved: resolved(phase: .idle, elapsedSeconds: nil),
+            showTimer: false,
+            reduceMotion: false
+        )
+
+        XCTAssertFalse(presentation.showsAllowanceBadge)
+        XCTAssertEqual(presentation.accessibilityLabel, "AgenticGlow, idle")
+    }
+
+    func testBadgeCoexistsWithPermissionPhase() {
+        let presentation = StatusPresentation(
+            resolved: resolved(phase: .permission, elapsedSeconds: nil),
+            showTimer: false,
+            reduceMotion: false,
+            lowAllowance: true
+        )
+
+        XCTAssertTrue(presentation.showsAllowanceBadge)
+        XCTAssertEqual(presentation.symbolName, "exclamationmark.circle.fill")
+        XCTAssertEqual(
+            presentation.accessibilityLabel,
+            "AgenticGlow, 1 session needs permission, usage low"
+        )
+    }
+
     private func resolved(phase: SessionPhase, elapsedSeconds: Int?) -> ResolvedSessions {
         let session = SessionSnapshot(
             provider: .codex,

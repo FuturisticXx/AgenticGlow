@@ -9,8 +9,11 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
     private let symbolView = NSImageView()
+    private let badgeView = NSView()
     private let popoverState = PopoverState()
     private var lastPresentation: StatusPresentation?
+    private var lastCelebrationCount = 0
+    private var celebrationResetTask: Task<Void, Never>?
 
     init(
         model: AppModel,
@@ -42,11 +45,20 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             symbolView.translatesAutoresizingMaskIntoConstraints = false
             symbolView.imageScaling = .scaleProportionallyDown
             button.addSubview(symbolView)
+            badgeView.translatesAutoresizingMaskIntoConstraints = false
+            badgeView.wantsLayer = true
+            badgeView.layer?.cornerRadius = 3
+            badgeView.isHidden = true
+            button.addSubview(badgeView)
             NSLayoutConstraint.activate([
                 symbolView.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 3),
                 symbolView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
                 symbolView.widthAnchor.constraint(equalToConstant: 18),
-                symbolView.heightAnchor.constraint(equalToConstant: 18)
+                symbolView.heightAnchor.constraint(equalToConstant: 18),
+                badgeView.trailingAnchor.constraint(equalTo: symbolView.trailingAnchor, constant: 1),
+                badgeView.topAnchor.constraint(equalTo: symbolView.topAnchor, constant: -1),
+                badgeView.widthAnchor.constraint(equalToConstant: 6),
+                badgeView.heightAnchor.constraint(equalToConstant: 6)
             ])
         }
         observeModel()
@@ -88,8 +100,10 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         let presentation = StatusPresentation(
             resolved: model.resolved,
             showTimer: model.showTimer,
-            reduceMotion: model.reduceMotion
+            reduceMotion: model.reduceMotion,
+            lowAllowance: model.hasLowAllowance
         )
+        let celebrating = beginCelebrationIfNeeded()
         guard presentation != lastPresentation else { return }
         lastPresentation = presentation
         let image = NSImage(
@@ -98,12 +112,36 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         )
         image?.isTemplate = true
         symbolView.image = image
-        symbolView.contentTintColor = presentation.color
+        symbolView.contentTintColor = celebrating ? .systemGreen : presentation.color
+        badgeView.isHidden = !presentation.showsAllowanceBadge
+        badgeView.layer?.backgroundColor = NSColor.systemOrange.cgColor
         item.button?.image = nil
         item.button?.title = presentation.title.isEmpty ? "" : "     \(presentation.title)"
         item.length = presentation.title.isEmpty ? 24 : NSStatusItem.variableLength
         item.button?.setAccessibilityLabel(presentation.accessibilityLabel)
         configureAnimation(enabled: presentation.animates)
+    }
+
+    /// Briefly turns the icon green (with a bounce where available) when a
+    /// weekly allowance window rolls over, then restores the live state.
+    private func beginCelebrationIfNeeded() -> Bool {
+        guard model.weeklyResetCount != lastCelebrationCount else {
+            return celebrationResetTask != nil
+        }
+        lastCelebrationCount = model.weeklyResetCount
+        symbolView.contentTintColor = .systemGreen
+        if !model.reduceMotion, #available(macOS 15.0, *) {
+            symbolView.addSymbolEffect(.bounce, options: .repeat(3))
+        }
+        celebrationResetTask?.cancel()
+        celebrationResetTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(4))
+            guard let self, !Task.isCancelled else { return }
+            self.celebrationResetTask = nil
+            self.lastPresentation = nil
+            self.update()
+        }
+        return true
     }
 
     private func configureAnimation(enabled: Bool) {
