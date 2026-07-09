@@ -151,13 +151,23 @@ extension UserNotificationCenterClient: UserNotificationScheduling {
     }
 
     func isAuthorized() async -> Bool {
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
-        return settings.authorizationStatus == .authorized
+        await authorizationStatus() == .authorized
     }
 
     func isDenied() async -> Bool {
-        let settings = await UNUserNotificationCenter.current().notificationSettings()
-        return settings.authorizationStatus == .denied
+        await authorizationStatus() == .denied
+    }
+
+    // Extract only the Sendable authorization status inside the completion
+    // handler. Awaiting notificationSettings() directly would carry the
+    // non-Sendable UNNotificationSettings across the MainActor boundary,
+    // which fails to compile under the CI toolchain (Xcode 16.4).
+    private func authorizationStatus() async -> UNAuthorizationStatus {
+        await withCheckedContinuation { continuation in
+            UNUserNotificationCenter.current().getNotificationSettings { settings in
+                continuation.resume(returning: settings.authorizationStatus)
+            }
+        }
     }
 
     func add(id: String, title: String, body: String, userInfo: [String: String]) async {
