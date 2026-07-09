@@ -1,5 +1,14 @@
 # Got done
 
+## 2026-07-08 - Percentage pill on the allowance bars
+
+- Moved each allowance bar's percent-left onto the bar itself as a floating, provider-colored pill (Claude orange, Codex azure, white text, no arrow), inspired by a macOS weather "Feels Like" widget John shared.
+- Dropped the standalone "X% left · Y% used" text line; the pill now carries the number, and Claude's "% used" was removed so both providers read the same. Window and reset info moved to a caption under each bar (`5h · 1h 59m`, `Week · resets Sat 8:29 PM`).
+- The pill clamps near the track edges so very low or very high percentages stay fully visible instead of clipping.
+- Verified: Debug build succeeded, `AllowancePresentationTests` passed, and the live popover was captured in both Light and Dark mode via the `signals` fixture (8% / 5%), confirming the clamping and that the white number stays readable on both provider tints. System appearance was flipped only for the dark capture and restored.
+- Single-file change to `Sources/AgenticGlowApp/MenuBar/AllowanceSectionView.swift`. Committed separately from pre-existing `project.pbxproj` bookkeeping that registers the status and notification test files.
+- No version bump, no release. Local commits pushed to main.
+
 ## 2026-07-06 - Cleaned up 0.2.0 release bookkeeping
 
 - Updated the current release goal to monitor v0.2.0 instead of v0.1.1.

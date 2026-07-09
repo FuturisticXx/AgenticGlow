@@ -35,3 +35,7 @@ John reported "Dark Mode is too light." I read it as the whole popover surface; 
 ## Guard new-SDK symbols with compiler checks, not just #available (2026-07-05)
 
 `ConcentricRectangle` (macOS 26 SDK) compiled locally on Xcode 26 but broke CI, which builds with Xcode 16.4. `if #available(macOS 26.0, *)` only guards at runtime; the symbol must also exist at compile time. Wrap any API newer than the CI toolchain's SDK in `#if compiler(>=6.2)` (or the matching version) with a fallback branch. Local green is not proof: CI's Xcode is older than the local beta.
+
+## A UI reference usually means "restyle my data," not "build a new feature" (2026-07-08)
+
+John shared a macOS weather "Feels Like" widget (a bar with a floating pill) and asked to add "something like this." I read it as a new metric and proposed a burn-rate/pace indicator with up/down delta arrows, then built mockups for it. He corrected me: he only wanted the existing percent-left number moved into the pill, no arrows, no new math. Rule: when John shares a visual reference, lead with the simplest interpretation, applying the visual pattern to data that already exists, and confirm that before designing anything more elaborate. Show a quick mock of the literal reading first; only add new meaning if he asks for it.

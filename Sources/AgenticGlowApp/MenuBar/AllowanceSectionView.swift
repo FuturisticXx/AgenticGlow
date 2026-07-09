@@ -73,20 +73,25 @@ private struct ProviderAllowanceRow: View {
         freshness: AllowanceFreshness
     ) -> some View {
         let presentation = AllowancePresentation(allowance: allowance, now: Date())
-        currentValueText(presentation)
-            .font(.callout.weight(.medium))
-            .monospacedDigit()
+        AllowanceBar(
+            value: presentation.currentProgress,
+            label: presentation.currentLeftPercent,
+            tint: tint
+        )
+        .accessibilityLabel(presentation.accessibilityCurrent)
         Text(presentation.currentDetail)
             .font(.caption)
             .foregroundStyle(.secondary)
-        AllowanceBar(value: presentation.currentProgress, tint: tint)
-            .accessibilityLabel(presentation.accessibilityCurrent)
-        weeklyValueText(presentation)
-            .font(.caption)
-            .monospacedDigit()
         if let weeklyProgress = presentation.weeklyProgress {
-            AllowanceBar(value: weeklyProgress, tint: tint)
-                .accessibilityLabel(presentation.accessibilityWeekly ?? "Weekly allowance")
+            AllowanceBar(
+                value: weeklyProgress,
+                label: presentation.weeklyLeftPercent,
+                tint: tint
+            )
+            .accessibilityLabel(presentation.accessibilityWeekly ?? "Weekly allowance")
+            Text(weeklyCaption(presentation))
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         if freshness == .stale {
             Text("Updated \(allowance.fetchedAt.formatted(.relative(presentation: .named)))")
@@ -95,29 +100,11 @@ private struct ProviderAllowanceRow: View {
         }
     }
 
-    private func currentValueText(_ presentation: AllowancePresentation) -> Text {
-        guard let left = presentation.currentLeftPercent else {
-            return Text(presentation.currentValue)
-        }
-        var text = Text("\(left)% left")
-        if provider == .claude, let used = presentation.currentUsedPercent {
-            text = text + Text(" · \(used)% used")
-        }
-        return text
-    }
-
-    private func weeklyValueText(_ presentation: AllowancePresentation) -> Text {
-        guard let left = presentation.weeklyLeftPercent else {
-            return Text(presentation.weeklyValue)
-        }
-        var text = Text("Week \(left)%")
-        if provider == .claude, let used = presentation.weeklyUsedPercent {
-            text = text + Text(" · \(used)% used")
-        }
+    private func weeklyCaption(_ presentation: AllowancePresentation) -> String {
         if let reset = presentation.weeklyResetValue {
-            text = text + Text(" · \(reset)")
+            return "Week · resets \(reset)"
         }
-        return text
+        return "Week"
     }
 
     private var tint: Color {
@@ -130,15 +117,20 @@ private struct ProviderAllowanceRow: View {
 }
 
 /// Slim capsule allowance bar: quiet track, gradient fill in the provider
-/// color, and a faint glow so it reads as lit rather than painted.
+/// color, and a floating pill on the fill edge showing the percent left.
 private struct AllowanceBar: View {
     let value: Double
+    let label: String?
     let tint: Color
+
+    private let pillHalfWidth: CGFloat = 22
 
     var body: some View {
         GeometryReader { geo in
+            let clamped = min(max(value, 0), 1)
+            let fillWidth = max(4, geo.size.width * clamped)
             ZStack(alignment: .leading) {
-                Capsule().fill(.quaternary)
+                Capsule().fill(.quaternary).frame(height: 4)
                 Capsule()
                     .fill(
                         LinearGradient(
@@ -147,10 +139,24 @@ private struct AllowanceBar: View {
                             endPoint: .trailing
                         )
                     )
-                    .frame(width: max(4, geo.size.width * min(max(value, 0), 1)))
+                    .frame(width: fillWidth, height: 4)
                     .shadow(color: tint.opacity(0.45), radius: 2.5, y: 0.5)
+                if let label {
+                    Text("\(label)%")
+                        .font(.caption2.weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(tint))
+                        .accessibilityHidden(true)
+                        .position(
+                            x: min(max(fillWidth, pillHalfWidth), geo.size.width - pillHalfWidth),
+                            y: geo.size.height / 2
+                        )
+                }
             }
         }
-        .frame(height: 4)
+        .frame(height: 22)
     }
 }
