@@ -8,6 +8,7 @@
 - Verified: Debug build succeeded, `AllowancePresentationTests` passed, and the live popover was captured in both Light and Dark mode via the `signals` fixture (8% / 5%), confirming the clamping and that the white number stays readable on both provider tints. System appearance was flipped only for the dark capture and restored.
 - Single-file change to `Sources/AgenticGlowApp/MenuBar/AllowanceSectionView.swift`. Committed separately from pre-existing `project.pbxproj` bookkeeping that registers the status and notification test files.
 - No version bump, no release. Local commits pushed to main.
+- Follow-up: pushing main also carried the previously local-only v0.3.0 notification commits public. CI (Xcode 16.4) then caught a pre-existing non-Sendable `UNNotificationSettings` error in `AgentNotificationService.swift` that the newer local toolchain had accepted. Fixed by reading the status through `getNotificationSettings` and resuming the continuation with only the Sendable `UNAuthorizationStatus`. CI run 28989478040 passed all jobs.
 
 ## 2026-07-06 - Cleaned up 0.2.0 release bookkeeping
 
