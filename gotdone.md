@@ -1,5 +1,12 @@
 # Got done
 
+## 2026-07-09 - Published v0.4.0
+
+- Installed build/AgenticGlow.app to /Applications replacing 0.3.0; Info.plist reads 0.4.0, Gatekeeper accepts as Notarized Developer ID, app launched and the status item is live.
+- Tagged v0.4.0 at 703c467 and published the GitHub release with the notarized DMG: https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.4.0. Notes cover everything since 0.2.0 (0.3.0 was never tagged): notifications, low-allowance badge, incident line, reset celebration, provider color language, plus the 0.4.0 calm-motion and adaptive-palette work.
+- Verified the published asset by downloading it back: SHA-256 matches c079f59e..., staple validates, spctl accepts.
+- Cask bumped to 0.4.0 in the main repo (5dc7abb) and the tap FuturisticXx/homebrew-agenticglow (6bb0916).
+
 ## 2026-07-09 - Built and notarized the 0.4.0 release
 
 - Signed universal release build via Scripts/build-release.sh 0.4.0: gates passed, codesign strict verification passed, lipo shows x86_64 arm64 for the app and the event helper, Info.plist stamps 0.4.0.
