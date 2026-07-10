@@ -1,5 +1,15 @@
 # Got done
 
+## 2026-07-09 - Provider color language for the icon and session list
+
+- One color language across the app: Claude orange, Codex azure, shared via a new `ProviderColor` helper that the allowance pills, session rows, and menu bar icon all read from.
+- Menu bar icon now colors by who is working: solid orange for Claude only, solid blue for Codex only, and a slow blue <-> orange cross-fade when both are working (static violet under Reduce Motion). Session rows tint their icon by provider, and the popover summary names the active agents ("Claude and Codex working").
+- Core change: `ResolvedSessions.activeProviders` (thinking/usingTool only), unit-tested. `StatusPresentation` exposes the active provider tints; `StatusItemController` drives the cross-fade.
+- Fixed a real rendering bug found during verification: the menu bar flattens template images to monochrome and ignores `contentTintColor`, so icon color never actually showed (the old yellow/green/blue states were invisible too). Now the color is baked into a non-template symbol image, so it renders. Verified live: blue, orange, and yellow all appear.
+- Incident line polish: made it neutral gray (keeps the warning triangle) so orange stays "Claude", and it now only fires on `major`/`critical` outages. This removed a false "Codex: Partial System Degradation" alarm that was actually OpenAI's unrelated FedRAMP component at `minor`.
+- Verified: 205 unit tests green, privacy gate passes, popover captured in Light and Dark, menu bar icon captured cross-fading. Added a `both-working` UI fixture. Reduce Motion violet verified by construction (same render path), not captured live.
+- Built and installed locally as 0.3.0 for John to watch the fade live. No commit pushed yet at time of writing; no version bump beyond the local build stamp.
+
 ## 2026-07-08 - Percentage pill on the allowance bars
 
 - Moved each allowance bar's percent-left onto the bar itself as a floating, provider-colored pill (Claude orange, Codex azure, white text, no arrow), inspired by a macOS weather "Feels Like" widget John shared.

@@ -113,3 +113,65 @@ Plan (bug fix, autonomous path):
 - [x] Unify PopoverAura: light palette, light opacities, no blend mode, drop unused colorScheme -> verified: rebuilt app screenshot shows saturated azure/gold edges over the dark scrim
 - [x] Run /code-review (8 finders + 2 verifiers) -> 2 confirmed findings: pre-macOS-26 dark mode has no scrim (reported, intentionally out of scope, cannot visually verify on this machine); magic numbers -> fixed with named constants
 - [x] Tests 154/154 pass, privacy gate passes, committed locally (push pending John's OK)
+
+# Feature: Provider color language for icon and session list (2026-07-08)
+
+**Goal:** Make the app show which agent is working. One color language, Claude = orange `#D97857`, Codex = azure `#408CFF`, used on the menu bar icon, the session row icons, and the allowance pills (already). The menu bar icon is solid orange when only Claude works, solid blue when only Codex works, and cross-fades blue <-> orange (~3s each way) when both work. The popover summary names the active agents.
+
+**Design approved by John.** Preview shown as an inline widget (solid orange / solid blue / cross-fade / Reduce Motion violet, plus popover mock).
+
+## Design decisions
+
+- Provider colors reuse the allowance-pill palette exactly, so icon, rows, and pills match. Azure reads as the "blue" John wanted for Codex (not `.controlAccentColor`, which follows the user's system accent).
+- Provider color applies ONLY to the working state (thinking / usingTool). All other states are untouched: permission yellow, completed and celebration green, disconnected gray, idle neutral, low-allowance orange badge dot.
+- Both working: slow cross-fade blue -> orange -> blue while rotating. Under Reduce Motion, no cross-fade; show a static violet blend (`#8C82AB`, the orange/blue midpoint) so it still reads as "both."
+- Summary line names the active agents: "Claude working", "Codex working", or "Claude and Codex working". Permission state keeps "N agents need you" (attention, not which is working). Falls back to the current count text when nothing is active.
+- "Active provider" = a provider with at least one session in thinking or usingTool. Permission does not count as working.
+- One source of truth for the palette: a small `ProviderColor` helper exposing both `NSColor` (AppKit) and `Color` (SwiftUI) per provider. `AllowanceSectionView`, `SessionRowView`, and `StatusPresentation` all read from it.
+
+## Global constraints
+
+- macOS 14.0 deployment target; CI builds Xcode 16.4. Guard newer symbols with `#if compiler(...)`, not just `#available`. No macOS 26-only symbols unguarded.
+- No em dashes in user-facing strings.
+- Surgical changes; match existing style. No version bump, no release, no push until John's OK.
+- Cross-fade must be gated on Reduce Motion, and must stop when the popover/app stops (no leaked timers).
+
+## Tasks
+
+### Task 1: Core — active providers
+- Add `activeProviders: Set<AgentProvider>` to `ResolvedSessions` in `Sources/AgenticGlowCore/State/SessionSnapshot.swift`; populate it in `SessionResolver.resolve` from sessions whose phase is `.thinking` or `.usingTool`.
+- Tests first in `Tests/AgenticGlowCoreTests/SessionResolverTests.swift`: none working -> empty; only a Claude thinking/usingTool session -> `[.claude]`; only Codex -> `[.codex]`; both -> `[.claude, .codex]`; permission-only or idle/completed/disconnected -> empty.
+- [x] Failing tests, implement, pass -> verified: SessionResolverTests 14/14 green (5 new: none/Claude-only/Codex-only/both/permission-excluded); StatusPresentationTests 11/11 still green after adding the field
+
+### Task 2: Shared provider palette
+- Add `ProviderColor` helper (app layer) with `static func nsColor(for: AgentProvider) -> NSColor` and `static func color(for: AgentProvider) -> Color`, plus the violet "both" blend for Reduce Motion. Values: Claude `#D97857`, Codex `#408CFF`, blend `#8C82AB`.
+- Point `AllowanceSectionView.tint` and `SessionRowView.color` (working state) at it; remove their local color literals.
+- [x] Implement -> verified: `ProviderColor` added; `AllowanceSectionView.tint` now reads from it. ProviderColorTests 3/3 lock the sRGB values; AllowancePresentationTests still green (pills unchanged). Note: `SessionRowView` color change moved to Task 5 (it was `.accentColor`, a behavior change, not a pure refactor).
+
+### Task 3: Presentation — provider tints on the icon
+- `StatusPresentation`: in the `.usingTool` / `.thinking` case, expose the active provider colors from `resolved.activeProviders` as `activeTints: [NSColor]` (0, 1, or 2 entries) instead of the flat `.controlAccentColor`. Keep `color` for non-working states. Struct stays `Equatable`.
+- Tests in `Tests/AgenticGlowAppTests/StatusPresentationTests.swift`: working {claude} -> `[orange]`; {codex} -> `[blue]`; both -> `[orange, blue]`; permission -> yellow unchanged; idle/completed unchanged.
+- [x] Failing tests, implement, pass -> verified: `activeTints: [NSColor]` added (Claude-then-Codex order, empty unless dominant phase is working). StatusPresentationTests 16/16 green (5 new: Claude-only, Codex-only, both-order, permission-empty, idle-empty).
+
+### Task 4: Controller — cross-fade
+- `StatusItemController.update()`: set tint from `activeTints` — 1 color -> solid; 2 colors -> start cross-fade; 0 -> `presentation.color`. Celebration (green) still wins.
+- Cross-fade: a repeating `Task` interpolating `symbolView.contentTintColor` between the two colors on a sine ease (~3s each way, ~50ms steps). Store as `tintCrossfadeTask`; cancel on state change and in `stop()`. Under Reduce Motion, no task; set the static violet blend.
+- Rotation (`configureAnimation`) unchanged; already gated on `presentation.animates`.
+- [x] Implement -> verified: build succeeds. `applyTint` handles solid (1 tint) / cross-fade (2 tints) / fallback (0), celebration green wins. Cross-fade is a `tintCrossfadeTask` (cosine ease, 3s each way), cancelled on state change, in `stop()`, and when a celebration starts. Reduce Motion sets the static violet blend, no task. Runtime/visual confirmation pending Task 6.
+
+### Task 5: Session list clarity
+- `SessionRowView.color`: for `.thinking` / `.usingTool`, return the provider color via `ProviderColor`; other phases unchanged.
+- `SessionListView.summary`: when `permissionCount == 0` and something is working, name providers from `model.resolved.activeProviders` ("Claude working" / "Codex working" / "Claude and Codex working"); permission and count branches unchanged.
+- [x] Implement -> verified: build succeeds. `SessionRowView` working icon now tints by provider; `SessionListView.summary` names providers ("Claude working" / "Codex working" / "Claude and Codex working"), permission and count branches unchanged. Full unit suite 205/205 green. Visual confirmation pending Task 6.
+
+### Task 6: Verify end to end
+- Run full Core + app test suite; privacy gate passes.
+- Launch and capture the real menu bar icon in each working state (Claude-only orange, Codex-only blue, both cross-fading) plus Reduce Motion violet, and the popover summary + colored rows, in Light and Dark. Add or adjust a UI-test fixture that puts both providers in a working (thinking/usingTool) phase, since the current `signals` fixture pairs Claude permission with Codex thinking.
+- [x] All tests pass (205), screenshots confirm each state -> verified: popover both-working captured in Light and Dark ("Claude and Codex working" summary, blue Codex row, orange Claude row). Added a `both-working` UI fixture. Menu bar icon captured cross-fading blue -> orange, and the permission state now shows yellow.
+
+## Follow-ups discovered during verification (2026-07-08)
+
+- Menu bar icon color did not render: macOS flattens status-bar TEMPLATE images to monochrome and ignores `contentTintColor` (pre-existing; the old yellow/green/blue states were invisible too). Fixed by baking the color into a NON-template symbol image via `NSImage.SymbolConfiguration(paletteColors:)`; the cross-fade regenerates the image per frame. Verified the icon now shows blue/orange/yellow. This also makes the existing permission/completed colors actually appear.
+- Reduce Motion static-violet path: could not flip the live accessibility setting via `defaults write` (the system caches it), so not captured on screen. Verified by construction: it calls the same proven `setSymbol` with `ProviderColor.bothBlend`, gated by the same `model.reduceMotion` that already gates rotation. Confirm live if desired by toggling Reduce Motion in System Settings.
+- Incident line: made neutral (`.secondary`, keeps the warning triangle) so orange stays "Claude" in the color language.
+- Incident severity: `StatusPageNormalizer` now only reports `major`/`critical` as incidents; `none`/`minor`/`maintenance` are operational. This kills a false alarm where OpenAI's unrelated FedRAMP component (minor) implied Codex was down.
