@@ -195,6 +195,45 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertTrue(memory.disconnectedRecords.isEmpty)
     }
 
+    func testActiveProvidersEmptyWhenNothingWorking() {
+        let resolved = resolve(
+            event(provider: .codex, session: "done", phase: .completed, updated: 999)
+        )
+        XCTAssertEqual(resolved.activeProviders, [])
+    }
+
+    func testActiveProvidersExcludesPermission() {
+        let resolved = resolve(
+            event(provider: .claude, session: "perm", phase: .permission, updated: 999),
+            event(provider: .codex, session: "idle", phase: .idle, updated: 999)
+        )
+        XCTAssertEqual(resolved.activeProviders, [])
+    }
+
+    func testActiveProvidersClaudeOnly() {
+        let resolved = resolve(
+            event(provider: .claude, session: "work", phase: .thinking, updated: 999),
+            event(provider: .codex, session: "done", phase: .completed, updated: 999)
+        )
+        XCTAssertEqual(resolved.activeProviders, [.claude])
+    }
+
+    func testActiveProvidersCodexOnly() {
+        let resolved = resolve(
+            event(provider: .codex, session: "work", phase: .usingTool, updated: 999),
+            event(provider: .claude, session: "idle", phase: .idle, updated: 999)
+        )
+        XCTAssertEqual(resolved.activeProviders, [.codex])
+    }
+
+    func testActiveProvidersBothWhenClaudeAndCodexWork() {
+        let resolved = resolve(
+            event(provider: .claude, session: "think", phase: .thinking, updated: 999),
+            event(provider: .codex, session: "tool", phase: .usingTool, updated: 999)
+        )
+        XCTAssertEqual(resolved.activeProviders, [.claude, .codex])
+    }
+
     func testUnknownProcessExpiresAfterFourHours() {
         var event = event(provider: .codex, session: "old", phase: .thinking, updated: 100)
         event = NormalizedEvent(
@@ -223,6 +262,16 @@ final class SessionResolverTests: XCTestCase {
         )
         XCTAssertTrue(resolved.sessions.isEmpty)
     }
+}
+
+private func resolve(_ events: NormalizedEvent...) -> ResolvedSessions {
+    var memory = ResolutionMemory()
+    return SessionResolver.resolve(
+        events: events,
+        now: Date(timeIntervalSince1970: 1_000),
+        memory: &memory,
+        isProcessAlive: { _, _ in true }
+    )
 }
 
 private func event(

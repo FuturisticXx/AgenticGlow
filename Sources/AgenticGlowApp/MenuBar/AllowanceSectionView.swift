@@ -108,9 +108,7 @@ private struct ProviderAllowanceRow: View {
     }
 
     private var tint: Color {
-        provider == .codex
-            ? Color(red: 0.25, green: 0.55, blue: 1.00)
-            : Color(red: 0.85, green: 0.47, blue: 0.34)
+        ProviderColor.color(for: provider)
     }
 
     private var providerName: String { provider == .codex ? "Codex" : "Claude" }

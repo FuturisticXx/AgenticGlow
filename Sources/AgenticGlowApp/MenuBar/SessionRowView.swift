@@ -55,7 +55,7 @@ struct SessionRowView: View {
         case .completed: Color(nsColor: .systemGreen)
         case .disconnected: .secondary
         case .idle: .primary
-        case .thinking, .usingTool: .accentColor
+        case .thinking, .usingTool: ProviderColor.color(for: session.provider)
         }
     }
 

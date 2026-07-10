@@ -8,6 +8,10 @@ struct StatusPresentation: Equatable {
     let color: NSColor
     let animates: Bool
     let showsAllowanceBadge: Bool
+    /// Provider tints for the working icon, in a stable Claude-then-Codex
+    /// order. Empty unless the dominant state is thinking or using a tool:
+    /// one entry drives a solid tint, two entries drive the cross-fade.
+    let activeTints: [NSColor]
 
     init(
         resolved: ResolvedSessions,
@@ -58,6 +62,13 @@ struct StatusPresentation: Equatable {
             color = .labelColor
             animates = false
         }
+        let working = [SessionPhase.thinking, .usingTool].contains(resolved.dominantPhase)
+        activeTints = working
+            ? [.claude, .codex]
+                .filter { resolved.activeProviders.contains($0) }
+                .map(ProviderColor.nsColor(for:))
+            : []
+
         accessibilityLabel = lowAllowance ? "\(phaseLabel), usage low" : phaseLabel
     }
 

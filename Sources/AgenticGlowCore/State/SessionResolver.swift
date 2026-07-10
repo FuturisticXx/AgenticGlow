@@ -79,7 +79,12 @@ public enum SessionResolver {
             sessions: snapshots,
             dominantPhase: dominant,
             activeCount: snapshots.filter { [.thinking, .usingTool, .permission].contains($0.phase) }.count,
-            permissionCount: snapshots.filter { $0.phase == .permission }.count
+            permissionCount: snapshots.filter { $0.phase == .permission }.count,
+            activeProviders: Set(
+                snapshots
+                    .filter { [.thinking, .usingTool].contains($0.phase) }
+                    .map(\.provider)
+            )
         )
     }
 

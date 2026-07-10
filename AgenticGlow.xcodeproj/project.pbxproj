@@ -93,6 +93,7 @@
 		A74B58C03AF64E6D5FD0EC4A /* ProcessIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEFBEECE0CB8A09500C9CA31 /* ProcessIdentity.swift */; };
 		AA595E83E76DE8D9A39456D2 /* SessionStateStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF9B30242B649B5C6291047 /* SessionStateStoreTests.swift */; };
 		AB79A0D58C5EE1D88CC599AF /* UITestSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0763AF5FB0C0D3034BE5AB2D /* UITestSessionStore.swift */; };
+		AC2654EEB91547E6F1FD5350 /* ProviderColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2FBC7471D1A39500680CA0 /* ProviderColor.swift */; };
 		AEF2E424FB6EC7FDCF96373D /* HookEventKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DBC5398CA02E6A4C00D7A2B /* HookEventKind.swift */; };
 		B0A58E68FB19543062D3305B /* WeeklyResetDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD207C8260418287CC0C9F4 /* WeeklyResetDetector.swift */; };
 		B17BDD406240127E4F78FA04 /* SetupViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9076E66E6BF081096A0783 /* SetupViewModelTests.swift */; };
@@ -106,6 +107,7 @@
 		C7C9B31CE60FA321C870674B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FD71F7060C2532BA0590C9AE /* Assets.xcassets */; };
 		CE67EF0878DD1A7260A743B0 /* WeeklyResetDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88602F1C495DE44E18D4FCFD /* WeeklyResetDetectorTests.swift */; };
 		CF57CE6B8A985B4A5BADC008 /* HelperInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2F943F38C7970E829E11BD2 /* HelperInstallerTests.swift */; };
+		D14724EBA140B84547F37332 /* ProviderColorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B3B26BB315DB673EB23BFA8 /* ProviderColorTests.swift */; };
 		D3E0C5B16827C452403E474A /* DiagnosticLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D5F748819AA3331177D6D4 /* DiagnosticLogger.swift */; };
 		D46FFAF6BB3C958C8A914002 /* AllowanceWarning.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA144C14771532CB8B2C2951 /* AllowanceWarning.swift */; };
 		D63891268110C4C55073CA71 /* ExecutableLocatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 919C32C56CA9405F36015736 /* ExecutableLocatorTests.swift */; };
@@ -193,6 +195,7 @@
 		166738A4E3CA52BF6BAA156A /* SessionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionListView.swift; sourceTree = "<group>"; };
 		18B38C3F07561451BED08073 /* AgenticGlowEventTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgenticGlowEventTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		18E366BBA73A954436275513 /* NormalizedEventTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NormalizedEventTests.swift; sourceTree = "<group>"; };
+		1A2FBC7471D1A39500680CA0 /* ProviderColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderColor.swift; sourceTree = "<group>"; };
 		1ACCD7381A4853B8E111A773 /* ProcessInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessInspector.swift; sourceTree = "<group>"; };
 		1B41BB5ACD7A89E1DC0660B9 /* ProcessIdentityResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessIdentityResolverTests.swift; sourceTree = "<group>"; };
 		1F16F21073C05BCF4BE52185 /* DiagnosticLoggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticLoggerTests.swift; sourceTree = "<group>"; };
@@ -246,6 +249,7 @@
 		88115C0C25E40D80C8E83266 /* ProviderAllowance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderAllowance.swift; sourceTree = "<group>"; };
 		88602F1C495DE44E18D4FCFD /* WeeklyResetDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyResetDetectorTests.swift; sourceTree = "<group>"; };
 		8926BBF020B1EC1C5537E5C5 /* ToolCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolCategory.swift; sourceTree = "<group>"; };
+		8B3B26BB315DB673EB23BFA8 /* ProviderColorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderColorTests.swift; sourceTree = "<group>"; };
 		8F17758F92DA69BE48F7C3EC /* CodexIntegrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexIntegrationManager.swift; sourceTree = "<group>"; };
 		90F24B3B97EA473795F54857 /* ProviderStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderStatusTests.swift; sourceTree = "<group>"; };
 		919C32C56CA9405F36015736 /* ExecutableLocatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExecutableLocatorTests.swift; sourceTree = "<group>"; };
@@ -453,6 +457,7 @@
 				CBFF8B113BD5CCF602B1399C /* AppModelTests.swift */,
 				2C6DEB49672FFC3761738A19 /* ClaudeSessionCredentialStoreTests.swift */,
 				04E752BA418FA3E0A5A56086 /* PreferencesStoreTests.swift */,
+				8B3B26BB315DB673EB23BFA8 /* ProviderColorTests.swift */,
 				9E9076E66E6BF081096A0783 /* SetupViewModelTests.swift */,
 				EF55C0928A839C5F09DD4F50 /* StatusPresentationTests.swift */,
 			);
@@ -713,6 +718,7 @@
 			children = (
 				7C53F572E885A59200578B68 /* AllowancePresentation.swift */,
 				4346FBB5245525ECAF9552A9 /* AllowanceSectionView.swift */,
+				1A2FBC7471D1A39500680CA0 /* ProviderColor.swift */,
 				166738A4E3CA52BF6BAA156A /* SessionListView.swift */,
 				4F50AE41D54AF0BBEA05DD1D /* SessionRowView.swift */,
 				57FAAB171A3AF6CA945DE557 /* StatusItemController.swift */,
@@ -970,6 +976,7 @@
 				09F035F92222190CA45A5054 /* AppModelTests.swift in Sources */,
 				95A3E1310B605C0FDBF54F90 /* ClaudeSessionCredentialStoreTests.swift in Sources */,
 				DE08088A9510936ECA46CC1E /* PreferencesStoreTests.swift in Sources */,
+				D14724EBA140B84547F37332 /* ProviderColorTests.swift in Sources */,
 				B17BDD406240127E4F78FA04 /* SetupViewModelTests.swift in Sources */,
 				696D7565CE4E9845DE9823CD /* StatusPresentationTests.swift in Sources */,
 				560F13E337C8692F0D32C9DB /* TestSupport.swift in Sources */,
@@ -989,6 +996,7 @@
 				48FDAFD5AACEF35C9AC6D839 /* ClaudeSessionCredentialStore.swift in Sources */,
 				66C47EDDEC29C3371EE1EE33 /* LaunchAtLoginService.swift in Sources */,
 				0DF282F51837E86223918BA8 /* PreferencesStore.swift in Sources */,
+				AC2654EEB91547E6F1FD5350 /* ProviderColor.swift in Sources */,
 				6D3752451B73567DAE129C70 /* SessionListView.swift in Sources */,
 				1B996A44F546B3858CC97BA3 /* SessionRowView.swift in Sources */,
 				D6EBA6BFF60DC6724AA3E151 /* SettingsView.swift in Sources */,

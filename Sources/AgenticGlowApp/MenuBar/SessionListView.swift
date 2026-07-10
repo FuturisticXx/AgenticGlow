@@ -99,7 +99,7 @@ struct SessionListView: View {
                     systemImage: "exclamationmark.triangle.fill"
                 )
                 .font(.caption)
-                .foregroundStyle(.orange)
+                .foregroundStyle(.secondary)
                 .accessibilityLabel("\(providerName(provider)) service incident. \(description)")
                 .accessibilityIdentifier("AgenticGlow.Incident.\(provider.rawValue)")
             }
@@ -153,11 +153,16 @@ struct SessionListView: View {
     }
 
     private var summary: String {
-        if model.resolved.permissionCount == 1 { return "1 agent needs you" }
-        if model.resolved.permissionCount > 1 { return "\(model.resolved.permissionCount) agents need you" }
-        if model.resolved.activeCount == 1 { return "1 agent working" }
-        if model.resolved.activeCount > 1 { return "\(model.resolved.activeCount) agents working" }
-        let count = model.resolved.sessions.count
+        let resolved = model.resolved
+        if resolved.permissionCount == 1 { return "1 agent needs you" }
+        if resolved.permissionCount > 1 { return "\(resolved.permissionCount) agents need you" }
+        if !resolved.activeProviders.isEmpty {
+            let names = [AgentProvider.claude, .codex]
+                .filter { resolved.activeProviders.contains($0) }
+                .map(providerName)
+            return "\(names.joined(separator: " and ")) working"
+        }
+        let count = resolved.sessions.count
         return count == 1 ? "1 session" : "\(count) sessions"
     }
 

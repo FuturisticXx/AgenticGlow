@@ -18,6 +18,9 @@ public struct ResolvedSessions: Equatable, Sendable {
     public let dominantPhase: SessionPhase
     public let activeCount: Int
     public let permissionCount: Int
+    /// Providers with at least one session actively working (thinking or
+    /// using a tool). Permission and idle do not count as working.
+    public let activeProviders: Set<AgentProvider>
 }
 
 struct DisconnectionRecord: Sendable {

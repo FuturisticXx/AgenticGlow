@@ -14,6 +14,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private var lastPresentation: StatusPresentation?
     private var lastCelebrationCount = 0
     private var celebrationResetTask: Task<Void, Never>?
+    private var tintCrossfadeTask: Task<Void, Never>?
 
     init(
         model: AppModel,
@@ -65,6 +66,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     }
 
     func stop() {
+        stopTintCrossfade()
         symbolView.removeAllSymbolEffects()
     }
 
@@ -103,16 +105,10 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             reduceMotion: model.reduceMotion,
             lowAllowance: model.hasLowAllowance
         )
-        let celebrating = beginCelebrationIfNeeded()
+        let celebrating = beginCelebrationIfNeeded(symbolName: presentation.symbolName)
         guard presentation != lastPresentation else { return }
         lastPresentation = presentation
-        let image = NSImage(
-            systemSymbolName: presentation.symbolName,
-            accessibilityDescription: nil
-        )
-        image?.isTemplate = true
-        symbolView.image = image
-        symbolView.contentTintColor = celebrating ? .systemGreen : presentation.color
+        applyTint(presentation, celebrating: celebrating)
         badgeView.isHidden = !presentation.showsAllowanceBadge
         badgeView.layer?.backgroundColor = NSColor.systemOrange.cgColor
         item.button?.image = nil
@@ -124,12 +120,13 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
     /// Briefly turns the icon green (with a bounce where available) when a
     /// weekly allowance window rolls over, then restores the live state.
-    private func beginCelebrationIfNeeded() -> Bool {
+    private func beginCelebrationIfNeeded(symbolName: String) -> Bool {
         guard model.weeklyResetCount != lastCelebrationCount else {
             return celebrationResetTask != nil
         }
         lastCelebrationCount = model.weeklyResetCount
-        symbolView.contentTintColor = .systemGreen
+        stopTintCrossfade()
+        setSymbol(symbolName, color: .systemGreen)
         if !model.reduceMotion, #available(macOS 15.0, *) {
             symbolView.addSymbolEffect(.bounce, options: .repeat(3))
         }
@@ -160,6 +157,77 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         options: SymbolEffectOptions
     ) where Effect: IndefiniteSymbolEffect & SymbolEffect {
         symbolView.addSymbolEffect(effect, options: options)
+    }
+
+    /// Colors the working icon by provider: solid for one, a slow blue <-> orange
+    /// cross-fade for both. Celebration green always wins. The color is baked
+    /// into a non-template symbol image because the menu bar renders template
+    /// images as flat monochrome and ignores contentTintColor.
+    private func applyTint(_ presentation: StatusPresentation, celebrating: Bool) {
+        let name = presentation.symbolName
+        if celebrating {
+            stopTintCrossfade()
+            setSymbol(name, color: .systemGreen)
+            return
+        }
+        switch presentation.activeTints.count {
+        case 0:
+            stopTintCrossfade()
+            setSymbol(name, color: presentation.color)
+        case 1:
+            stopTintCrossfade()
+            setSymbol(name, color: presentation.activeTints[0])
+        default:
+            startTintCrossfade(name, presentation.activeTints[0], presentation.activeTints[1])
+        }
+    }
+
+    /// Renders the SF Symbol with the color baked in (non-template) so the menu
+    /// bar shows it instead of flattening it to monochrome.
+    private func setSymbol(_ name: String, color: NSColor) {
+        let config = NSImage.SymbolConfiguration(paletteColors: [color])
+        let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(config)
+        image?.isTemplate = false
+        symbolView.image = image
+    }
+
+    private func startTintCrossfade(_ name: String, _ first: NSColor, _ second: NSColor) {
+        stopTintCrossfade()
+        guard !model.reduceMotion else {
+            setSymbol(name, color: ProviderColor.bothBlend)
+            return
+        }
+        let a = first.usingColorSpace(.sRGB) ?? first
+        let b = second.usingColorSpace(.sRGB) ?? second
+        tintCrossfadeTask = Task { [weak self] in
+            let period = 3.0
+            let step = 0.06
+            var elapsed = 0.0
+            while !Task.isCancelled {
+                guard let self else { break }
+                let fraction = (1 - cos(.pi * elapsed / period)) / 2
+                self.setSymbol(name, color: Self.blend(a, b, fraction))
+                try? await Task.sleep(for: .seconds(step))
+                elapsed += step
+                if elapsed >= 2 * period { elapsed -= 2 * period }
+            }
+        }
+    }
+
+    private func stopTintCrossfade() {
+        tintCrossfadeTask?.cancel()
+        tintCrossfadeTask = nil
+    }
+
+    private static func blend(_ a: NSColor, _ b: NSColor, _ fraction: Double) -> NSColor {
+        let t = CGFloat(fraction)
+        return NSColor(
+            srgbRed: a.redComponent + (b.redComponent - a.redComponent) * t,
+            green: a.greenComponent + (b.greenComponent - a.greenComponent) * t,
+            blue: a.blueComponent + (b.blueComponent - a.blueComponent) * t,
+            alpha: 1
+        )
     }
 }
 

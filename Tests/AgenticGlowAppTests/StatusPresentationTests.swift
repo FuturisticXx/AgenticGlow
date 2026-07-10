@@ -9,7 +9,8 @@ final class StatusPresentationTests: XCTestCase {
                 sessions: [],
                 dominantPhase: .permission,
                 activeCount: 3,
-                permissionCount: 2
+                permissionCount: 2,
+                activeProviders: []
             ),
             showTimer: true,
             reduceMotion: false
@@ -83,7 +84,8 @@ final class StatusPresentationTests: XCTestCase {
                 sessions: [],
                 dominantPhase: .idle,
                 activeCount: 0,
-                permissionCount: 0
+                permissionCount: 0,
+                activeProviders: []
             ),
             showTimer: false,
             reduceMotion: false
@@ -166,6 +168,68 @@ final class StatusPresentationTests: XCTestCase {
         )
     }
 
+    func testActiveTintIsClaudeOnlyOrange() {
+        let presentation = working(activeProviders: [.claude])
+        XCTAssertEqual(presentation.activeTints, [ProviderColor.nsColor(for: .claude)])
+    }
+
+    func testActiveTintIsCodexOnlyAzure() {
+        let presentation = working(activeProviders: [.codex])
+        XCTAssertEqual(presentation.activeTints, [ProviderColor.nsColor(for: .codex)])
+    }
+
+    func testActiveTintIsBothInClaudeThenCodexOrder() {
+        let presentation = working(activeProviders: [.codex, .claude])
+        XCTAssertEqual(
+            presentation.activeTints,
+            [ProviderColor.nsColor(for: .claude), ProviderColor.nsColor(for: .codex)]
+        )
+    }
+
+    func testPermissionHasNoProviderTints() {
+        let presentation = StatusPresentation(
+            resolved: .init(
+                sessions: [],
+                dominantPhase: .permission,
+                activeCount: 1,
+                permissionCount: 1,
+                activeProviders: []
+            ),
+            showTimer: false,
+            reduceMotion: false
+        )
+        XCTAssertTrue(presentation.activeTints.isEmpty)
+    }
+
+    func testIdleHasNoProviderTints() {
+        let presentation = StatusPresentation(
+            resolved: .init(
+                sessions: [],
+                dominantPhase: .idle,
+                activeCount: 0,
+                permissionCount: 0,
+                activeProviders: []
+            ),
+            showTimer: false,
+            reduceMotion: false
+        )
+        XCTAssertTrue(presentation.activeTints.isEmpty)
+    }
+
+    private func working(activeProviders: Set<AgentProvider>) -> StatusPresentation {
+        StatusPresentation(
+            resolved: .init(
+                sessions: [],
+                dominantPhase: .thinking,
+                activeCount: activeProviders.count,
+                permissionCount: 0,
+                activeProviders: activeProviders
+            ),
+            showTimer: false,
+            reduceMotion: false
+        )
+    }
+
     private func resolved(phase: SessionPhase, elapsedSeconds: Int?) -> ResolvedSessions {
         let session = SessionSnapshot(
             provider: .codex,
@@ -183,7 +247,8 @@ final class StatusPresentationTests: XCTestCase {
             sessions: [session],
             dominantPhase: phase,
             activeCount: isActive ? 1 : 0,
-            permissionCount: phase == .permission ? 1 : 0
+            permissionCount: phase == .permission ? 1 : 0,
+            activeProviders: [.thinking, .usingTool].contains(phase) ? [.codex] : []
         )
     }
 

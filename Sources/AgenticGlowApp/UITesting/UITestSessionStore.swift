@@ -49,6 +49,43 @@ enum UITestFixtureFactory {
                     updatedAt: Date()
                 )
             ]
+        case "both-working":
+            return [
+                .init(
+                    schemaVersion: 1,
+                    provider: .claude,
+                    surface: .cli,
+                    sessionID: "both-claude",
+                    turnID: "turn",
+                    phase: .thinking,
+                    label: "Thinking",
+                    toolCategory: nil,
+                    projectName: "horizon-app",
+                    workingDirectory: "/tmp/horizon-app",
+                    sourceBundleID: "com.apple.Terminal",
+                    sourceProcessID: nil,
+                    sourceProcessStartedAt: nil,
+                    turnStartedAt: Date(),
+                    updatedAt: Date()
+                ),
+                .init(
+                    schemaVersion: 1,
+                    provider: .codex,
+                    surface: .cli,
+                    sessionID: "both-codex",
+                    turnID: "turn",
+                    phase: .usingTool,
+                    label: "Editing main.swift",
+                    toolCategory: .edit,
+                    projectName: "AgenticGlow",
+                    workingDirectory: "/tmp/AgenticGlow",
+                    sourceBundleID: "com.apple.Terminal",
+                    sourceProcessID: nil,
+                    sourceProcessStartedAt: nil,
+                    turnStartedAt: Date(),
+                    updatedAt: Date()
+                )
+            ]
         default:
             return nil
         }
