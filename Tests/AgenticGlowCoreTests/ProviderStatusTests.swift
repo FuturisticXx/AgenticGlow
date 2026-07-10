@@ -12,13 +12,31 @@ final class StatusPageNormalizerTests: XCTestCase {
         XCTAssertEqual(status, .operational)
     }
 
-    func testMinorIndicatorIsIncidentWithDescription() throws {
+    func testMinorIndicatorIsOperational() throws {
         let status = try StatusPageNormalizer.normalize(json(
             indicator: "minor",
             description: "Partial System Degradation"
         ))
 
-        XCTAssertEqual(status, .incident("Partial System Degradation"))
+        XCTAssertEqual(status, .operational)
+    }
+
+    func testMaintenanceIndicatorIsOperational() throws {
+        let status = try StatusPageNormalizer.normalize(json(
+            indicator: "maintenance",
+            description: "Scheduled Maintenance"
+        ))
+
+        XCTAssertEqual(status, .operational)
+    }
+
+    func testMajorIndicatorIsIncidentWithDescription() throws {
+        let status = try StatusPageNormalizer.normalize(json(
+            indicator: "major",
+            description: "Major Service Outage"
+        ))
+
+        XCTAssertEqual(status, .incident("Major Service Outage"))
     }
 
     func testCriticalIndicatorWithoutDescriptionUsesFallback() throws {
@@ -126,7 +144,7 @@ final class ProviderStatusMonitorTests: XCTestCase {
     }
 
     private func incidentData() -> Data {
-        Data(#"{"status":{"indicator":"minor","description":"Partial System Degradation"}}"#.utf8)
+        Data(#"{"status":{"indicator":"major","description":"Partial System Degradation"}}"#.utf8)
     }
 }
 

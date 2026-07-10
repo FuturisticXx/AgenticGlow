@@ -395,7 +395,7 @@ private final class MutableAllowanceAdapter: AllowanceProviding, @unchecked Send
 
 private struct IncidentStatusRequester: ProviderStatusRequesting {
     func fetchStatus(for provider: AgentProvider) async throws -> Data {
-        Data(#"{"status":{"indicator":"minor","description":"Partial System Degradation"}}"#.utf8)
+        Data(#"{"status":{"indicator":"major","description":"Partial System Degradation"}}"#.utf8)
     }
 }
 

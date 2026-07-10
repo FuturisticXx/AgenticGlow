@@ -38,10 +38,16 @@ public struct StatusPageClient: ProviderStatusRequesting {
 public enum StatusPageNormalizer {
     public static func normalize(_ data: Data) throws -> ProviderServiceStatus {
         let response = try JSONDecoder().decode(Response.self, from: data)
-        if response.status.indicator == "none" {
+        // Statuspage rolls every component, including ones the user never
+        // touches (e.g. OpenAI's FedRAMP environment), into the top-level
+        // indicator. Only major and critical mean a real outage worth
+        // surfacing; none, minor, and maintenance are treated as operational.
+        switch response.status.indicator {
+        case "major", "critical":
+            return .incident(response.status.description ?? "Service incident")
+        default:
             return .operational
         }
-        return .incident(response.status.description ?? "Service incident")
     }
 
     private struct Response: Decodable {
