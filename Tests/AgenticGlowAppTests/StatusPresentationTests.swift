@@ -168,22 +168,19 @@ final class StatusPresentationTests: XCTestCase {
         )
     }
 
-    func testActiveTintIsClaudeOnlyOrange() {
+    func testActiveProviderIsClaudeOnly() {
         let presentation = working(activeProviders: [.claude])
-        XCTAssertEqual(presentation.activeTints, [ProviderColor.nsColor(for: .claude)])
+        XCTAssertEqual(presentation.activeProviders, [.claude])
     }
 
-    func testActiveTintIsCodexOnlyAzure() {
+    func testActiveProviderIsCodexOnly() {
         let presentation = working(activeProviders: [.codex])
-        XCTAssertEqual(presentation.activeTints, [ProviderColor.nsColor(for: .codex)])
+        XCTAssertEqual(presentation.activeProviders, [.codex])
     }
 
-    func testActiveTintIsBothInClaudeThenCodexOrder() {
+    func testActiveProvidersAreBothInClaudeThenCodexOrder() {
         let presentation = working(activeProviders: [.codex, .claude])
-        XCTAssertEqual(
-            presentation.activeTints,
-            [ProviderColor.nsColor(for: .claude), ProviderColor.nsColor(for: .codex)]
-        )
+        XCTAssertEqual(presentation.activeProviders, [.claude, .codex])
     }
 
     func testPermissionHasNoProviderTints() {
@@ -198,7 +195,7 @@ final class StatusPresentationTests: XCTestCase {
             showTimer: false,
             reduceMotion: false
         )
-        XCTAssertTrue(presentation.activeTints.isEmpty)
+        XCTAssertTrue(presentation.activeProviders.isEmpty)
     }
 
     func testIdleHasNoProviderTints() {
@@ -213,7 +210,7 @@ final class StatusPresentationTests: XCTestCase {
             showTimer: false,
             reduceMotion: false
         )
-        XCTAssertTrue(presentation.activeTints.isEmpty)
+        XCTAssertTrue(presentation.activeProviders.isEmpty)
     }
 
     private func working(activeProviders: Set<AgentProvider>) -> StatusPresentation {

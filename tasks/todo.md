@@ -1,3 +1,34 @@
+# Adaptive menu bar icon colors (2026-07-09)
+
+**Goal:** The working icon's provider colors automatically deepen on light menu bars and brighten on dark ones, riding macOS's own per-wallpaper bar appearance. No border, no screen sampling, no new permissions.
+
+**Mechanism:** macOS flips each menu bar between light and dark appearance based on the wallpaper behind it (how template icons stay legible). The status item button exposes this as effectiveAppearance; KVO-observe it and swap palettes.
+
+**Known limits (John accepted):** two-mode adaptation, not continuous color matching; one appearance value per status item, so it follows the main display when wallpapers differ.
+
+## Tasks
+
+### Task 1: Two palettes in ProviderColor
+- Menu bar palette pairs: dark-bar (bright: current blue 0.25/0.55/1.00, coral 0.85/0.47/0.34) and light-bar (deep: orange 0.82/0.37/0.22, blue ~0.10/0.42/0.88). Popover rows and pills keep the single existing palette.
+- bothBlend becomes the midpoint of whichever pair is active.
+- [x] Update ProviderColorTests to lock both palettes and midpoints -> verified: 6 ProviderColorTests green (both palettes, midpoints, light-darker-than-dark invariant)
+
+### Task 2: Presentation exposes providers, controller picks colors
+- StatusPresentation.activeTints [NSColor] becomes activeProviders [AgentProvider]; StatusItemController resolves colors per appearance at render time.
+- [x] Update StatusPresentationTests accordingly -> verified: activeProviders replaces activeTints, 53 app tests green
+
+### Task 3: Appearance observation
+- KVO on item.button.effectiveAppearance (aqua vs darkAqua bestMatch); on change invalidate lastPresentation and re-render, motion task picks up new palette next frame without restarting (phase preserved).
+- [x] Build passes -> NOTE: KVO observation replaced with per-frame resolution in the motion task; effectiveAppearance KVO fires for our own renders (storm measured at ~325 events/s), so the frame task reads the verdict each frame instead
+
+### Task 4: Verify end to end
+- [x] Full unit suite passes; UI suite passes -> verified: 157 core + 53 app + 6 UI, zero failures
+- [x] Live verification (method changed: system Light/Dark toggle does not drive bar appearance on macOS 27; wallpaper does) -> verified: white wallpaper on main display gives light verdict and deep palette (bluest pixel rgb(43,119,209), distance 26 to deep vs 55 to bright); pink wallpaper gives dark verdict. Sweep 9.99s vs 10.0 target; rotation autocorrelation peak +0.95 at 2.0s lag (12s/rev).
+- Caveat (system behavior, affects all menu bar apps): macOS lags flipping bar appearance after a wallpaper change (Apple's own template icons rendered black on a near-black bar during the lag). Our icon follows the same system verdict as every other icon.
+- Caveat: macOS dims menu bar content on inactive displays; that dimming, not the palette, is what washes the icon out on secondary displays.
+
+---
+
 # v0.3.0: Notifications, Low-Allowance Badge, Incident Status, Reset Celebration (2026-07-08)
 
 **Goal:** AgenticGlow proactively tells John when an agent needs him or usage runs low, hints low allowance on the menu bar icon, surfaces provider incidents in the popover behind an explicit opt-in, and celebrates the weekly usage reset.

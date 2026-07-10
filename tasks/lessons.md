@@ -39,3 +39,15 @@ John reported "Dark Mode is too light." I read it as the whole popover surface; 
 ## A UI reference usually means "restyle my data," not "build a new feature" (2026-07-08)
 
 John shared a macOS weather "Feels Like" widget (a bar with a floating pill) and asked to add "something like this." I read it as a new metric and proposed a burn-rate/pace indicator with up/down delta arrows, then built mockups for it. He corrected me: he only wanted the existing percent-left number moved into the pill, no arrows, no new math. Rule: when John shares a visual reference, lead with the simplest interpretation, applying the visual pattern to data that already exists, and confirm that before designing anything more elaborate. Show a quick mock of the literal reading first; only add new meaning if he asks for it.
+
+## Menu bar icon: never swap the image under a symbol effect (2026-07-09)
+
+John reported the working icon "glitching" between blue and orange. Root cause: the cross-fade rebuilt the icon image every frame while rotation ran as an SF Symbol effect on the view; every image swap restarts the effect, so the spin stuttered continuously. Also true: the menu bar ignores `contentTintColor` and flattens template images, and rotating the view (`frameCenterRotation`) fights Auto Layout until the icon vanishes. Rule: for animated status items, bake rotation and color into a single image per frame from one clock-driven task. No symbol effects, no view or layer transforms, no tint properties.
+
+## Verify menu bar visuals on the ACTIVE display only (2026-07-09)
+
+macOS dims menu bar content on inactive displays, and the bar's material can wash colored icons toward the bar tone there. I spent a long detour "fixing" invisible orange that was really system dimming on an inactive BenQ bar; the same wallpaper on the active main display showed the icon crisp in 37/37 frames. Rule: pixel-verify status item rendering on the display that is currently active, and confirm which DerivedData products directory the launched binary came from before trusting any visual check (a stale July 3 build cost an hour of false diagnosis).
+
+## effectiveAppearance KVO storms with self-rendering status items (2026-07-09)
+
+Observing `button.effectiveAppearance` to adapt icon colors re-fired from our own 30fps renders (~325 events/s measured), looping re-renders. Rule: for anything redrawn by a frame task, read environment state (like bar appearance) inside the frame task instead of observing it; changes apply within a frame and there is nothing to storm.

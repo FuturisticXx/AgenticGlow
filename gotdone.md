@@ -1,5 +1,17 @@
 # Got done
 
+## 2026-07-09 - Calm motion and appearance-adaptive colors for the menu bar icon
+
+- Deepened Claude orange (0.82/0.37/0.22) after John flagged the coral washing out; white pill text contrast improves 3.14:1 -> 3.91:1.
+- Rewrote icon motion after John reported glitching: one 30fps frame task now bakes rotation and color into a single image per frame (SF Symbol rotate effect restarted on every cross-fade image swap; that was the stutter). Rotation 12s/rev, cross-fade 5s per direction on a monotonic clock (the old loop drifted 8.7s actual vs 6s nominal).
+- Fixed the spin restarting every second: timer-title ticks re-applied the symbol effect each update during a session's first minute.
+- Capped the sweep at 80% orange so it never parks on full alert-orange (cosine dwell); solid orange still means Claude working alone.
+- Adaptive palettes: the frame task resolves colors per frame against the bar's effectiveAppearance verdict, deep palette on light bars, bright on dark. No KVO (our own renders storm it at ~325 events/s), no screen sampling, no new permissions.
+- Tried and rejected with John: thin black outline around the glyph ("looks terrible").
+- Verified by measurement on the live bar: 9.99s sweep vs 10.0 target; rotation autocorrelation peaks +0.95 at exactly 2.0s lag (hexagon 60-degree symmetry at 12s/rev = constant spin, no restarts); deep palette confirmed on a light bar by pixel distance (rgb(43,119,209), 26 from deep vs 55 from bright target). 157 core + 53 app + 6 UI tests green.
+- Known system behaviors documented in tasks/todo.md: macOS dims inactive displays' menu bars (that was most of the "washed out on light wallpaper" complaint) and can lag the bar's light/dark verdict after wallpaper changes (Apple's own template icons went black-on-black during the lag).
+- Pushed to main.
+
 ## 2026-07-09 - Provider color language for the icon and session list
 
 - One color language across the app: Claude orange, Codex azure, shared via a new `ProviderColor` helper that the allowance pills, session rows, and menu bar icon all read from.

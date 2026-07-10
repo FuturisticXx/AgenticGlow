@@ -8,10 +8,12 @@ struct StatusPresentation: Equatable {
     let color: NSColor
     let animates: Bool
     let showsAllowanceBadge: Bool
-    /// Provider tints for the working icon, in a stable Claude-then-Codex
+    /// Providers coloring the working icon, in a stable Claude-then-Codex
     /// order. Empty unless the dominant state is thinking or using a tool:
-    /// one entry drives a solid tint, two entries drive the cross-fade.
-    let activeTints: [NSColor]
+    /// one entry drives a solid tint, two entries drive the cross-fade. The
+    /// controller resolves actual colors per menu bar appearance at render
+    /// time, so the icon can adapt when the wallpaper flips the bar.
+    let activeProviders: [AgentProvider]
 
     init(
         resolved: ResolvedSessions,
@@ -63,10 +65,8 @@ struct StatusPresentation: Equatable {
             animates = false
         }
         let working = [SessionPhase.thinking, .usingTool].contains(resolved.dominantPhase)
-        activeTints = working
-            ? [.claude, .codex]
-                .filter { resolved.activeProviders.contains($0) }
-                .map(ProviderColor.nsColor(for:))
+        activeProviders = working
+            ? [.claude, .codex].filter { resolved.activeProviders.contains($0) }
             : []
 
         accessibilityLabel = lowAllowance ? "\(phaseLabel), usage low" : phaseLabel

@@ -1,4 +1,5 @@
 import AppKit
+import AgenticGlowCore
 import Observation
 import Symbols
 import SwiftUI
@@ -14,7 +15,35 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private var lastPresentation: StatusPresentation?
     private var lastCelebrationCount = 0
     private var celebrationResetTask: Task<Void, Never>?
-    private var tintCrossfadeTask: Task<Void, Never>?
+    private var motionTask: Task<Void, Never>?
+    private var motionRotating = false
+    /// Providers coloring the animated icon; two entries cross-fade, one is a
+    /// solid provider tint. The frame task resolves actual colors per frame
+    /// against the bar's current appearance, so a wallpaper that flips the
+    /// bar light or dark re-palettes the icon within a frame, no observers.
+    private var motionProviders: [AgentProvider]?
+    private var currentSymbolName: String?
+    private var currentSolidColor: NSColor?
+
+    /// Menu bar motion is ambient, not feedback: it plays for minutes at a time
+    /// while an agent works. Slow and continuous reads as calm; anything brisk
+    /// enough to notice becomes a distraction in the corner of the eye.
+    ///
+    /// Rotation is driven by our own frame task, not RotateSymbolEffect: the
+    /// cross-fade must swap the symbol image every frame (the menu bar flattens
+    /// contentTintColor, so color has to be baked in), and every image swap
+    /// restarts a symbol effect, which stuttered the spin.
+    private enum Motion {
+        /// Seconds per full revolution. The hexagon grid repeats every 60
+        /// degrees, so the visible pattern cycles once every period/6 seconds.
+        static let rotationPeriod: Double = 12.0
+        /// Seconds for one direction of the blue <-> orange sweep.
+        static let crossfadePeriod: Double = 5.0
+        /// The sweep tops out at this much orange instead of saturating.
+        static let crossfadePeakShare: Double = 0.8
+        /// 30fps. At the previous 0.06s the sweep banded into visible steps.
+        static let frameInterval: Double = 1.0 / 30.0
+    }
 
     init(
         model: AppModel,
@@ -66,7 +95,8 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     }
 
     func stop() {
-        stopTintCrossfade()
+        motionTask?.cancel()
+        motionTask = nil
         symbolView.removeAllSymbolEffects()
     }
 
@@ -116,6 +146,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         item.length = presentation.title.isEmpty ? 24 : NSStatusItem.variableLength
         item.button?.setAccessibilityLabel(presentation.accessibilityLabel)
         configureAnimation(enabled: presentation.animates)
+        reconcileMotionTask()
     }
 
     /// Briefly turns the icon green (with a bounce where available) when a
@@ -125,7 +156,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             return celebrationResetTask != nil
         }
         lastCelebrationCount = model.weeklyResetCount
-        stopTintCrossfade()
+        motionProviders = nil
         setSymbol(symbolName, color: .systemGreen)
         if !model.reduceMotion, #available(macOS 15.0, *) {
             symbolView.addSymbolEffect(.bounce, options: .repeat(3))
@@ -142,82 +173,137 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     }
 
     private func configureAnimation(enabled: Bool) {
-        symbolView.removeAllSymbolEffects()
-        if enabled, #available(macOS 15.0, *) {
-            let effect: RotateSymbolEffect = .rotate
-            addIndefiniteEffect(
-                effect,
-                options: .repeating.speed(0.25)
-            )
-        }
-    }
-
-    private func addIndefiniteEffect<Effect>(
-        _ effect: Effect,
-        options: SymbolEffectOptions
-    ) where Effect: IndefiniteSymbolEffect & SymbolEffect {
-        symbolView.addSymbolEffect(effect, options: options)
+        motionRotating = enabled
     }
 
     /// Colors the working icon by provider: solid for one, a slow blue <-> orange
     /// cross-fade for both. Celebration green always wins. The color is baked
     /// into a non-template symbol image because the menu bar renders template
-    /// images as flat monochrome and ignores contentTintColor.
+    /// images as flat monochrome and ignores contentTintColor (verified: a
+    /// template symbol with contentTintColor drew gray in the menu bar).
     private func applyTint(_ presentation: StatusPresentation, celebrating: Bool) {
         let name = presentation.symbolName
         if celebrating {
-            stopTintCrossfade()
+            motionProviders = nil
             setSymbol(name, color: .systemGreen)
             return
         }
-        switch presentation.activeTints.count {
-        case 0:
-            stopTintCrossfade()
+        let providers = presentation.activeProviders
+        if providers.isEmpty {
+            motionProviders = nil
             setSymbol(name, color: presentation.color)
-        case 1:
-            stopTintCrossfade()
-            setSymbol(name, color: presentation.activeTints[0])
-        default:
-            startTintCrossfade(name, presentation.activeTints[0], presentation.activeTints[1])
+        } else if providers.count > 1, model.reduceMotion {
+            motionProviders = nil
+            setSymbol(name, color: ProviderColor.bothBlend(on: barAppearance))
+        } else {
+            motionProviders = providers
+            currentSymbolName = name
+            setSymbol(name, color: ProviderColor.nsColor(for: providers[0], on: barAppearance))
         }
     }
 
-    /// Renders the SF Symbol with the color baked in (non-template) so the menu
-    /// bar shows it instead of flattening it to monochrome.
-    private func setSymbol(_ name: String, color: NSColor) {
-        let config = NSImage.SymbolConfiguration(paletteColors: [color])
-        let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
-            .withSymbolConfiguration(config)
-        image?.isTemplate = false
-        symbolView.image = image
+    /// macOS re-tints each menu bar light or dark for the wallpaper behind
+    /// it; the button's effectiveAppearance carries that verdict.
+    private var barAppearance: ProviderColor.BarAppearance {
+        let match = item.button?.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua])
+        return match == .aqua ? .light : .dark
     }
 
-    private func startTintCrossfade(_ name: String, _ first: NSColor, _ second: NSColor) {
-        stopTintCrossfade()
-        guard !model.reduceMotion else {
-            setSymbol(name, color: ProviderColor.bothBlend)
+    private func setSymbol(_ name: String, color: NSColor) {
+        currentSymbolName = name
+        currentSolidColor = color
+        symbolView.image = Self.symbolImage(name, color: color, rotatedDegrees: 0)
+    }
+
+    /// Rotation is baked into the image alongside the color: rotating the view
+    /// (frameCenterRotation) fights Auto Layout and blanked the icon, and layer
+    /// transforms get reset by layout passes. Drawing the rotated symbol into a
+    /// fresh image each frame is the one path the menu bar renders reliably.
+    private static func symbolImage(
+        _ name: String,
+        color: NSColor,
+        rotatedDegrees degrees: Double
+    ) -> NSImage? {
+        let config = NSImage.SymbolConfiguration(paletteColors: [color])
+        guard let base = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(config) else { return nil }
+        base.isTemplate = false
+        guard degrees != 0 else { return base }
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            let transform = NSAffineTransform()
+            transform.translateX(by: rect.midX, yBy: rect.midY)
+            transform.rotate(byDegrees: CGFloat(degrees))
+            transform.translateX(by: -rect.midX, yBy: -rect.midY)
+            transform.concat()
+            let baseSize = base.size
+            let scale = min(rect.width / baseSize.width, rect.height / baseSize.height)
+            let drawSize = NSSize(width: baseSize.width * scale, height: baseSize.height * scale)
+            let origin = NSPoint(
+                x: rect.midX - drawSize.width / 2,
+                y: rect.midY - drawSize.height / 2
+            )
+            base.draw(in: NSRect(origin: origin, size: drawSize))
+            return true
+        }
+        image.isTemplate = false
+        return image
+    }
+
+    /// One frame task drives both the spin and the color sweep so neither ever
+    /// restarts when the other changes. State flips (provider joins or leaves,
+    /// celebration) just change what the next frame renders; the task and its
+    /// clock keep running, which keeps rotation phase and sweep phase steady.
+    private func reconcileMotionTask() {
+        guard motionRotating || motionProviders != nil else {
+            motionTask?.cancel()
+            motionTask = nil
             return
         }
-        let a = first.usingColorSpace(.sRGB) ?? first
-        let b = second.usingColorSpace(.sRGB) ?? second
-        tintCrossfadeTask = Task { [weak self] in
-            let period = 3.0
-            let step = 0.06
-            var elapsed = 0.0
+        guard motionTask == nil else { return }
+        motionTask = Task { [weak self] in
+            // Read the clock instead of accumulating the nominal step:
+            // Task.sleep overshoots, and the error compounds every frame.
+            let start = ContinuousClock.now
             while !Task.isCancelled {
                 guard let self else { break }
-                let fraction = (1 - cos(.pi * elapsed / period)) / 2
-                self.setSymbol(name, color: Self.blend(a, b, fraction))
-                try? await Task.sleep(for: .seconds(step))
-                elapsed += step
-                if elapsed >= 2 * period { elapsed -= 2 * period }
+                let elapsed = ContinuousClock.now - start
+                let seconds = Double(elapsed.components.seconds)
+                    + Double(elapsed.components.attoseconds) * 1e-18
+                self.renderMotionFrame(at: seconds)
+                try? await Task.sleep(for: .seconds(Motion.frameInterval))
             }
         }
     }
 
-    private func stopTintCrossfade() {
-        tintCrossfadeTask?.cancel()
-        tintCrossfadeTask = nil
+    private func renderMotionFrame(at seconds: Double) {
+        // The celebration bounce effect owns the icon while it plays; swapping
+        // images under it would cancel the bounce.
+        guard celebrationResetTask == nil, let name = currentSymbolName else { return }
+        let color: NSColor
+        if let providers = motionProviders, providers.count == 2 {
+            let bar = barAppearance
+            let claude = ProviderColor.nsColor(for: providers[0], on: bar)
+            let codex = ProviderColor.nsColor(for: providers[1], on: bar)
+            let phase = seconds.truncatingRemainder(dividingBy: 2 * Motion.crossfadePeriod)
+            let blueShare = (1 - cos(.pi * phase / Motion.crossfadePeriod)) / 2
+            // Providers are Claude-then-Codex. The cosine dwells at its
+            // extremes, so an uncapped sweep parks on full orange, which reads
+            // as an alert. Cap the orange end and let blue saturate fully: the
+            // icon stays blue-based, and solid orange means "Claude alone".
+            let orangeShare = Motion.crossfadePeakShare * (1 - blueShare)
+            color = Self.blend(claude, codex, 1 - orangeShare)
+        } else if let providers = motionProviders, providers.count == 1 {
+            color = ProviderColor.nsColor(for: providers[0], on: barAppearance)
+        } else if motionRotating, let solid = currentSolidColor {
+            color = solid
+        } else {
+            return
+        }
+        let turns = motionRotating
+            ? (seconds / Motion.rotationPeriod).truncatingRemainder(dividingBy: 1)
+            : 0
+        symbolView.image = Self.symbolImage(name, color: color, rotatedDegrees: -360 * turns)
     }
 
     private static func blend(_ a: NSColor, _ b: NSColor, _ fraction: Double) -> NSColor {
