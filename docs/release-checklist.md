@@ -112,13 +112,24 @@ Public release 0.2.0 evidence recorded 2026-07-05:
 - The installed /Applications app was replaced with the notarized 0.2.0 build and relaunched.
 - Known appearance note: the Dark Mode scrim applies on macOS 26+ only; macOS 14 to 25 keep the more opaque `.regularMaterial` background.
 
+Public release 0.4.0 evidence recorded 2026-07-10:
+
+- Released from commit `703c467` (tag `v0.4.0`). Version 0.3.0 was never tagged, so this is the first public release since 0.2.0 and bundles both lines of work: the 0.3.0 features (permission and low-allowance notifications, low-allowance menu bar badge, opt-in provider incident line limited to major and critical outages, weekly reset celebration, provider color language, allowance percentage pills) and the 0.4.0 icon polish (deeper Claude orange, one frame-task motion pipeline at 12 seconds per revolution and 10 seconds per color sweep, 80 percent orange cap, appearance-adaptive palettes resolved per frame).
+- Motion was verified by measurement on the live menu bar: the sweep measured 9.99 seconds against a 10.0 target, and rotation autocorrelation peaked at +0.95 at exactly the hexagon's 2.0 second symmetry lag, proving a constant spin with no restarts.
+- The full suite passed on the release commit: 157 core, 53 app, and 6 UI tests with zero failures, and the privacy contract verification passed. CI run `29124749705` passed on the feature commit `2f59788`, and the follow-up docs and cask pushes were green.
+- Signed universal `arm64` and `x86_64` build passed strict code-signature checks for the app and the event helper. Apple accepted notarization submission `bb34b41b-4de9-48d7-8b43-27e5e441b6ad`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- The released DMG SHA-256 is `c079f59e1d495b2df654ffc6eafea01685756546c939fb9786678c639c395e62`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.4.0 checksum (main commit `5dc7abb`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `6bb0916`).
+- The installed /Applications app was replaced with the notarized 0.4.0 build and relaunched.
+- Known system behaviors documented during verification: macOS dims menu bar content on inactive displays, and the bar's light or dark appearance verdict can lag a wallpaper change; the icon follows the same system verdict as every other menu bar icon.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.
 
 Next unblocked work:
 
-1. Monitor v0.2.0 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy.
+1. Monitor v0.4.0 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy.
 
 ## Legal and Branding
 
@@ -230,12 +241,17 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-05)
-  - Release notes published
-  - DMG uploaded to release
-  - Tag pushed to repository
+- [x] **GitHub release published** (date: 2026-07-10, latest: v0.4.0)
+  - Release notes published, covering 0.3.0 and 0.4.0 work since v0.3.0 was never tagged
+  - Notarized DMG uploaded to the release and re-verified after download (checksum, staple, Gatekeeper)
+  - Tag `v0.4.0` pushed to the repository at commit `703c467`
+  - Prior public releases: v0.1.0, v0.1.1, v0.2.0 (2026-07-05)
 
-- [ ] **Homebrew cask submitted** (date: ________)
+- [x] **Cask updated in the official tap** (date: 2026-07-10, version 0.4.0)
+  - `Cask/agenticglow.rb` regenerated with the 0.4.0 checksum and pushed on main (`5dc7abb`)
+  - Tap `FuturisticXx/homebrew-agenticglow` updated to 0.4.0 (tap commit `6bb0916`)
+
+- [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask
   - PR merged and cask available
   - Document PR number
