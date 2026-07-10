@@ -1,5 +1,13 @@
 # Got done
 
+## 2026-07-09 - Built and notarized the 0.4.0 release
+
+- Signed universal release build via Scripts/build-release.sh 0.4.0: gates passed, codesign strict verification passed, lipo shows x86_64 arm64 for the app and the event helper, Info.plist stamps 0.4.0.
+- DMG created, signed, notarized (submission bb34b41b-4de9-48d7-8b43-27e5e441b6ad, status Accepted), and stapled via Scripts/create-dmg.sh 0.4.0. Gatekeeper accepts both app and DMG as Notarized Developer ID.
+- DMG: build/AgenticGlow-0.4.0.dmg, 4.0M, SHA-256 c079f59e1d495b2df654ffc6eafea01685756546c939fb9786678c639c395e62.
+- Ships the calm-motion and adaptive-color icon work from commit 2f59788 (CI green).
+- Not yet done, pending John: install to /Applications, tag v0.4.0, publish the GitHub release, bump the cask in the tap.
+
 ## 2026-07-09 - Calm motion and appearance-adaptive colors for the menu bar icon
 
 - Deepened Claude orange (0.82/0.37/0.22) after John flagged the coral washing out; white pill text contrast improves 3.14:1 -> 3.91:1.
