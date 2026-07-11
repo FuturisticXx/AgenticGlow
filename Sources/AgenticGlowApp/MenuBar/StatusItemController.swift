@@ -104,6 +104,11 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         popoverState.isPresented = false
     }
 
+    func showPopoverForVisualQA() {
+        guard !popover.isShown else { return }
+        togglePopover()
+    }
+
     @objc private func togglePopover() {
         guard let button = item.button else { return }
         if popover.isShown {

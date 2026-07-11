@@ -168,3 +168,20 @@
 - Stopped UI verification after repeated Debug launches caused Keychain password
   prompts. Integrated light/dark screenshot comparison remains deferred until it
   can run without touching John's login Keychain.
+
+## Credential-isolated visual completion
+
+- Added `--visual-qa` with in-memory Claude credentials, isolated preferences,
+  empty session state, disabled real provider/update activity, explicit Light or
+  Dark appearance, explicit Glass Clarity, and automatic native popover opening.
+- Verified the visual-QA tests compile with code signing disabled and no app-host
+  launch.
+- Captured Dark and requested Light appearance at 0 and 100 percent clarity from
+  the actual native popover over a visually rich background. No Keychain prompt
+  occurred during any visual-QA launch.
+- Confirmed the current 0 percent surface remains intact, 100 percent transmits
+  more underlying color while retaining legibility and dimensional cues, and the
+  native material continues adapting to dark background content.
+- Reverified privacy, deterministic XcodeGen, diff formatting, and the immutable
+  motion boundary. `PopoverAura` is byte-identical to `main`; the only status-item
+  change is the visual-QA entry point that invokes the existing toggle method.

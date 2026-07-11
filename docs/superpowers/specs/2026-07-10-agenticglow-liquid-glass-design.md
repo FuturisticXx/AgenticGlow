@@ -123,7 +123,21 @@ consumed only by `LiquidGlassSurface`.
 - `StatusItemController.swift` is byte-identical to `main`.
 - No glass preference or surface type is referenced by animation code.
 - UI automation could not initialize twice because macOS timed out enabling
-  automation mode. Further app-hosted launches were stopped after they caused
-  repeated Keychain prompts. Integrated screenshot comparison remains deferred
-  until it can be performed without prompting for John's Keychain password.
-
+  automation mode. A dedicated `--visual-qa` mode now replaces real credentials
+  with an in-memory store, uses isolated preferences and empty session data,
+  disables real provider and update activity, applies explicit appearance and
+  clarity arguments, and opens the native popover automatically.
+- Four native-popover captures completed without a Keychain prompt: Dark Mode at
+  0 and 100 percent clarity, and requested Light appearance at 0 and 100 percent.
+- The 0 percent Dark Mode capture retained the existing dense, legible surface.
+  At 100 percent, more of the underlying color transmitted through while text,
+  controls, top illumination, and lower depth remained clear.
+- Over the dark, visually rich test background, the native popover remained dark
+  even when the app requested Light appearance. This verified the system
+  material's background-responsive adaptation instead of a forced flat light
+  fill; both endpoints remained premium and legible.
+- The final test build compiled with code signing disabled and launched no test
+  host. Privacy verification, deterministic XcodeGen, and diff formatting passed.
+- The only `StatusItemController` addition is a visual-QA entry point that calls
+  the existing popover toggle. No existing border, glow, timing, or animation
+  line changed.

@@ -27,14 +27,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         NSApp.setActivationPolicy(.accessory)
-        let fixtureName = UITestFixtureFactory.name(arguments: CommandLine.arguments)
+        let visualQA = VisualQALaunchConfiguration(arguments: CommandLine.arguments)
+        if let visualQA {
+            NSApp.appearance = NSAppearance(
+                named: visualQA.appearance == .dark ? .darkAqua : .aqua
+            )
+        }
+        let fixtureName = visualQA == nil
+            ? UITestFixtureFactory.name(arguments: CommandLine.arguments)
+            : "empty"
         if fixtureName != nil {
             claudeCredentialStore = InMemoryClaudeSessionCredentialStore()
         }
 
         // Check for UI test fixtures
         let store: SessionStateStoring
-        if let fixtureEvents = UITestFixtureFactory.events(arguments: CommandLine.arguments) {
+        if visualQA != nil {
+            store = UITestSessionStore(events: [])
+        } else if let fixtureEvents = UITestFixtureFactory.events(arguments: CommandLine.arguments) {
             store = UITestSessionStore(events: fixtureEvents)
         } else {
             store = FileSessionStateStore(directory: FileSessionStateStore.defaultDirectory)
@@ -68,6 +78,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let suiteName = "\(ProductMetadata.bundleIdentifier).ui-tests.\(ProcessInfo.processInfo.processIdentifier)"
             let defaults = UserDefaults(suiteName: suiteName)!
             defaults.removePersistentDomain(forName: suiteName)
+            if let visualQA {
+                defaults.set(visualQA.glassClarity, forKey: "glassClarity")
+            }
             if fixtureName == "allowance-unavailable" {
                 defaults.set(true, forKey: "codexUsageEnabled")
             }
@@ -123,6 +136,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
            CommandLine.arguments.contains("--ui-test-open-popover") {
             DispatchQueue.main.async { [weak self] in
                 self?.showUITestSessionWindow()
+            }
+        }
+        if visualQA != nil {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.statusItemController.showPopoverForVisualQA()
             }
         }
         if CommandLine.arguments.contains("--ui-test-celebrate") {
