@@ -89,3 +89,41 @@ consumed only by `LiquidGlassSurface`.
 - Light and Dark Mode screenshots at clarity 0 and 100 provide before/after visual
   evidence from the built app.
 
+## Implemented Changes
+
+- Added a persisted `Glass Clarity` setting with a 0 through 100 percent slider.
+- Added a pure `GlassAppearance` mapping with separate Light and Dark Mode values
+  for contrast, illumination, interior depth, and a restrained specular cue.
+- Added `LiquidGlassSurface` as a static layer above the native popover material.
+- Preserved the exact current appearance at 0 percent clarity: Dark Mode retains
+  the 45 percent black scrim and Light Mode adds no custom layer.
+- Added a Reduce Transparency override that resolves to the current baseline.
+- Retained `.regularMaterial` unchanged on macOS 14 through 25.
+
+## Before and After
+
+| Before | After | Why |
+| --- | --- | --- |
+| Fixed 45 percent Dark Mode scrim | Scrim decreases continuously from 45 to 16 percent | More background transmission at higher clarity without discarding the proven legibility floor |
+| No custom Light Mode surface treatment | Restrained illumination, depth, and specular layers appear as clarity rises | Adds dimensional cues while the native material remains responsible for adaptation and blur |
+| Binary Light Mode versus Dark Mode behavior | Independently calibrated Light and Dark Mode optical values | Keeps the surface controlled across contrasting backgrounds |
+| No user control | Live, persisted Glass Clarity slider | Lets users choose between the exact current default and a clearer presentation |
+| Accessibility setting did not influence custom glass | Reduce Transparency restores the current baseline | Respects the user's legibility preference |
+
+## Verification Record
+
+- Baseline non-UI suite passed before implementation.
+- `PreferencesStoreTests`: 6 passed, 0 failures.
+- `GlassAppearanceTests`: 4 passed, 0 failures.
+- `AgenticGlowAppTests`: 59 passed, 0 failures.
+- Full non-UI scheme passed with zero failures.
+- Debug build and `Scripts/verify-privacy.sh` exited successfully.
+- XcodeGen regeneration produced an identical project file.
+- The entire `PopoverAura` source block is byte-identical to `main`.
+- `StatusItemController.swift` is byte-identical to `main`.
+- No glass preference or surface type is referenced by animation code.
+- UI automation could not initialize twice because macOS timed out enabling
+  automation mode. Further app-hosted launches were stopped after they caused
+  repeated Keychain prompts. Integrated screenshot comparison remains deferred
+  until it can be performed without prompting for John's Keychain password.
+

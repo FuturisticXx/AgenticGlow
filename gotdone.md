@@ -151,3 +151,20 @@
 - Triggered the Private Release Candidate workflow for 0.2.0 (run 28761194156). All steps passed: gates, signed build, DMG packaging, verification, notarization, and Cask generation.
 - Artifact `AgenticGlow-0.2.0-private-rc` (DMG + Cask, ~4 MB) is attached to the run. No public GitHub release or Homebrew submission was created.
 - 0.2.0 contents since v0.1.1: glowing popover aura, redesigned allowance bars in Claude orange and Codex azure, exact seconds for young sessions, refreshed app icon.
+# 2026-07-10: Liquid Glass clarity worktree
+
+- Created the isolated `NewGlass` worktree and recorded the Apple-guided Liquid
+  Glass design plus its test-first implementation plan in commit `bc1cc52`.
+- Added a live, persisted Glass Clarity slider whose zero value exactly preserves
+  AgenticGlow's current popover surface.
+- Added adaptive static material layers for transmission, top illumination,
+  interior depth, and a restrained specular cue while retaining native macOS
+  Liquid Glass as the primary material.
+- Added deterministic Light Mode, Dark Mode, and Reduce Transparency behavior.
+- Verified 59 app tests, the full non-UI scheme, Debug build, privacy check,
+  deterministic XcodeGen output, and clean diff formatting.
+- Proved the `PopoverAura` source block and `StatusItemController.swift` remain
+  byte-identical to `main`; no border, glow, or animation behavior changed.
+- Stopped UI verification after repeated Debug launches caused Keychain password
+  prompts. Integrated light/dark screenshot comparison remains deferred until it
+  can run without touching John's login Keychain.

@@ -78,4 +78,19 @@ final class AgenticGlowUITests: XCTestCase {
         repair.click()
         XCTAssertTrue(app.staticTexts["Installed, trust required"].waitForExistence(timeout: 3))
     }
+
+    func testSettingsExposeGlassClarityControl() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-test-fixture", "empty", "--ui-test-open-popover"]
+        app.launch()
+        XCTAssertTrue(app.windows["AgenticGlow"].waitForExistence(timeout: 3))
+
+        app.descendants(matching: .any)["AgenticGlow.More"].click()
+        XCTAssertTrue(app.menuItems["Settings…"].waitForExistence(timeout: 2))
+        app.menuItems["Settings…"].click()
+
+        XCTAssertTrue(
+            app.sliders["AgenticGlow.GlassClarity"].waitForExistence(timeout: 3)
+        )
+    }
 }

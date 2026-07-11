@@ -51,3 +51,12 @@ macOS dims menu bar content on inactive displays, and the bar's material can was
 ## effectiveAppearance KVO storms with self-rendering status items (2026-07-09)
 
 Observing `button.effectiveAppearance` to adapt icon colors re-fired from our own 30fps renders (~325 events/s measured), looping re-renders. Rule: for anything redrawn by a frame task, read environment state (like bar appearance) inside the frame task instead of observing it; changes apply within a frame and there is nothing to storm.
+
+## Do not repeatedly trigger Keychain prompts during UI verification (2026-07-10)
+
+Repeated app-hosted and UI-test launches of locally re-signed Debug builds caused
+John to receive repeated Keychain password prompts. Rule: before visual QA or UI
+testing, use an isolated in-memory credential path that cannot touch the login
+Keychain, or use verification that does not launch the app host. Stop immediately
+if a Keychain prompt appears. Never ask John to approve repeated prompts for a
+visual-only change.

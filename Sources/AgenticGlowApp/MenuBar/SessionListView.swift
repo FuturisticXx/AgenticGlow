@@ -3,7 +3,6 @@ import AgenticGlowCore
 import SwiftUI
 
 struct SessionListView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @Bindable var model: AppModel
     @Bindable var preferences: PreferencesStore
     @Bindable var popoverState: PopoverState
@@ -59,7 +58,7 @@ struct SessionListView: View {
         .frame(width: 360)
         .background {
             if #available(macOS 26.0, *) {
-                darkModeScrim
+                LiquidGlassSurface(clarity: preferences.glassClarity)
             } else {
                 Rectangle().fill(.regularMaterial)
             }
@@ -74,17 +73,6 @@ struct SessionListView: View {
                 claudeCredentialConfigured: (try? claudeCredentialStore.load()) != nil,
                 apply: applyUsageConsent
             )
-        }
-    }
-
-    /// The Liquid Glass popover material lets bright desktop content wash out
-    /// Dark Mode, so a dim layer sits between the glass and the content.
-    private static let darkScrimOpacity = 0.45
-
-    @ViewBuilder
-    private var darkModeScrim: some View {
-        if colorScheme == .dark {
-            Color.black.opacity(Self.darkScrimOpacity)
         }
     }
 

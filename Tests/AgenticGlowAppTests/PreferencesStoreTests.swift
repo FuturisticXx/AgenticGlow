@@ -48,6 +48,37 @@ final class PreferencesStoreTests: XCTestCase {
         XCTAssertTrue(defaults.bool(forKey: "serviceStatusEnabled"))
     }
 
+    func testGlassClarityDefaultsToCurrentAppearanceAndPersists() {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let preferences = PreferencesStore(defaults: defaults)
+
+        XCTAssertEqual(preferences.glassClarity, 0)
+
+        preferences.glassClarity = 0.72
+
+        XCTAssertEqual(defaults.double(forKey: "glassClarity"), 0.72)
+        XCTAssertEqual(PreferencesStore(defaults: defaults).glassClarity, 0.72)
+    }
+
+    func testGlassClarityClampsToSupportedRangeBeforePersisting() {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let preferences = PreferencesStore(defaults: defaults)
+
+        preferences.glassClarity = 1.4
+
+        XCTAssertEqual(preferences.glassClarity, 1)
+        XCTAssertEqual(defaults.double(forKey: "glassClarity"), 1)
+
+        preferences.glassClarity = -0.2
+
+        XCTAssertEqual(preferences.glassClarity, 0)
+        XCTAssertEqual(defaults.double(forKey: "glassClarity"), 0)
+    }
+
     func testUsageAccessDefaultsOffAndPersistsPerProvider() {
         let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

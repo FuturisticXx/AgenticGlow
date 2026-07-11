@@ -33,6 +33,14 @@ final class PreferencesStore {
     var serviceStatusEnabled: Bool {
         didSet { defaults.set(serviceStatusEnabled, forKey: "serviceStatusEnabled") }
     }
+    private var storedGlassClarity: Double
+    var glassClarity: Double {
+        get { storedGlassClarity }
+        set {
+            storedGlassClarity = Self.clampedGlassClarity(newValue)
+            defaults.set(storedGlassClarity, forKey: "glassClarity")
+        }
+    }
 
     private let showTimerDidChange: (Bool) -> Void
 
@@ -51,5 +59,12 @@ final class PreferencesStore {
         self.notifyPermission = defaults.object(forKey: "notifyPermission") as? Bool ?? true
         self.notifyQuotaLow = defaults.object(forKey: "notifyQuotaLow") as? Bool ?? true
         self.serviceStatusEnabled = defaults.bool(forKey: "serviceStatusEnabled")
+        self.storedGlassClarity = Self.clampedGlassClarity(
+            defaults.object(forKey: "glassClarity") as? Double ?? 0
+        )
+    }
+
+    private static func clampedGlassClarity(_ value: Double) -> Double {
+        min(max(value, 0), 1)
     }
 }

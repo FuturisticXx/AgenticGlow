@@ -48,8 +48,10 @@
 		4ACCE55191A2EE2A2BDBA062 /* IntegrationStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82CB06FA8CA96570073A5931 /* IntegrationStatus.swift */; };
 		4AFB82A6B4698DB6B71D2E19 /* AllowanceAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A23E352B85895A8A294977FC /* AllowanceAdapter.swift */; };
 		4BA78FF28099354B057B2A2E /* HookNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9B2E99889D9DD3C4DA034D /* HookNormalizer.swift */; };
+		4DDA0BA62FB1B7928256ACB6 /* LiquidGlassSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2938FAB242A16FFE3A8CD74 /* LiquidGlassSurface.swift */; };
 		5148B4D61979ABE2A235797F /* AgenticGlowLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AFB630BA9BD83DF76A64083 /* AgenticGlowLaunchTests.swift */; };
 		560F13E337C8692F0D32C9DB /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216B6EA781EC14324868BEB0 /* TestSupport.swift */; };
+		5849F73C1F73685AB1F96B5D /* GlassAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0EBA8B2074D34DDA9B6CF9E /* GlassAppearance.swift */; };
 		586DE423544315B499BEE64C /* CodexAllowanceAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF901100AB66864CABD16C7E /* CodexAllowanceAdapterTests.swift */; };
 		598FAE5E2DC249C0C90A03F7 /* ProviderStatusMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B268262F8ECC372D1C961E7D /* ProviderStatusMonitor.swift */; };
 		59B7064BC525BB9983969226 /* ProcessIdentityResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B41BB5ACD7A89E1DC0660B9 /* ProcessIdentityResolverTests.swift */; };
@@ -58,6 +60,7 @@
 		5C7EE0687E2DD04857CF3085 /* AllowancePolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40989AAEDDF1F4D72714B980 /* AllowancePolicyTests.swift */; };
 		5E19FA68F706AA0263E045EC /* pre-tool-use.json in Resources */ = {isa = PBXBuildFile; fileRef = 45A57C3729989A4F98DAEE89 /* pre-tool-use.json */; };
 		5EF1FDD618E19AA1B393CF18 /* CodexIntegrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F17758F92DA69BE48F7C3EC /* CodexIntegrationManager.swift */; };
+		61DCCAAD6704FB2D0FB65C12 /* GlassAppearanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 851C39342ADB16A9FFE21DD9 /* GlassAppearanceTests.swift */; };
 		632CCFF5BAF2E0060D5752CE /* user-prompt-submit.json in Resources */ = {isa = PBXBuildFile; fileRef = E2E98FF53E88A359B5C3E345 /* user-prompt-submit.json */; };
 		662326058893BB21A7B04493 /* SetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30AD5E52FB58312BF6DF93A2 /* SetupViewModel.swift */; };
 		66C47EDDEC29C3371EE1EE33 /* LaunchAtLoginService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 404BC3AEDF8446564803A481 /* LaunchAtLoginService.swift */; };
@@ -245,6 +248,7 @@
 		829A953919BF21B83C220FFE /* SyntheticEventService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntheticEventService.swift; sourceTree = "<group>"; };
 		82CB06FA8CA96570073A5931 /* IntegrationStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationStatus.swift; sourceTree = "<group>"; };
 		849DF0FB9E1B17DB2BCCB500 /* UpdateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateViewModel.swift; sourceTree = "<group>"; };
+		851C39342ADB16A9FFE21DD9 /* GlassAppearanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassAppearanceTests.swift; sourceTree = "<group>"; };
 		87103F95A6621E2B381ACF3A /* ProviderServiceStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderServiceStatus.swift; sourceTree = "<group>"; };
 		88115C0C25E40D80C8E83266 /* ProviderAllowance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderAllowance.swift; sourceTree = "<group>"; };
 		88602F1C495DE44E18D4FCFD /* WeeklyResetDetectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyResetDetectorTests.swift; sourceTree = "<group>"; };
@@ -258,6 +262,7 @@
 		9E9076E66E6BF081096A0783 /* SetupViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupViewModelTests.swift; sourceTree = "<group>"; };
 		A0C39F4753E65D9704083133 /* AgenticGlowAppSmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenticGlowAppSmokeTests.swift; sourceTree = "<group>"; };
 		A0D57322B8A0ACBB63DE7E49 /* SessionSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSnapshot.swift; sourceTree = "<group>"; };
+		A0EBA8B2074D34DDA9B6CF9E /* GlassAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassAppearance.swift; sourceTree = "<group>"; };
 		A23E352B85895A8A294977FC /* AllowanceAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllowanceAdapter.swift; sourceTree = "<group>"; };
 		A327A12847C06F26401FE779 /* AgenticGlowAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AgenticGlowAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3597CD22675B161FAB22C04 /* SessionResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionResolver.swift; sourceTree = "<group>"; };
@@ -277,6 +282,7 @@
 		CA48A33A7F83D51545B46C58 /* JSONConfigEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONConfigEditorTests.swift; sourceTree = "<group>"; };
 		CB215EF226A2A930E51664A7 /* AgenticGlowCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = AgenticGlowCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CBFF8B113BD5CCF602B1399C /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
+		D2938FAB242A16FFE3A8CD74 /* LiquidGlassSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlassSurface.swift; sourceTree = "<group>"; };
 		D2F943F38C7970E829E11BD2 /* HelperInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperInstallerTests.swift; sourceTree = "<group>"; };
 		D412365288FA361EA549F936 /* ClaudeAllowanceAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAllowanceAdapter.swift; sourceTree = "<group>"; };
 		D6BDF7E173224C36D6A55826 /* AllowanceCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllowanceCacheTests.swift; sourceTree = "<group>"; };
@@ -456,6 +462,7 @@
 				9874361D6CB0DC0D689C05A9 /* AllowancePresentationTests.swift */,
 				CBFF8B113BD5CCF602B1399C /* AppModelTests.swift */,
 				2C6DEB49672FFC3761738A19 /* ClaudeSessionCredentialStoreTests.swift */,
+				851C39342ADB16A9FFE21DD9 /* GlassAppearanceTests.swift */,
 				04E752BA418FA3E0A5A56086 /* PreferencesStoreTests.swift */,
 				8B3B26BB315DB673EB23BFA8 /* ProviderColorTests.swift */,
 				9E9076E66E6BF081096A0783 /* SetupViewModelTests.swift */,
@@ -718,6 +725,8 @@
 			children = (
 				7C53F572E885A59200578B68 /* AllowancePresentation.swift */,
 				4346FBB5245525ECAF9552A9 /* AllowanceSectionView.swift */,
+				A0EBA8B2074D34DDA9B6CF9E /* GlassAppearance.swift */,
+				D2938FAB242A16FFE3A8CD74 /* LiquidGlassSurface.swift */,
 				1A2FBC7471D1A39500680CA0 /* ProviderColor.swift */,
 				166738A4E3CA52BF6BAA156A /* SessionListView.swift */,
 				4F50AE41D54AF0BBEA05DD1D /* SessionRowView.swift */,
@@ -975,6 +984,7 @@
 				8D1A60CC7519895E25122BA9 /* AllowancePresentationTests.swift in Sources */,
 				09F035F92222190CA45A5054 /* AppModelTests.swift in Sources */,
 				95A3E1310B605C0FDBF54F90 /* ClaudeSessionCredentialStoreTests.swift in Sources */,
+				61DCCAAD6704FB2D0FB65C12 /* GlassAppearanceTests.swift in Sources */,
 				DE08088A9510936ECA46CC1E /* PreferencesStoreTests.swift in Sources */,
 				D14724EBA140B84547F37332 /* ProviderColorTests.swift in Sources */,
 				B17BDD406240127E4F78FA04 /* SetupViewModelTests.swift in Sources */,
@@ -994,7 +1004,9 @@
 				D8D4457FF742F561DB4F36F4 /* AppDelegate.swift in Sources */,
 				F286223DEB57DC70F9E27A0F /* AppModel.swift in Sources */,
 				48FDAFD5AACEF35C9AC6D839 /* ClaudeSessionCredentialStore.swift in Sources */,
+				5849F73C1F73685AB1F96B5D /* GlassAppearance.swift in Sources */,
 				66C47EDDEC29C3371EE1EE33 /* LaunchAtLoginService.swift in Sources */,
+				4DDA0BA62FB1B7928256ACB6 /* LiquidGlassSurface.swift in Sources */,
 				0DF282F51837E86223918BA8 /* PreferencesStore.swift in Sources */,
 				AC2654EEB91547E6F1FD5350 /* ProviderColor.swift in Sources */,
 				6D3752451B73567DAE129C70 /* SessionListView.swift in Sources */,

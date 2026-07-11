@@ -30,6 +30,27 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Toggle("Show elapsed turn timer", isOn: $preferences.showTimer)
+            Section("Appearance") {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Glass Clarity")
+                        Spacer()
+                        Text(preferences.glassClarity, format: .percent.precision(.fractionLength(0)))
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    Slider(value: $preferences.glassClarity, in: 0...1)
+                        .accessibilityLabel("Glass Clarity")
+                        .accessibilityValue(Text(
+                            verbatim: "\(Int((preferences.glassClarity * 100).rounded())) percent"
+                        ))
+                        .accessibilityHint("Higher clarity reveals more of the background.")
+                        .accessibilityIdentifier("AgenticGlow.GlassClarity")
+                    Text("Higher clarity reveals more of the background through the popover.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             Section {
                 Toggle("Notify when an agent needs permission", isOn: $preferences.notifyPermission)
                 Toggle("Notify when usage runs low", isOn: $preferences.notifyQuotaLow)
