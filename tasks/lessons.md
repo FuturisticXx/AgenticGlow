@@ -69,3 +69,7 @@ popover. The slider therefore updated a different store from the one rendering
 the glass. Rule: app-wide observable stores passed into multiple scene or window
 roots must retain one object identity for the full app lifetime. Reconfigure
 backing services or defaults in place instead of replacing the observable.
+
+## Signing and keychain prompts for local test runs (2026-07-10)
+
+Repeated xcodebuild runs prompted John's keychain for the signing key on every build, which he rightly flagged as annoying. Facts learned: clicking "Always Allow" on the prompt (with password, once per key) silences it permanently; there are two keys (Apple Development for test builds, Developer ID Application for releases). Ad-hoc signing (CODE_SIGN_IDENTITY="-") avoids the keychain entirely and is fine for unit test bundles, but it BREAKS UI tests: the ad-hoc-signed app loses its automation/accessibility identity and 5 of 7 UI tests fail on launch. Rule: unit tests may run ad-hoc; UI tests must use the real identity; tell John to Always Allow instead of hammering builds through prompts.

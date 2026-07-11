@@ -47,6 +47,7 @@ struct SessionListView: View {
                         settingsPresentationChanged(true)
                         openSettings()
                     }
+                    .accessibilityIdentifier("AgenticGlow.SettingsMenuItem")
                     Divider()
                     Button("Quit AgenticGlow") { NSApp.terminate(nil) }
                 } label: {

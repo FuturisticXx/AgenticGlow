@@ -86,8 +86,11 @@ final class AgenticGlowUITests: XCTestCase {
         XCTAssertTrue(app.windows["AgenticGlow"].waitForExistence(timeout: 3))
 
         app.descendants(matching: .any)["AgenticGlow.More"].click()
-        XCTAssertTrue(app.menuItems["Settings…"].waitForExistence(timeout: 2))
-        app.menuItems["Settings…"].click()
+        // The app menu also contains a "Settings…" item, so match the popover
+        // menu's item by identifier instead of by title.
+        let settingsItem = app.menuItems["AgenticGlow.SettingsMenuItem"]
+        XCTAssertTrue(settingsItem.waitForExistence(timeout: 2))
+        settingsItem.click()
 
         XCTAssertTrue(
             app.sliders["AgenticGlow.GlassClarity"].waitForExistence(timeout: 3)
