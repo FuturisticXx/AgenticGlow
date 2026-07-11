@@ -84,7 +84,7 @@ public enum HookNormalizer {
             phase: phase,
             label: label,
             toolCategory: toolCategory,
-            projectName: URL(fileURLWithPath: cwd).lastPathComponent,
+            projectName: Self.projectName(for: cwd, provider: provider),
             workingDirectory: cwd,
             sourceBundleID: surface == .cli
                 ? (terminalBundleID ?? processIdentity?.bundleIdentifier)
@@ -96,6 +96,17 @@ public enum HookNormalizer {
         )
         try normalizedEvent.validate()
         return normalizedEvent
+    }
+
+    /// A root, empty, or relative-dot working directory has no meaningful
+    /// basename, so fall back to the provider name instead of surfacing "/"
+    /// as the session's project.
+    private static func projectName(for cwd: String, provider: AgentProvider) -> String {
+        let name = URL(fileURLWithPath: cwd).lastPathComponent
+        if name.isEmpty || name == "/" || name == "." {
+            return provider.displayName
+        }
+        return name
     }
 
     private static func safeIdentifier(prefix: String, raw: String) -> String {

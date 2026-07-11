@@ -3,6 +3,13 @@ import Foundation
 public enum AgentProvider: String, Codable, CaseIterable, Sendable {
     case codex
     case claude
+
+    public var displayName: String {
+        switch self {
+        case .codex: "Codex"
+        case .claude: "Claude"
+        }
+    }
 }
 
 public enum SourceSurface: String, Codable, Sendable {

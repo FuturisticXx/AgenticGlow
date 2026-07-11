@@ -2,6 +2,29 @@ import XCTest
 @testable import AgenticGlowCore
 
 final class HookNormalizerTests: XCTestCase {
+    func testRootWorkingDirectoryFallsBackToProviderName() throws {
+        // An empty cwd is rejected upstream (missingWorkingDirectory), so the
+        // root directory is the degenerate path that reaches projectName.
+        for (cwd, provider, expected) in [
+            ("/", AgentProvider.claude, "Claude"),
+            ("/", AgentProvider.codex, "Codex"),
+        ] {
+            let event = try XCTUnwrap(HookNormalizer.normalize(
+                provider: provider,
+                event: .userPromptSubmit,
+                payload: ["session_id": "abc", "cwd": cwd],
+                environment: [:],
+                processIdentity: .fixture,
+                previous: nil,
+                now: Date(timeIntervalSince1970: 500)
+            ))
+            XCTAssertEqual(
+                event.projectName, expected,
+                "cwd \"\(cwd)\" should not surface as a project name"
+            )
+        }
+    }
+
     func testClaudePromptHashesRawSessionIdentifierWithoutPersistingIt() throws {
         let payload: [String: Any] = [
             "session_id": "sk-live-secret-session-token",
