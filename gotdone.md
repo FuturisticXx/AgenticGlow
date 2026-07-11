@@ -1,5 +1,15 @@
 # Got done
 
+## 2026-07-10 - Published v0.4.5 (Liquid Glass)
+
+- John's Liquid Glass work (glass popover surface, Glass Clarity slider shared across Settings and popover, visual QA session display) merged to main via fast-forward of his NewGlass branch on top of the v0.4.0 release commits.
+- Fixed his new UI test before release: app.menuItems["Settings…"] matched both the app menu and the popover menu item; the popover item now has accessibilityIdentifier AgenticGlow.SettingsMenuItem and the test uses it. All 7 UI tests pass signed; unit bundles green.
+- Signed universal 0.4.5 build, DMG notarized and stapled, Gatekeeper accepts app and DMG as Notarized Developer ID. SHA-256 6acd2b5d0decba3083a38b4f2c42adf49cf20b7fa6c187a54a9bf403b7fcc160.
+- Installed to /Applications replacing 0.4.0 and relaunched; Info.plist reads 0.4.5.
+- Tagged v0.4.5 at 1f5595e and published https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.4.5; downloaded asset matches checksum, staple validates, spctl accepts.
+- Cask bumped in main repo and tap (tap commit a4abad2).
+- Keychain prompt annoyance addressed: John will Always Allow the signing keys; lesson recorded that ad-hoc signing is unit-tests-only (it breaks UI test automation, 5 of 7 failed).
+
 ## 2026-07-09 - Published v0.4.0
 
 - Installed build/AgenticGlow.app to /Applications replacing 0.3.0; Info.plist reads 0.4.0, Gatekeeper accepts as Notarized Developer ID, app launched and the status item is live.
