@@ -60,3 +60,12 @@ testing, use an isolated in-memory credential path that cannot touch the login
 Keychain, or use verification that does not launch the app host. Stop immediately
 if a Keychain prompt appears. Never ask John to approve repeated prompts for a
 visual-only change.
+
+## Keep observable settings identity stable across app launch (2026-07-10)
+
+SwiftUI created the Settings scene with the original `PreferencesStore`, but
+`applicationDidFinishLaunching` replaced that object before constructing the
+popover. The slider therefore updated a different store from the one rendering
+the glass. Rule: app-wide observable stores passed into multiple scene or window
+roots must retain one object identity for the full app lifetime. Reconfigure
+backing services or defaults in place instead of replacing the observable.

@@ -104,7 +104,7 @@ consumed only by `LiquidGlassSurface`.
 
 | Before | After | Why |
 | --- | --- | --- |
-| Fixed 45 percent Dark Mode scrim | Scrim decreases continuously from 45 to 16 percent | More background transmission at higher clarity without discarding the proven legibility floor |
+| Fixed 45 percent Dark Mode scrim | Scrim decreases continuously from 45 to 0 percent | Makes maximum clarity visibly transmissive while retaining the exact current surface at the minimum |
 | No custom Light Mode surface treatment | Restrained illumination, depth, and specular layers appear as clarity rises | Adds dimensional cues while the native material remains responsible for adaptation and blur |
 | Binary Light Mode versus Dark Mode behavior | Independently calibrated Light and Dark Mode optical values | Keeps the surface controlled across contrasting backgrounds |
 | No user control | Live, persisted Glass Clarity slider | Lets users choose between the exact current default and a clearer presentation |
@@ -113,15 +113,16 @@ consumed only by `LiquidGlassSurface`.
 ## Verification Record
 
 - Baseline non-UI suite passed before implementation.
-- `PreferencesStoreTests`: 6 passed, 0 failures.
+- `PreferencesStoreTests`: 8 passed, 0 failures.
 - `GlassAppearanceTests`: 4 passed, 0 failures.
-- `AgenticGlowAppTests`: 63 passed, 0 failures after the isolated test mode was
+- `AgenticGlowAppTests`: 65 passed, 0 failures after the isolated test mode was
   added, including all four `VisualQALaunchConfigurationTests`.
 - Full non-UI scheme passed with zero failures.
 - Debug build and `Scripts/verify-privacy.sh` exited successfully.
 - XcodeGen regeneration produced an identical project file.
 - The entire `PopoverAura` source block is byte-identical to `main`.
-- `StatusItemController.swift` is byte-identical to `main`.
+- Existing `StatusItemController` animation code is unchanged. Its additions are
+  limited to visual-QA popover opening and temporary Settings pinning.
 - No glass preference or surface type is referenced by animation code.
 - UI automation could not initialize twice because macOS timed out enabling
   automation mode. A dedicated `--visual-qa` mode now replaces real credentials

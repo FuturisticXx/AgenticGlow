@@ -163,8 +163,8 @@
 - Added deterministic Light Mode, Dark Mode, and Reduce Transparency behavior.
 - Verified 59 app tests, the full non-UI scheme, Debug build, privacy check,
   deterministic XcodeGen output, and clean diff formatting.
-- Proved the `PopoverAura` source block and `StatusItemController.swift` remain
-  byte-identical to `main`; no border, glow, or animation behavior changed.
+- Proved the `PopoverAura` source block remains byte-identical to `main`; no
+  border, glow, or animation behavior changed.
 - Stopped UI verification after repeated Debug launches caused Keychain password
   prompts. Integrated light/dark screenshot comparison remains deferred until it
   can run without touching John's login Keychain.
@@ -183,8 +183,8 @@
   more underlying color while retaining legibility and dimensional cues, and the
   native material continues adapting to dark background content.
 - Reverified privacy, deterministic XcodeGen, diff formatting, and the immutable
-  motion boundary. `PopoverAura` is byte-identical to `main`; the only status-item
-  change is the visual-QA entry point that invokes the existing toggle method.
+  motion boundary. `PopoverAura` is byte-identical to `main`; status-item additions
+  only open visual QA and temporarily pin the popover while Settings is visible.
 - Added `AGENTICGLOW_ISOLATED_TEST_MODE=1` so app-hosted tests receive the same
   in-memory credentials and isolated state without opening a popover. The final
   non-UI suite passed 63 app tests with ad-hoc signing and no password prompt.
