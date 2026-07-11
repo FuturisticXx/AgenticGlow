@@ -138,7 +138,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.showUITestSessionWindow()
             }
         }
-        if visualQA != nil {
+        if visualQA?.opensPopover == true {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                 self?.statusItemController.showPopoverForVisualQA()
             }

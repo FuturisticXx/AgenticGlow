@@ -8,9 +8,17 @@ struct VisualQALaunchConfiguration: Equatable {
 
     let appearance: Appearance
     let glassClarity: Double
+    let opensPopover: Bool
 
-    init?(arguments: [String]) {
-        guard arguments.contains("--visual-qa") else { return nil }
+    init?(
+        arguments: [String],
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) {
+        let argumentMode = arguments.contains("--visual-qa")
+        guard argumentMode || environment["AGENTICGLOW_ISOLATED_TEST_MODE"] == "1" else {
+            return nil
+        }
+        opensPopover = argumentMode
 
         appearance = Self.value(after: "--visual-qa-appearance", in: arguments)
             .flatMap(Appearance.init(rawValue:)) ?? .dark

@@ -185,3 +185,6 @@
 - Reverified privacy, deterministic XcodeGen, diff formatting, and the immutable
   motion boundary. `PopoverAura` is byte-identical to `main`; the only status-item
   change is the visual-QA entry point that invokes the existing toggle method.
+- Added `AGENTICGLOW_ISOLATED_TEST_MODE=1` so app-hosted tests receive the same
+  in-memory credentials and isolated state without opening a popover. The final
+  non-UI suite passed 63 app tests with ad-hoc signing and no password prompt.

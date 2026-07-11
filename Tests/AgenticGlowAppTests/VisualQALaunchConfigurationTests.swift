@@ -3,7 +3,10 @@ import XCTest
 
 final class VisualQALaunchConfigurationTests: XCTestCase {
     func testReturnsNilOutsideVisualQAMode() {
-        XCTAssertNil(VisualQALaunchConfiguration(arguments: ["AgenticGlow"]))
+        XCTAssertNil(VisualQALaunchConfiguration(
+            arguments: ["AgenticGlow"],
+            environment: [:]
+        ))
     }
 
     func testParsesExplicitAppearanceAndClarity() {
@@ -16,6 +19,7 @@ final class VisualQALaunchConfigurationTests: XCTestCase {
 
         XCTAssertEqual(configuration?.appearance, .light)
         XCTAssertEqual(configuration?.glassClarity, 0.75)
+        XCTAssertEqual(configuration?.opensPopover, true)
     }
 
     func testUsesSafeDefaultsAndClampsClarity() {
@@ -29,5 +33,16 @@ final class VisualQALaunchConfigurationTests: XCTestCase {
         XCTAssertEqual(defaults?.appearance, .dark)
         XCTAssertEqual(defaults?.glassClarity, 0)
         XCTAssertEqual(aboveRange?.glassClarity, 1)
+    }
+
+    func testEnvironmentEnablesIsolationWithoutOpeningPopover() {
+        let configuration = VisualQALaunchConfiguration(
+            arguments: ["AgenticGlow"],
+            environment: ["AGENTICGLOW_ISOLATED_TEST_MODE": "1"]
+        )
+
+        XCTAssertEqual(configuration?.appearance, .dark)
+        XCTAssertEqual(configuration?.glassClarity, 0)
+        XCTAssertEqual(configuration?.opensPopover, false)
     }
 }

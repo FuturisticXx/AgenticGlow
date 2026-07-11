@@ -115,7 +115,8 @@ consumed only by `LiquidGlassSurface`.
 - Baseline non-UI suite passed before implementation.
 - `PreferencesStoreTests`: 6 passed, 0 failures.
 - `GlassAppearanceTests`: 4 passed, 0 failures.
-- `AgenticGlowAppTests`: 59 passed, 0 failures.
+- `AgenticGlowAppTests`: 63 passed, 0 failures after the isolated test mode was
+  added, including all four `VisualQALaunchConfigurationTests`.
 - Full non-UI scheme passed with zero failures.
 - Debug build and `Scripts/verify-privacy.sh` exited successfully.
 - XcodeGen regeneration produced an identical project file.
@@ -138,6 +139,9 @@ consumed only by `LiquidGlassSurface`.
   fill; both endpoints remained premium and legible.
 - The final test build compiled with code signing disabled and launched no test
   host. Privacy verification, deterministic XcodeGen, and diff formatting passed.
+- The final non-UI suite also ran with ad-hoc signing and
+  `AGENTICGLOW_ISOLATED_TEST_MODE=1`; it passed without Keychain access or a
+  password prompt.
 - The only `StatusItemController` addition is a visual-QA entry point that calls
   the existing popover toggle. No existing border, glow, timing, or animation
   line changed.
