@@ -163,3 +163,17 @@ consumed only by `LiquidGlassSurface`.
 - The slider continues binding directly to the production `LiquidGlassSurface`,
   so every adjustment is visible on the actual interface rather than a proxy.
 - Final isolated non-UI verification passed 64 app tests with zero failures.
+
+## Shared Preference Identity Fix
+
+- Runtime testing exposed an app-lifecycle split that unit observation tests did
+  not cover: SwiftUI created Settings with the original `PreferencesStore`, then
+  `applicationDidFinishLaunching` replaced that store before constructing the
+  popover. The slider updated the original instance while the popover observed
+  the replacement.
+- `PreferencesStore` now keeps a stable object identity for the app lifetime and
+  reconfigures its backing `UserDefaults` in place for normal, UI-test, and visual
+  QA launches.
+- A regression test proves reconfiguration preserves object identity, moves
+  persistence to the requested defaults suite, and retains live observation.
+- Final isolated non-UI verification passed 65 app tests with zero failures.

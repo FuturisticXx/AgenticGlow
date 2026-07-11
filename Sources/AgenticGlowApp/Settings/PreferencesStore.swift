@@ -4,7 +4,7 @@ import Observation
 @MainActor
 @Observable
 final class PreferencesStore {
-    private let defaults: UserDefaults
+    private var defaults: UserDefaults
 
     var showTimer: Bool {
         didSet {
@@ -42,7 +42,7 @@ final class PreferencesStore {
         }
     }
 
-    private let showTimerDidChange: (Bool) -> Void
+    private var showTimerDidChange: (Bool) -> Void
 
     init(
         defaults: UserDefaults = .standard,
@@ -62,6 +62,37 @@ final class PreferencesStore {
         self.storedGlassClarity = Self.clampedGlassClarity(
             defaults.object(forKey: "glassClarity") as? Double ?? 0
         )
+    }
+
+    func reconfigure(
+        defaults: UserDefaults,
+        showTimerDidChange: ((Bool) -> Void)? = nil
+    ) {
+        let showTimer = defaults.bool(forKey: "showTimer")
+        let automaticUpdateChecks = defaults.bool(forKey: "automaticUpdateChecks")
+        let diagnosticsEnabled = defaults.bool(forKey: "diagnosticsEnabled")
+        let codexUsageEnabled = defaults.bool(forKey: "codexUsageEnabled")
+        let claudeUsageEnabled = defaults.bool(forKey: "claudeUsageEnabled")
+        let notifyPermission = defaults.object(forKey: "notifyPermission") as? Bool ?? true
+        let notifyQuotaLow = defaults.object(forKey: "notifyQuotaLow") as? Bool ?? true
+        let serviceStatusEnabled = defaults.bool(forKey: "serviceStatusEnabled")
+        let glassClarity = Self.clampedGlassClarity(
+            defaults.object(forKey: "glassClarity") as? Double ?? 0
+        )
+
+        self.defaults = defaults
+        if let showTimerDidChange {
+            self.showTimerDidChange = showTimerDidChange
+        }
+        self.showTimer = showTimer
+        self.automaticUpdateChecks = automaticUpdateChecks
+        self.diagnosticsEnabled = diagnosticsEnabled
+        self.codexUsageEnabled = codexUsageEnabled
+        self.claudeUsageEnabled = claudeUsageEnabled
+        self.notifyPermission = notifyPermission
+        self.notifyQuotaLow = notifyQuotaLow
+        self.serviceStatusEnabled = serviceStatusEnabled
+        self.storedGlassClarity = glassClarity
     }
 
     private static func clampedGlassClarity(_ value: Double) -> Double {

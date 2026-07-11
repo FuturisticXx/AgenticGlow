@@ -98,6 +98,27 @@ final class PreferencesStoreTests: XCTestCase {
         await fulfillment(of: [changed], timeout: 0.2)
     }
 
+    func testReconfigureKeepsStoreIdentityAndMovesPersistenceToNewDefaults() {
+        let firstSuite = "PreferencesStoreTests.first.\(UUID().uuidString)"
+        let secondSuite = "PreferencesStoreTests.second.\(UUID().uuidString)"
+        let firstDefaults = UserDefaults(suiteName: firstSuite)!
+        let secondDefaults = UserDefaults(suiteName: secondSuite)!
+        defer {
+            firstDefaults.removePersistentDomain(forName: firstSuite)
+            secondDefaults.removePersistentDomain(forName: secondSuite)
+        }
+        secondDefaults.set(0.25, forKey: "glassClarity")
+        let preferences = PreferencesStore(defaults: firstDefaults)
+        let originalIdentity = ObjectIdentifier(preferences)
+
+        preferences.reconfigure(defaults: secondDefaults)
+        preferences.glassClarity = 0.8
+
+        XCTAssertEqual(ObjectIdentifier(preferences), originalIdentity)
+        XCTAssertEqual(secondDefaults.double(forKey: "glassClarity"), 0.8)
+        XCTAssertEqual(firstDefaults.object(forKey: "glassClarity") as? Double, nil)
+    }
+
     func testUsageAccessDefaultsOffAndPersistsPerProvider() {
         let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

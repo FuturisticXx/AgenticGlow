@@ -321,7 +321,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func configurePreferences(defaults: UserDefaults) {
-        preferences = PreferencesStore(
+        preferences.reconfigure(
             defaults: defaults,
             showTimerDidChange: { [weak self] showTimer in
                 self?.model.showTimer = showTimer

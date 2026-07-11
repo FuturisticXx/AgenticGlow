@@ -204,3 +204,15 @@
   changes are visible immediately on the actual menu-bar interface.
 - Isolated non-UI verification passed 64 app tests with zero failures. Animated
   border and glow implementation remains untouched.
+
+## Shared Settings and popover preference identity
+
+- Traced the nonresponsive slider to two `PreferencesStore` instances created at
+  different app lifecycle points: Settings retained the original while the
+  popover received a replacement during launch configuration.
+- Reworked configuration to preserve one observable store identity and switch its
+  backing defaults in place. Settings and the popover now read and mutate the same
+  live value.
+- Added regression coverage for stable identity, isolated persistence, and
+  observation invalidation.
+- Final isolated non-UI verification passed 65 app tests with zero failures.
