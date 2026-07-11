@@ -145,3 +145,19 @@ consumed only by `LiquidGlassSurface`.
 - The only `StatusItemController` addition is a visual-QA entry point that calls
   the existing popover toggle. No existing border, glow, timing, or animation
   line changed.
+
+## Live Preview Calibration Follow-up
+
+- Live observation was verified directly: changing `glassClarity` invalidates
+  observers immediately.
+- Initial screenshot calibration showed the higher-clarity highlight and depth
+  layers replacing too much of the opacity removed from the scrim, making the
+  slider's effect technically present but visually too subtle.
+- Maximum Dark Mode clarity now removes the custom scrim completely. Highlight,
+  depth, and specular layers were reduced so they add dimension without masking
+  the increased transmission. The 0 percent baseline remains unchanged.
+- Settings now includes a compact `GlassClarityPreview` built from the same
+  production `LiquidGlassSurface`. It updates while the slider is dragged, so
+  users can see the effect even though opening Settings closes the transient
+  menu-bar popover.
+- Final isolated non-UI verification passed 64 app tests with zero failures.

@@ -37,14 +37,14 @@ final class GlassAppearanceTests: XCTestCase {
             reduceTransparency: false
         )
 
-        XCTAssertEqual(dark.scrimOpacity, 0.16, accuracy: 0.0001)
+        XCTAssertEqual(dark.scrimOpacity, 0, accuracy: 0.0001)
         XCTAssertEqual(light.scrimOpacity, 0)
-        XCTAssertEqual(dark.highlightOpacity, 0.16, accuracy: 0.0001)
-        XCTAssertEqual(light.highlightOpacity, 0.24, accuracy: 0.0001)
-        XCTAssertEqual(dark.depthOpacity, 0.10, accuracy: 0.0001)
-        XCTAssertEqual(light.depthOpacity, 0.07, accuracy: 0.0001)
-        XCTAssertEqual(dark.specularOpacity, 0.18, accuracy: 0.0001)
-        XCTAssertEqual(light.specularOpacity, 0.28, accuracy: 0.0001)
+        XCTAssertEqual(dark.highlightOpacity, 0.06, accuracy: 0.0001)
+        XCTAssertEqual(light.highlightOpacity, 0.08, accuracy: 0.0001)
+        XCTAssertEqual(dark.depthOpacity, 0.03, accuracy: 0.0001)
+        XCTAssertEqual(light.depthOpacity, 0.02, accuracy: 0.0001)
+        XCTAssertEqual(dark.specularOpacity, 0.09, accuracy: 0.0001)
+        XCTAssertEqual(light.specularOpacity, 0.12, accuracy: 0.0001)
     }
 
     func testClarityClampsBeforeDerivingLayers() {
@@ -62,7 +62,7 @@ final class GlassAppearanceTests: XCTestCase {
         XCTAssertEqual(belowRange.clarity, 0)
         XCTAssertEqual(aboveRange.clarity, 1)
         XCTAssertEqual(belowRange.scrimOpacity, 0.45)
-        XCTAssertEqual(aboveRange.scrimOpacity, 0.16, accuracy: 0.0001)
+        XCTAssertEqual(aboveRange.scrimOpacity, 0, accuracy: 0.0001)
     }
 
     func testReduceTransparencyUsesLegibleBaselineRegardlessOfPreference() {

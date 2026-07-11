@@ -1,4 +1,5 @@
 import XCTest
+import Observation
 @testable import AgenticGlow
 
 @MainActor
@@ -77,6 +78,24 @@ final class PreferencesStoreTests: XCTestCase {
 
         XCTAssertEqual(preferences.glassClarity, 0)
         XCTAssertEqual(defaults.double(forKey: "glassClarity"), 0)
+    }
+
+    func testGlassClarityChangeInvalidatesObserversForLivePreview() async {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let preferences = PreferencesStore(defaults: defaults)
+        let changed = expectation(description: "glass clarity observation changed")
+
+        withObservationTracking {
+            _ = preferences.glassClarity
+        } onChange: {
+            changed.fulfill()
+        }
+
+        preferences.glassClarity = 0.5
+
+        await fulfillment(of: [changed], timeout: 0.2)
     }
 
     func testUsageAccessDefaultsOffAndPersistsPerProvider() {

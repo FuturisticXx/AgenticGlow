@@ -16,6 +16,7 @@
 		0D626A999A92570603B3B9BF /* AgenticGlowCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CB215EF226A2A930E51664A7 /* AgenticGlowCore.framework */; };
 		0DF282F51837E86223918BA8 /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCB240EE03BC6D945AB738F1 /* PreferencesStore.swift */; };
 		0E0E6B37F4EB9D98BB5AEAA6 /* AgenticGlowEventCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D6527B9D899D9AE37E6513 /* AgenticGlowEventCommand.swift */; };
+		1270A7A2004830E546844275 /* GlassClarityPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E73405CD9A73C39F408278 /* GlassClarityPreview.swift */; };
 		183007BC3251A92C84814A88 /* codex-rate-limits.json in Resources */ = {isa = PBXBuildFile; fileRef = D982DF9638C77504896D1881 /* codex-rate-limits.json */; };
 		18320558595D293EA74457AC /* AgenticGlowApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C88672709FBBE9C229FB665 /* AgenticGlowApp.swift */; };
 		196226E7439686D8D2AEDF45 /* SessionKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AB2F40E369FB0BBDFF5C36B /* SessionKey.swift */; };
@@ -291,6 +292,7 @@
 		D412365288FA361EA549F936 /* ClaudeAllowanceAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAllowanceAdapter.swift; sourceTree = "<group>"; };
 		D6BDF7E173224C36D6A55826 /* AllowanceCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllowanceCacheTests.swift; sourceTree = "<group>"; };
 		D80032B619FD4696E5CAEFA3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		D8E73405CD9A73C39F408278 /* GlassClarityPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassClarityPreview.swift; sourceTree = "<group>"; };
 		D982DF9638C77504896D1881 /* codex-rate-limits.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "codex-rate-limits.json"; sourceTree = "<group>"; };
 		DA41C809073FE3BDF4A37FF8 /* AllowanceRefreshCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllowanceRefreshCoordinator.swift; sourceTree = "<group>"; };
 		DD900C395D8ED57E743096C1 /* AllowanceRefreshCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllowanceRefreshCoordinatorTests.swift; sourceTree = "<group>"; };
@@ -396,6 +398,7 @@
 			isa = PBXGroup;
 			children = (
 				20DBE0D16A4A34E5D2656C82 /* ClaudeSessionCredentialStore.swift */,
+				D8E73405CD9A73C39F408278 /* GlassClarityPreview.swift */,
 				BCB240EE03BC6D945AB738F1 /* PreferencesStore.swift */,
 				7F88D47C441E780F8ADA4880 /* SettingsView.swift */,
 				849DF0FB9E1B17DB2BCCB500 /* UpdateViewModel.swift */,
@@ -1012,6 +1015,7 @@
 				F286223DEB57DC70F9E27A0F /* AppModel.swift in Sources */,
 				48FDAFD5AACEF35C9AC6D839 /* ClaudeSessionCredentialStore.swift in Sources */,
 				5849F73C1F73685AB1F96B5D /* GlassAppearance.swift in Sources */,
+				1270A7A2004830E546844275 /* GlassClarityPreview.swift in Sources */,
 				66C47EDDEC29C3371EE1EE33 /* LaunchAtLoginService.swift in Sources */,
 				4DDA0BA62FB1B7928256ACB6 /* LiquidGlassSurface.swift in Sources */,
 				0DF282F51837E86223918BA8 /* PreferencesStore.swift in Sources */,

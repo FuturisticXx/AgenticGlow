@@ -20,20 +20,20 @@ struct GlassAppearance: Equatable {
 
         switch colorScheme {
         case .dark:
-            scrimOpacity = Self.interpolate(from: 0.45, to: 0.16, progress: clarity)
-            highlightOpacity = 0.16 * clarity
-            depthOpacity = 0.10 * clarity
-            specularOpacity = 0.18 * clarity
+            scrimOpacity = Self.interpolate(from: 0.45, to: 0, progress: clarity)
+            highlightOpacity = 0.06 * clarity
+            depthOpacity = 0.03 * clarity
+            specularOpacity = 0.09 * clarity
         case .light:
             scrimOpacity = 0
-            highlightOpacity = 0.24 * clarity
-            depthOpacity = 0.07 * clarity
-            specularOpacity = 0.28 * clarity
+            highlightOpacity = 0.08 * clarity
+            depthOpacity = 0.02 * clarity
+            specularOpacity = 0.12 * clarity
         @unknown default:
             scrimOpacity = 0
-            highlightOpacity = 0.20 * clarity
-            depthOpacity = 0.08 * clarity
-            specularOpacity = 0.22 * clarity
+            highlightOpacity = 0.07 * clarity
+            depthOpacity = 0.025 * clarity
+            specularOpacity = 0.10 * clarity
         }
     }
 

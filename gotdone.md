@@ -188,3 +188,17 @@
 - Added `AGENTICGLOW_ISOLATED_TEST_MODE=1` so app-hosted tests receive the same
   in-memory credentials and isolated state without opening a popover. The final
   non-UI suite passed 63 app tests with ad-hoc signing and no password prompt.
+
+## Glass Clarity live-preview correction
+
+- Reproduced John's report that the slider appeared ineffective. Observation
+  invalidation passed, identifying calibration rather than state propagation as
+  the root cause.
+- Changed only the glass mapping: 100 percent Dark Mode clarity now removes the
+  custom scrim, while highlight, depth, and specular overlays are substantially
+  lighter. The 0 percent surface remains exact.
+- Added a Settings preview using the production `LiquidGlassSurface`, allowing
+  immediate visual feedback while dragging even when the transient popover is
+  closed.
+- Isolated non-UI verification passed 64 app tests with zero failures. Animated
+  border and glow implementation remains untouched.

@@ -46,6 +46,7 @@ struct SettingsView: View {
                         ))
                         .accessibilityHint("Higher clarity reveals more of the background.")
                         .accessibilityIdentifier("AgenticGlow.GlassClarity")
+                    GlassClarityPreview(clarity: preferences.glassClarity)
                     Text("Higher clarity reveals more of the background through the popover.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
