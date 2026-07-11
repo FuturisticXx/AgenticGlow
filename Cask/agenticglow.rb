@@ -1,6 +1,6 @@
 cask "agenticglow" do
-  version "0.4.0"
-  sha256 "c079f59e1d495b2df654ffc6eafea01685756546c939fb9786678c639c395e62"
+  version "0.4.5"
+  sha256 "6acd2b5d0decba3083a38b4f2c42adf49cf20b7fa6c187a54a9bf403b7fcc160"
 
   url "https://github.com/FuturisticXx/AgenticGlow/releases/download/v#{version}/AgenticGlow-#{version}.dmg"
   name "AgenticGlow"
