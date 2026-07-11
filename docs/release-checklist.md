@@ -131,13 +131,21 @@ Public release 0.4.5 evidence recorded 2026-07-10:
 - Released DMG SHA-256 `6acd2b5d0decba3083a38b4f2c42adf49cf20b7fa6c187a54a9bf403b7fcc160`; the downloaded release asset matched checksum, staple, and Gatekeeper.
 - Cask regenerated and pushed to main and the official tap (tap commit `a4abad2`); /Applications updated to 0.4.5 and relaunched.
 
+Public release 0.4.6 evidence recorded 2026-07-11:
+
+- Released from commit `de8b30e` (tag `v0.4.6`): root-cwd sessions no longer surface "/" as their project name; the normalizer falls back to the provider display name, TDD-tested.
+- 158 core plus app unit tests and all 7 UI tests passed on the release commit; privacy gate passed; CI green.
+- Signed universal build passed strict checks; DMG notarized, stapled, validated; Gatekeeper accepted app and DMG as `Notarized Developer ID`.
+- Released DMG SHA-256 `bb4f08803938fc8472f3693e517c5458bd005cfac9673a576ec99a63b2e60276`; downloaded asset matched checksum, staple, and Gatekeeper.
+- Cask regenerated and pushed to main and the official tap (tap commit `494623e`); /Applications updated to 0.4.6 and relaunched.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.
 
 Next unblocked work:
 
-1. Monitor v0.4.5 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy.
+1. Monitor v0.4.6 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy.
 
 ## Legal and Branding
 
@@ -249,13 +257,13 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-10, latest: v0.4.5)
+- [x] **GitHub release published** (date: 2026-07-11, latest: v0.4.6)
   - Release notes published, covering 0.3.0 and 0.4.0 work since v0.3.0 was never tagged
   - Notarized DMG uploaded to the release and re-verified after download (checksum, staple, Gatekeeper)
   - Tag `v0.4.0` pushed to the repository at commit `703c467`
   - Prior public releases: v0.1.0, v0.1.1, v0.2.0 (2026-07-05)
 
-- [x] **Cask updated in the official tap** (date: 2026-07-10, version 0.4.5)
+- [x] **Cask updated in the official tap** (date: 2026-07-11, version 0.4.6)
   - `Cask/agenticglow.rb` regenerated with the 0.4.0 checksum and pushed on main (`5dc7abb`)
   - Tap `FuturisticXx/homebrew-agenticglow` updated to 0.4.0 (tap commit `6bb0916`)
 

@@ -1,5 +1,14 @@
 # Got done
 
+## 2026-07-11 - Published v0.4.6
+
+- Patch release for the "/" project-name fix: sessions with a root working directory now fall back to the provider name (HookNormalizer), with a TDD test that reproduced the symptom first; AgentProvider.displayName made public in Core.
+- Evidence on release commit de8b30e: 158 core + app unit tests green (ad-hoc signed), all 7 UI tests green on a clean signed run, privacy gate passed, CI green.
+- Signed universal build; DMG notarized (Accepted), stapled, Gatekeeper accepts app and DMG. SHA-256 bb4f08803938fc8472f3693e517c5458bd005cfac9673a576ec99a63b2e60276.
+- Installed to /Applications (reads 0.4.6) and relaunched. Tagged v0.4.6 at de8b30e; published https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.4.6; downloaded asset matched checksum, staple, and Gatekeeper.
+- Cask bumped on main and in the tap (tap commit 494623e).
+- Note: previously recorded events keep their baked "/" label until they refresh; only new events get the fallback.
+
 ## 2026-07-10 - Published v0.4.5 (Liquid Glass)
 
 - John's Liquid Glass work (glass popover surface, Glass Clarity slider shared across Settings and popover, visual QA session display) merged to main via fast-forward of his NewGlass branch on top of the v0.4.0 release commits.
