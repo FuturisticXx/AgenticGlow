@@ -43,7 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Check for UI test fixtures
         let store: SessionStateStoring
         if visualQA != nil {
-            store = UITestSessionStore(events: [])
+            store = FileSessionStateStore(directory: FileSessionStateStore.defaultDirectory)
         } else if let fixtureEvents = UITestFixtureFactory.events(arguments: CommandLine.arguments) {
             store = UITestSessionStore(events: fixtureEvents)
         } else {

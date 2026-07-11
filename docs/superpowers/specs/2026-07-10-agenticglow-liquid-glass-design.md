@@ -125,7 +125,7 @@ consumed only by `LiquidGlassSurface`.
 - No glass preference or surface type is referenced by animation code.
 - UI automation could not initialize twice because macOS timed out enabling
   automation mode. A dedicated `--visual-qa` mode now replaces real credentials
-  with an in-memory store, uses isolated preferences and empty session data,
+  with an in-memory store, uses isolated preferences and local session metadata,
   disables real provider and update activity, applies explicit appearance and
   clarity arguments, and opens the native popover automatically.
 - Four native-popover captures completed without a Keychain prompt: Dark Mode at

@@ -172,7 +172,7 @@
 ## Credential-isolated visual completion
 
 - Added `--visual-qa` with in-memory Claude credentials, isolated preferences,
-  empty session state, disabled real provider/update activity, explicit Light or
+  local session metadata, disabled real provider/update activity, explicit Light or
   Dark appearance, explicit Glass Clarity, and automatic native popover opening.
 - Verified the visual-QA tests compile with code signing disabled and no app-host
   launch.
