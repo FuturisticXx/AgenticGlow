@@ -168,6 +168,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             notificationsDenied: { [notificationClient] in
                 await notificationClient.isDenied()
+            },
+            settingsPresentationChanged: { [weak self] isPresented in
+                self?.statusItemController.setSettingsPresented(isPresented)
             }
         )
     }

@@ -7,6 +7,7 @@ struct SettingsView: View {
     let openIntegrations: () -> Void
     let serviceStatusChanged: (Bool) -> Void
     let notificationsDenied: () async -> Bool
+    let settingsPresentationChanged: (Bool) -> Void
     @State private var launchAtLoginEnabled: Bool
     @State private var showsDeniedHint = false
 
@@ -16,7 +17,8 @@ struct SettingsView: View {
         launchAtLogin: LaunchAtLoginServicing,
         openIntegrations: @escaping () -> Void,
         serviceStatusChanged: @escaping (Bool) -> Void = { _ in },
-        notificationsDenied: @escaping () async -> Bool = { false }
+        notificationsDenied: @escaping () async -> Bool = { false },
+        settingsPresentationChanged: @escaping (Bool) -> Void = { _ in }
     ) {
         self.preferences = preferences
         self.updates = updates
@@ -24,6 +26,7 @@ struct SettingsView: View {
         self.openIntegrations = openIntegrations
         self.serviceStatusChanged = serviceStatusChanged
         self.notificationsDenied = notificationsDenied
+        self.settingsPresentationChanged = settingsPresentationChanged
         _launchAtLoginEnabled = State(initialValue: launchAtLogin.isEnabled)
     }
 
@@ -46,7 +49,6 @@ struct SettingsView: View {
                         ))
                         .accessibilityHint("Higher clarity reveals more of the background.")
                         .accessibilityIdentifier("AgenticGlow.GlassClarity")
-                    GlassClarityPreview(clarity: preferences.glassClarity)
                     Text("Higher clarity reveals more of the background through the popover.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -107,6 +109,9 @@ struct SettingsView: View {
         .frame(width: 520)
         .task {
             showsDeniedHint = await notificationsDenied()
+        }
+        .onDisappear {
+            settingsPresentationChanged(false)
         }
     }
 }

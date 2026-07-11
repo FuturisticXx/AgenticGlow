@@ -3,11 +3,13 @@ import AgenticGlowCore
 import SwiftUI
 
 struct SessionListView: View {
+    @Environment(\.openSettings) private var openSettings
     @Bindable var model: AppModel
     @Bindable var preferences: PreferencesStore
     @Bindable var popoverState: PopoverState
     let claudeCredentialStore: any ClaudeSessionCredentialStoring
     let openIntegrations: () -> Void
+    var settingsPresentationChanged: (Bool) -> Void = { _ in }
     @State private var showingUsageConsent = false
 
     var body: some View {
@@ -41,7 +43,10 @@ struct SessionListView: View {
                     usageDetails
                     Divider()
                     Button("Integrations…", action: openIntegrations)
-                    SettingsLink { Text("Settings…") }
+                    Button("Settings…") {
+                        settingsPresentationChanged(true)
+                        openSettings()
+                    }
                     Divider()
                     Button("Quit AgenticGlow") { NSApp.terminate(nil) }
                 } label: {

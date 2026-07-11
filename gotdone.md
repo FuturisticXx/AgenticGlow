@@ -197,8 +197,10 @@
 - Changed only the glass mapping: 100 percent Dark Mode clarity now removes the
   custom scrim, while highlight, depth, and specular overlays are substantially
   lighter. The 0 percent surface remains exact.
-- Added a Settings preview using the production `LiquidGlassSurface`, allowing
-  immediate visual feedback while dragging even when the transient popover is
-  closed.
+- Removed the separate Settings preview after John requested adjustment against
+  the real interface. Choosing Settings now temporarily pins the native popover
+  open, and closing Settings restores its normal transient dismissal behavior.
+- The slider remains bound directly to the production `LiquidGlassSurface`, so
+  changes are visible immediately on the actual menu-bar interface.
 - Isolated non-UI verification passed 64 app tests with zero failures. Animated
   border and glow implementation remains untouched.

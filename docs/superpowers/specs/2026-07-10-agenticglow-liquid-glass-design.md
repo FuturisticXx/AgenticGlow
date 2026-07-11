@@ -156,8 +156,10 @@ consumed only by `LiquidGlassSurface`.
 - Maximum Dark Mode clarity now removes the custom scrim completely. Highlight,
   depth, and specular layers were reduced so they add dimension without masking
   the increased transmission. The 0 percent baseline remains unchanged.
-- Settings now includes a compact `GlassClarityPreview` built from the same
-  production `LiquidGlassSurface`. It updates while the slider is dragged, so
-  users can see the effect even though opening Settings closes the transient
-  menu-bar popover.
+- The separate Settings preview was removed after review. Choosing Settings from
+  the popover now temporarily changes only the popover dismissal policy from
+  `.transient` to `.applicationDefined`, keeping the real menu-bar interface open
+  while the slider is dragged. Closing Settings restores `.transient` behavior.
+- The slider continues binding directly to the production `LiquidGlassSurface`,
+  so every adjustment is visible on the actual interface rather than a proxy.
 - Final isolated non-UI verification passed 64 app tests with zero failures.

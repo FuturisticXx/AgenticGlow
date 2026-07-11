@@ -63,7 +63,10 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
                 preferences: preferences,
                 popoverState: popoverState,
                 claudeCredentialStore: claudeCredentialStore,
-                openIntegrations: openIntegrations
+                openIntegrations: openIntegrations,
+                settingsPresentationChanged: { [weak self] isPresented in
+                    self?.setSettingsPresented(isPresented)
+                }
             )
         )
 
@@ -107,6 +110,10 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     func showPopoverForVisualQA() {
         guard !popover.isShown else { return }
         togglePopover()
+    }
+
+    func setSettingsPresented(_ isPresented: Bool) {
+        popover.behavior = isPresented ? .applicationDefined : .transient
     }
 
     @objc private func togglePopover() {
