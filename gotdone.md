@@ -1,5 +1,9 @@
 # Got done
 
+## 2026-07-11 - Isolated implementation workspace preparation
+
+- Added `.worktrees/` to the repository ignore rules before creating the approved isolated implementation worktree, preventing linked checkout contents from appearing in project status or commits.
+
 ## 2026-07-11 - Usage alert and Codex workspace implementation plans
 
 - Split the approved work into two executable plans: a test-first usage alert state machine and a supported Codex workspace session repair.
