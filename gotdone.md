@@ -1,5 +1,11 @@
 # Got done
 
+## 2026-07-11 - Codex workspace session reporting repaired
+
+- Registered and opened the canonical `/Volumes/Liquid/2DaMax Development/AgenticGlow` project without recreating the deleted Klarity path or editing Codex private state.
+- Verified a real current-task `Thinking` event at 10:23:49 PM with the canonical AgenticGlow working directory. Its `sourceProcessID` 48031 exactly matched the running ChatGPT/Codex app-server process.
+- Confirmed AgenticGlow diagnostics remained off, the earlier synthetic diagnostic session was absent, and the temporary installer download caused by the bundled-app CLI mismatch was removed.
+
 ## 2026-07-11 - Usage alert verification complete
 
 - Verified deterministic XcodeGen regeneration with no `project.pbxproj` diff.
