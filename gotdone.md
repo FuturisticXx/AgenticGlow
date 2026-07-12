@@ -275,3 +275,12 @@
 - Added regression coverage for stable identity, isolated persistence, and
   observation invalidation.
 - Final isolated non-UI verification passed 65 app tests with zero failures.
+
+## 2026-07-12: Released and installed AgenticGlow 0.4.7
+
+- Published `v0.4.7` from release commit `236c642` after CI run `29181689044` passed.
+- Built a universal Developer ID signed app and notarized DMG. Apple accepted submission `1e60e111-ed51-437f-9271-7f72640e4205`; the stapled DMG and app both passed Gatekeeper assessment.
+- Verified the downloaded GitHub asset against SHA-256 `62792a04c0f526497037bd9925e68e81bc4b7f6f96783d6f2baa840c2ea625ea`.
+- Updated the official Homebrew tap to v0.4.7 at tap commit `49a90e4`.
+- Upgraded the installed app through the public tap, relaunched it, and verified `/Applications/AgenticGlow.app` reports v0.4.7, has a valid signature, is accepted by Gatekeeper, and is running.
+- Rechecked Codex detection using the live state file: the current AgenticGlow workspace event remains in `thinking`, and its recorded Codex app-server process is alive, so the resolver counts it as active.

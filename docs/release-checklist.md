@@ -257,13 +257,19 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-11, latest: v0.4.6)
+- [x] **GitHub release published** (date: 2026-07-12, latest: v0.4.7)
+  - v0.4.7 published from commit `236c642`; CI run `29181689044` passed
+  - Apple notarization submission `1e60e111-ed51-437f-9271-7f72640e4205` accepted
+  - Published DMG SHA-256: `62792a04c0f526497037bd9925e68e81bc4b7f6f96783d6f2baa840c2ea625ea`
+  - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
   - Release notes published, covering 0.3.0 and 0.4.0 work since v0.3.0 was never tagged
   - Notarized DMG uploaded to the release and re-verified after download (checksum, staple, Gatekeeper)
   - Tag `v0.4.0` pushed to the repository at commit `703c467`
   - Prior public releases: v0.1.0, v0.1.1, v0.2.0 (2026-07-05)
 
-- [x] **Cask updated in the official tap** (date: 2026-07-11, version 0.4.6)
+- [x] **Cask updated in the official tap** (date: 2026-07-12, version 0.4.7)
+  - Official tap updated to v0.4.7 at commit `49a90e4`
+  - Homebrew upgraded the installed app through the public tap; installed v0.4.7 passed code-signing and Gatekeeper checks and launched successfully
   - `Cask/agenticglow.rb` regenerated with the 0.4.0 checksum and pushed on main (`5dc7abb`)
   - Tap `FuturisticXx/homebrew-agenticglow` updated to 0.4.0 (tap commit `6bb0916`)
 
