@@ -24,6 +24,9 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private var motionProviders: [AgentProvider]?
     private var currentSymbolName: String?
     private var currentSolidColor: NSColor?
+    /// True while the icon alternates between the working hexagon and the
+    /// yellow permission exclamation (one session waiting, others working).
+    private var dissolvesPermission = false
 
     /// Menu bar motion is ambient, not feedback: it plays for minutes at a time
     /// while an agent works. Slow and continuous reads as calm; anything brisk
@@ -169,6 +172,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         }
         lastCelebrationCount = model.weeklyResetCount
         motionProviders = nil
+        dissolvesPermission = false
         setSymbol(symbolName, color: .systemGreen)
         if !model.reduceMotion, #available(macOS 15.0, *) {
             symbolView.addSymbolEffect(.bounce, options: .repeat(3))
@@ -197,11 +201,19 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         let name = presentation.symbolName
         if celebrating {
             motionProviders = nil
+            dissolvesPermission = false
             setSymbol(name, color: .systemGreen)
             return
         }
         let providers = presentation.activeProviders
-        if providers.isEmpty {
+        dissolvesPermission = presentation.pulsesPermission && !providers.isEmpty
+        if dissolvesPermission {
+            // The motion task owns the icon: hexagon spinning in provider
+            // color, dissolving to and from the yellow exclamation.
+            motionProviders = providers
+            currentSymbolName = "circle.hexagongrid"
+            currentSolidColor = ProviderColor.nsColor(for: providers[0], on: barAppearance)
+        } else if providers.isEmpty {
             motionProviders = nil
             setSymbol(name, color: presentation.color)
         } else if providers.count > 1, model.reduceMotion {
@@ -262,6 +274,55 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         return image
     }
 
+    /// Both glyphs baked into one frame at complementary opacity. Drawing
+    /// them into a single image keeps the menu bar path identical to the
+    /// plain motion frames; only the pixels change.
+    private static func dissolveImage(
+        workingName: String,
+        workingColor: NSColor,
+        rotatedDegrees: Double,
+        workingOpacity: Double
+    ) -> NSImage? {
+        guard let working = symbolImage(
+            workingName,
+            color: workingColor,
+            rotatedDegrees: rotatedDegrees == 0 ? 0.0001 : rotatedDegrees
+        ), let permission = symbolImage(
+            "exclamationmark.circle.fill",
+            color: .systemYellow,
+            rotatedDegrees: 0
+        ) else { return nil }
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            working.draw(
+                in: rect,
+                from: .zero,
+                operation: .sourceOver,
+                fraction: CGFloat(workingOpacity)
+            )
+            permission.draw(
+                in: aspectFit(permission.size, in: rect),
+                from: .zero,
+                operation: .sourceOver,
+                fraction: CGFloat(1 - workingOpacity)
+            )
+            return true
+        }
+        image.isTemplate = false
+        return image
+    }
+
+    private static func aspectFit(_ imageSize: NSSize, in rect: NSRect) -> NSRect {
+        let scale = min(rect.width / imageSize.width, rect.height / imageSize.height)
+        let size = NSSize(width: imageSize.width * scale, height: imageSize.height * scale)
+        return NSRect(
+            x: rect.midX - size.width / 2,
+            y: rect.midY - size.height / 2,
+            width: size.width,
+            height: size.height
+        )
+    }
+
     /// One frame task drives both the spin and the color sweep so neither ever
     /// restarts when the other changes. State flips (provider joins or leaves,
     /// celebration) just change what the next frame renders; the task and its
@@ -315,7 +376,18 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         let turns = motionRotating
             ? (seconds / Motion.rotationPeriod).truncatingRemainder(dividingBy: 1)
             : 0
-        symbolView.image = Self.symbolImage(name, color: color, rotatedDegrees: -360 * turns)
+        let rotated = -360.0 * turns
+        if dissolvesPermission {
+            let opacity = PermissionDissolve.workingOpacity(at: seconds)
+            symbolView.image = Self.dissolveImage(
+                workingName: name,
+                workingColor: color,
+                rotatedDegrees: rotated,
+                workingOpacity: opacity
+            )
+        } else {
+            symbolView.image = Self.symbolImage(name, color: color, rotatedDegrees: rotated)
+        }
     }
 
     private static func blend(_ a: NSColor, _ b: NSColor, _ fraction: Double) -> NSColor {
