@@ -31,18 +31,23 @@ final class AgentNotificationServiceTests: XCTestCase {
         XCTAssertEqual(scheduler.added, [])
     }
 
-    func testQuotaAlertFiresOncePerWindowWithWindowCopy() async {
+    func testQuotaLowIncludesResetTime() async {
         let scheduler = FakeScheduler()
-        let service = makeService(scheduler: scheduler)
-        let low = allowance(currentUsed: 92)
+        let service = makeService(
+            scheduler: scheduler,
+            resetTime: { _ in "12:50 AM" }
+        )
 
-        service.allowanceUpdated(provider: .codex, allowance: low)
-        service.allowanceUpdated(provider: .codex, allowance: low)
+        service.allowanceUpdated(provider: .claude, allowance: allowance(currentUsed: 92))
         await service.drain()
 
         XCTAssertEqual(scheduler.added.count, 1)
-        XCTAssertEqual(scheduler.added.first?.title, "Codex usage running low")
-        XCTAssertEqual(scheduler.added.first?.body, "5-hour window: 8% left.")
+        XCTAssertEqual(scheduler.added.first?.id, "quota.claude.5h")
+        XCTAssertEqual(scheduler.added.first?.title, "Claude usage running low")
+        XCTAssertEqual(
+            scheduler.added.first?.body,
+            "5-hour window: 8% left. Resets at 12:50 AM."
+        )
     }
 
     func testQuotaToggleOffSuppressesDelivery() async {
@@ -55,24 +60,81 @@ final class AgentNotificationServiceTests: XCTestCase {
         XCTAssertEqual(scheduler.added, [])
     }
 
-    func testWeeklyWindowUsesWeeklyCopy() async {
+    func testQuotaExhaustedReplacesLowNotification() async {
+        let scheduler = FakeScheduler()
+        let service = makeService(
+            scheduler: scheduler,
+            resetTime: { _ in "12:50 AM" }
+        )
+
+        service.allowanceUpdated(provider: .claude, allowance: allowance(currentUsed: 92))
+        service.allowanceUpdated(provider: .claude, allowance: allowance(currentUsed: 100))
+        await service.drain()
+
+        XCTAssertEqual(
+            scheduler.added.map(\.id),
+            ["quota.claude.5h", "quota.claude.5h"]
+        )
+        XCTAssertEqual(scheduler.added.last?.title, "Claude 5-hour usage exhausted")
+        XCTAssertEqual(scheduler.added.last?.body, "Available again at 12:50 AM.")
+    }
+
+    func testQuotaExhaustedWithoutResetTimeUsesFallback() async {
         let scheduler = FakeScheduler()
         let service = makeService(scheduler: scheduler)
 
         service.allowanceUpdated(
-            provider: .claude,
-            allowance: allowance(currentUsed: 20, weeklyUsed: 95)
+            provider: .codex,
+            allowance: allowance(currentUsed: 100, currentResetAt: nil)
         )
         await service.drain()
 
-        XCTAssertEqual(scheduler.added.first?.title, "Claude usage running low")
-        XCTAssertEqual(scheduler.added.first?.body, "Weekly window: 5% left.")
+        XCTAssertEqual(scheduler.added.first?.title, "Codex 5-hour usage exhausted")
+        XCTAssertEqual(
+            scheduler.added.first?.body,
+            "No usage remaining in this window."
+        )
+    }
+
+    func testWeeklyExhaustedUsesWeeklyTitleAndSameWindowID() async {
+        let scheduler = FakeScheduler()
+        let service = makeService(
+            scheduler: scheduler,
+            resetTime: { _ in "8:00 PM" }
+        )
+
+        service.allowanceUpdated(
+            provider: .claude,
+            allowance: allowance(currentUsed: 20, weeklyUsed: 100)
+        )
+        await service.drain()
+
+        XCTAssertEqual(scheduler.added.first?.id, "quota.claude.week")
+        XCTAssertEqual(scheduler.added.first?.title, "Claude weekly usage exhausted")
+        XCTAssertEqual(
+            scheduler.added.first?.body,
+            "Available again at 8:00 PM."
+        )
+    }
+
+    func testRepeatedExhaustedReadingsScheduleOnce() async {
+        let scheduler = FakeScheduler()
+        let service = makeService(scheduler: scheduler)
+
+        service.allowanceUpdated(provider: .claude, allowance: allowance(currentUsed: 100))
+        service.allowanceUpdated(provider: .claude, allowance: allowance(currentUsed: 100))
+        await service.drain()
+
+        XCTAssertEqual(scheduler.added.count, 1)
     }
 
     func testClickActivatesSourceApplication() {
         let scheduler = FakeScheduler()
         var activated: [String] = []
-        let service = makeService(scheduler: scheduler) { activated.append($0) }
+        let service = makeService(
+            scheduler: scheduler,
+            activate: { activated.append($0) }
+        )
 
         service.start()
         scheduler.clickHandler?(["sourceBundleID": "com.apple.Terminal"])
@@ -108,12 +170,14 @@ final class AgentNotificationServiceTests: XCTestCase {
         scheduler: FakeScheduler,
         permissionEnabled: Bool = true,
         quotaEnabled: Bool = true,
+        resetTime: @escaping (Date) -> String = { _ in "12:50 AM" },
         activate: @escaping (String) -> Void = { _ in }
     ) -> AgentNotificationService {
         AgentNotificationService(
             scheduler: scheduler,
             permissionEnabled: { permissionEnabled },
             quotaEnabled: { quotaEnabled },
+            resetTime: resetTime,
             activate: activate
         )
     }
@@ -134,15 +198,17 @@ final class AgentNotificationServiceTests: XCTestCase {
 
     private func allowance(
         currentUsed: Double?,
-        weeklyUsed: Double? = 20
+        currentResetAt: Date? = Date(timeIntervalSince1970: 1_783_101_600),
+        weeklyUsed: Double? = 20,
+        weeklyResetAt: Date? = Date(timeIntervalSince1970: 1_783_616_400)
     ) -> ProviderAllowance {
         ProviderAllowance(
             provider: .codex,
             currentWindowLabel: "5h",
             currentPercentUsed: currentUsed,
-            currentResetAt: Date(timeIntervalSince1970: 1_783_101_600),
+            currentResetAt: currentResetAt,
             weeklyPercentUsed: weeklyUsed,
-            weeklyResetAt: Date(timeIntervalSince1970: 1_783_616_400),
+            weeklyResetAt: weeklyResetAt,
             fetchedAt: Date(timeIntervalSince1970: 1_783_099_000)
         )
     }
@@ -151,6 +217,7 @@ final class AgentNotificationServiceTests: XCTestCase {
 @MainActor
 private final class FakeScheduler: UserNotificationScheduling {
     struct Added: Equatable {
+        let id: String
         let title: String
         let body: String
         let userInfo: [String: String]
@@ -168,6 +235,6 @@ private final class FakeScheduler: UserNotificationScheduling {
     func isAuthorized() async -> Bool { true }
 
     func add(id: String, title: String, body: String, userInfo: [String: String]) async {
-        added.append(Added(title: title, body: body, userInfo: userInfo))
+        added.append(Added(id: id, title: title, body: body, userInfo: userInfo))
     }
 }

@@ -1,5 +1,11 @@
 # Got done
 
+## 2026-07-11 - Helpful low and exhausted usage notifications
+
+- Low-usage alerts now include the provider reset time when available. Reaching 0 percent emits a distinct provider and window-specific exhausted alert with availability guidance or a clear fallback when no reset is known.
+- Low and exhausted alerts reuse the same provider-window notification identifier, so the exhausted banner replaces the earlier warning in Notification Center instead of adding clutter.
+- TDD evidence: the focused service test first failed on the missing reset formatter, the weekly title test then failed on a deliberate five-hour-only implementation, and the final `AgentNotificationServiceTests` run passed 11 tests with 0 failures.
+
 ## 2026-07-11 - Quota alerts deduplicated by usage state
 
 - Replaced reset-timestamp notification keys with per-provider, per-window low and exhausted states. Moving reset times no longer create repeat alerts, 0 percent is a distinct transition, and healthy recovery re-arms the next cycle.

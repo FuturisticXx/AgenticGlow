@@ -23,6 +23,7 @@ final class AgentNotificationService: AgentNotifying {
     private let scheduler: any UserNotificationScheduling
     private let permissionEnabled: () -> Bool
     private let quotaEnabled: () -> Bool
+    private let resetTime: (Date) -> String
     private let activate: (String) -> Void
     private var quotaTracker = QuotaAlertTracker()
     private var pending: Task<Void, Never>?
@@ -31,11 +32,15 @@ final class AgentNotificationService: AgentNotifying {
         scheduler: any UserNotificationScheduling,
         permissionEnabled: @escaping () -> Bool,
         quotaEnabled: @escaping () -> Bool,
+        resetTime: @escaping (Date) -> String = {
+            $0.formatted(date: .omitted, time: .shortened)
+        },
         activate: @escaping (String) -> Void
     ) {
         self.scheduler = scheduler
         self.permissionEnabled = permissionEnabled
         self.quotaEnabled = quotaEnabled
+        self.resetTime = resetTime
         self.activate = activate
     }
 
@@ -72,12 +77,26 @@ final class AgentNotificationService: AgentNotifying {
         guard quotaEnabled() else { return }
         for alert in quotaTracker.newAlerts(provider: provider, allowance: allowance) {
             let window = alert.window
-            let windowName = window.label == "week" ? "Weekly window" : "5-hour window"
+            let windowName = window.label == "week" ? "Weekly" : "5-hour"
+            let id = "quota.\(provider.rawValue).\(window.label)"
+            let title: String
+            let body: String
+            switch alert.level {
+            case .low:
+                title = "\(provider.notificationName) usage running low"
+                let reset = window.resetAt.map { " Resets at \(resetTime($0))." } ?? ""
+                body = "\(windowName) window: \(Int(window.percentLeft.rounded()))% left.\(reset)"
+            case .exhausted:
+                let titleWindow = windowName == "Weekly" ? "weekly" : "5-hour"
+                title = "\(provider.notificationName) \(titleWindow) usage exhausted"
+                body = window.resetAt.map { "Available again at \(resetTime($0))." }
+                    ?? "No usage remaining in this window."
+            }
             enqueue { scheduler in
                 await scheduler.add(
-                    id: "quota.\(provider.rawValue).\(window.label)",
-                    title: "\(provider.notificationName) usage running low",
-                    body: "\(windowName): \(Int(window.percentLeft.rounded()))% left.",
+                    id: id,
+                    title: title,
+                    body: body,
                     userInfo: [:]
                 )
             }
