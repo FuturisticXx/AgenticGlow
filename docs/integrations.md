@@ -64,6 +64,15 @@ renamed, moved, or deleted, reopen the task from the current project path so the
 hook can launch and AgenticGlow can receive a live session event. Do not recreate
 an obsolete path or edit Codex private application state as a workaround.
 
+### Config Is Cached at Process Startup
+Codex's `app-server` process reads `~/.codex/hooks.json` once, at its own launch,
+and holds it in memory for the life of the process. It does not hot-reload on
+file change. After running Install or Repair for Codex, fully quit the ChatGPT
+app (confirm no `codex` / `Codex Framework` / `ChatGPT` processes remain) and
+relaunch it before new hook events will fire. Restarting AgenticGlow or closing
+individual session windows is not sufficient. Codex will also prompt to re-trust
+the hooks (`/hooks`) after they change; accept the AgenticGlow entries.
+
 ## Helper Installation
 
 ### Destination Path

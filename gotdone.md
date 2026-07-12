@@ -292,3 +292,12 @@
 - Added complete v0.4.7 build, notarization, CI, Homebrew, installation, and Codex resolver evidence to the release checklist and changed the current monitoring target from v0.4.6 to v0.4.7.
 - Marked the usage-alert plan and design as implemented and released. Updated the Codex repair plan truthfully: event and resolver evidence pass, while direct popover-row capture remains an explicit follow-up.
 - Labeled old task plans as historical and added a short current-work section so unchecked historical verification steps are not mistaken for active implementation work.
+
+## 2026-07-12: Diagnosed and fixed Codex sessions not appearing in AgenticGlow
+
+- Root-caused "No Active Sessions" for Codex to two stacked issues: `~/.codex/hooks.json` had lost AgenticGlow's managed entries entirely (only Klarity's and Sessionlet's remained, two other hook-based apps John has installed), and the `agenticglow-event` helper binary was missing from `~/Library/Application Support/AgenticGlow/bin/`.
+- Repaired both integrations through the app's Setup window; confirmed via file inspection that `~/.codex/hooks.json` and `~/.claude/settings.json` both regained their `--agenticglow-hook`-marked entries and the helper binary was reinstalled.
+- Found sessions still weren't reporting after the repair. Diagnosed that Codex's `app-server` process caches `hooks.json` in memory at its own startup and never re-reads it, so every already-running Codex process was still operating on the pre-repair config.
+- Quit and relaunched AgenticGlow, then (with explicit confirmation) fully quit and relaunched the ChatGPT/Codex app. Verified via a fresh `codex-*.json` session file in `~/Library/Application Support/AgenticGlow/Sessions/` whose `sourceProcessID` matched the new `app-server` process and whose phase reached `completed`, confirming the pipeline works end to end.
+- Documented the caching behavior in `docs/integrations.md` and logged the full diagnostic trail (marker grep, helper binary check, session-file-timestamp-vs-process-start correlation) in `tasks/lessons.md` so future integration outages get triaged the same way.
+- Cleaned up build clutter surfaced along the way: removed 6 stale `~/Library/Developer/Xcode/DerivedData/AgenticGlow-*` folders and 6 unreferenced ad-hoc `build/DerivedData-*`/verification directories from prior debugging sessions, freeing roughly 6.3 GB. Confirmed via Spotlight that only the installed app and the official release-build artifacts remain.
