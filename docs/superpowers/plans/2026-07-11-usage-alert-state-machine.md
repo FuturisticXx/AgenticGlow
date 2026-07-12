@@ -8,6 +8,8 @@
 
 **Tech Stack:** Swift 6, Foundation, UserNotifications, XCTest, XcodeGen, macOS 14+
 
+**Status:** Complete. Implemented in commits `a0b01b7` and `e0824eb`, verified with 234 non-UI tests, and released in v0.4.7.
+
 ## Global Constraints
 
 - Keep `AllowanceWarning.thresholdPercentLeft` at exactly `10`.
@@ -33,7 +35,7 @@
 - Consumes: `ProviderAllowance`, `AllowanceWarning.Window`, `AgentProvider`
 - Produces: `QuotaAlert.Level`, `QuotaAlert.window`, and `QuotaAlertTracker.newAlerts(provider:allowance:) -> [QuotaAlert]`
 
-- [ ] **Step 1: Replace the old reset-window tests with failing transition tests**
+- [x] **Step 1: Replace the old reset-window tests with failing transition tests**
 
 Keep the permission tests unchanged. Replace the quota tests with:
 
@@ -97,7 +99,7 @@ func testQuotaTrackerKeepsWindowsAndProvidersIndependent() {
 
 Expand the allowance helper to accept `weeklyUsed`, `currentResetAt`, and `weeklyResetAt` independently.
 
-- [ ] **Step 2: Run the focused core test and verify RED**
+- [x] **Step 2: Run the focused core test and verify RED**
 
 ```bash
 xcodebuild test \
@@ -110,7 +112,7 @@ xcodebuild test \
 
 Expected: compilation fails because `QuotaAlert` and `QuotaAlert.Level` do not exist and `newAlerts` still returns `[AllowanceWarning.Window]`.
 
-- [ ] **Step 3: Implement the semantic tracker**
+- [x] **Step 3: Implement the semantic tracker**
 
 Replace the existing quota tracker with:
 
@@ -177,13 +179,13 @@ public struct QuotaAlertTracker: Sendable {
 
 Mechanically unwrap `alert.window` in `AgentNotificationService` so the existing copy continues to compile. Do not change copy or branch on `alert.level` until Task 2.
 
-- [ ] **Step 4: Run the focused core test and verify GREEN**
+- [x] **Step 4: Run the focused core test and verify GREEN**
 
 Run the command from Step 2.
 
 Expected: `NotificationPolicyTests` passes with zero failures.
 
-- [ ] **Step 5: Record and commit the core behavior**
+- [x] **Step 5: Record and commit the core behavior**
 
 Add a `gotdone.md` entry with the transition behavior and focused test result.
 
@@ -206,7 +208,7 @@ git commit -m "fix: dedupe quota alerts by usage state"
 - Consumes: `QuotaAlertTracker.newAlerts(provider:allowance:) -> [QuotaAlert]`
 - Produces: reset-time copy and stable IDs through `UserNotificationScheduling.add`
 
-- [ ] **Step 1: Replace the existing quota-copy tests with failing copy and replacement tests**
+- [x] **Step 1: Replace the existing quota-copy tests with failing copy and replacement tests**
 
 Replace `testQuotaAlertFiresOncePerWindowWithWindowCopy` and `testWeeklyWindowUsesWeeklyCopy` so their old bodies cannot conflict with the reset-time copy. Add `id` to `FakeScheduler.Added`, store it in `add`, inject a deterministic reset formatter through `makeService`, and add:
 
@@ -257,7 +259,7 @@ func testRepeatedExhaustedReadingsScheduleOnce() async {
 }
 ```
 
-- [ ] **Step 2: Run the focused service test and verify RED**
+- [x] **Step 2: Run the focused service test and verify RED**
 
 ```bash
 xcodebuild test \
@@ -270,7 +272,7 @@ xcodebuild test \
 
 Expected: compilation or assertions fail because the service has no reset formatter or exhausted copy and the fake scheduler does not retain IDs.
 
-- [ ] **Step 3: Add reset formatting and semantic copy**
+- [x] **Step 3: Add reset formatting and semantic copy**
 
 Add this initializer dependency:
 
@@ -308,13 +310,13 @@ case .exhausted:
 
 Schedule both levels with `id`, ensuring the exhausted request replaces the low request.
 
-- [ ] **Step 4: Run the focused service test and verify GREEN**
+- [x] **Step 4: Run the focused service test and verify GREEN**
 
 Run the command from Step 2.
 
 Expected: `AgentNotificationServiceTests` passes with zero failures.
 
-- [ ] **Step 5: Record and commit the app behavior**
+- [x] **Step 5: Record and commit the app behavior**
 
 Add a `gotdone.md` entry with copy, replacement behavior, and focused test result.
 
@@ -335,7 +337,7 @@ git commit -m "feat: alert once when usage is exhausted"
 - Consumes: completed core and app notification behavior
 - Produces: repository-wide verification evidence
 
-- [ ] **Step 1: Verify deterministic project generation**
+- [x] **Step 1: Verify deterministic project generation**
 
 ```bash
 xcodegen generate
@@ -344,7 +346,7 @@ git diff --exit-code -- AgenticGlow.xcodeproj/project.pbxproj
 
 Expected: both commands exit `0` and the generated project is unchanged.
 
-- [ ] **Step 2: Run the complete non-UI suite**
+- [x] **Step 2: Run the complete non-UI suite**
 
 ```bash
 xcodebuild test \
@@ -358,7 +360,7 @@ xcodebuild test \
 
 Expected: `** TEST SUCCEEDED **` with zero failures and no Keychain prompt.
 
-- [ ] **Step 3: Verify helper isolation, privacy, and diff hygiene**
+- [x] **Step 3: Verify helper isolation, privacy, and diff hygiene**
 
 ```bash
 Scripts/verify-standalone-helper.sh \
@@ -369,7 +371,7 @@ git diff --check
 
 Expected: all commands exit `0`.
 
-- [ ] **Step 4: Record final evidence**
+- [x] **Step 4: Record final evidence**
 
 Add exact test counts and verification results to `gotdone.md`.
 

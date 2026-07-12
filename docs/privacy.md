@@ -62,10 +62,13 @@ discarded when the toggle is turned off or the app quits.
 
 ## Notifications
 
-Optional notifications (agent needs permission, usage running low) are composed
-and delivered locally through macOS Notification Center. They contain only the
-provider name, project name, and allowance percentages, and involve no network
-request.
+Optional notifications (agent needs permission, usage running low, or usage
+exhausted) are composed and delivered locally through macOS Notification Center.
+They contain only the provider name, project name, allowance percentage, window
+label, and reset time when available, and involve no network request. Low and
+exhausted alerts for one provider window reuse one notification identifier so an
+exhausted alert replaces the earlier warning instead of adding another retained
+notification.
 
 ## Stored allowance fields
 

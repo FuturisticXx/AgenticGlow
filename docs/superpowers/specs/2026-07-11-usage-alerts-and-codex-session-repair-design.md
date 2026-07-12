@@ -1,7 +1,7 @@
 # Usage Alerts and Codex Session Repair Design
 
 **Date:** 2026-07-11
-**Status:** Approved for implementation planning
+**Status:** Implemented, verified, and released in v0.4.7 on 2026-07-12
 
 ## Goal
 

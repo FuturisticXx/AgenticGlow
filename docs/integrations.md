@@ -58,6 +58,12 @@ Running repair removes any existing AgenticGlow hooks and reinstalls all support
 ### Removal Behavior
 Running remove deletes only entries marked with `--agenticglow-hook`. All other hooks and settings are preserved.
 
+### Workspace Changes
+Codex launches hooks from the task's working directory. If a project directory is
+renamed, moved, or deleted, reopen the task from the current project path so the
+hook can launch and AgenticGlow can receive a live session event. Do not recreate
+an obsolete path or edit Codex private application state as a workaround.
+
 ## Helper Installation
 
 ### Destination Path

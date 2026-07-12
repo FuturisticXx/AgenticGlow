@@ -284,3 +284,11 @@
 - Updated the official Homebrew tap to v0.4.7 at tap commit `49a90e4`.
 - Upgraded the installed app through the public tap, relaunched it, and verified `/Applications/AgenticGlow.app` reports v0.4.7, has a valid signature, is accepted by Gatekeeper, and is running.
 - Rechecked Codex detection using the live state file: the current AgenticGlow workspace event remains in `thinking`, and its recorded Codex app-server process is alive, so the resolver counts it as active.
+
+## 2026-07-12: Reconciled project documentation with v0.4.7
+
+- Updated the README to point to the current public release and accurately describe supported sessions plus low and exhausted usage alerts.
+- Updated integration and privacy documentation with the supported Codex workspace recovery path, local exhausted-alert contents, and Notification Center replacement behavior.
+- Added complete v0.4.7 build, notarization, CI, Homebrew, installation, and Codex resolver evidence to the release checklist and changed the current monitoring target from v0.4.6 to v0.4.7.
+- Marked the usage-alert plan and design as implemented and released. Updated the Codex repair plan truthfully: event and resolver evidence pass, while direct popover-row capture remains an explicit follow-up.
+- Labeled old task plans as historical and added a short current-work section so unchecked historical verification steps are not mistaken for active implementation work.

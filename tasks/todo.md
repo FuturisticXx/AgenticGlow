@@ -1,4 +1,14 @@
+# Current Work
+
+- Monitor public v0.4.7 behavior and incoming reports.
+- Submit the maintained Cask to `homebrew/homebrew-cask` when AgenticGlow meets Homebrew's published notability threshold.
+- Directly confirm the repaired Codex session row in the AgenticGlow popover during a live Codex turn; resolver-level evidence already passes.
+
+The sections below are completed historical plans retained for implementation context.
+
 # Adaptive menu bar icon colors (2026-07-09)
+
+**Status:** Complete and released in v0.4.0. This section is retained as historical implementation evidence.
 
 **Goal:** The working icon's provider colors automatically deepen on light menu bars and brighten on dark ones, riding macOS's own per-wallpaper bar appearance. No border, no screen sampling, no new permissions.
 
@@ -30,6 +40,8 @@
 ---
 
 # v0.3.0: Notifications, Low-Allowance Badge, Incident Status, Reset Celebration (2026-07-08)
+
+**Status:** Implemented and released as part of v0.4.0. The unchecked verification items below are preserved as the original plan and are not current work.
 
 **Goal:** AgenticGlow proactively tells John when an agent needs him or usage runs low, hints low allowance on the menu bar icon, surfaces provider incidents in the popover behind an explicit opt-in, and celebrates the weekly usage reset.
 
@@ -114,6 +126,8 @@
 
 # Release 0.2.0 with Dark Mode fix (2026-07-05)
 
+**Status:** Complete and released.
+
 John asked to cut the release build containing the Dark Mode popover fix. Since
 v0.1.1, main also holds the popover aura, allowance bar redesign, elapsed-seconds
 display, refreshed icon, and the Codex bundled-binary allowance fix; that set was
@@ -125,6 +139,8 @@ already staged privately as 0.2.0, so this release is 0.2.0.
 - [x] John confirmed publication: GitHub release v0.2.0 published from tag at `09dabd6`, downloaded asset checksum/staple/Gatekeeper verified, cask bumped on main (`3b2575f`) and tap updated (`5c21667`)
 
 # Fix: Dark Mode popover too light (2026-07-05)
+
+**Status:** Complete and released in v0.2.0.
 
 Bug report from John: "Dark Mode is too light." Reproduced on macOS 27 in Dark Mode:
 the popover glass is nearly transparent, desktop content bleeds through, and the
@@ -146,6 +162,8 @@ Plan (bug fix, autonomous path):
 - [x] Tests 154/154 pass, privacy gate passes, committed locally (push pending John's OK)
 
 # Feature: Provider color language for icon and session list (2026-07-08)
+
+**Status:** Complete and released in v0.4.0.
 
 **Goal:** Make the app show which agent is working. One color language, Claude = orange `#D97857`, Codex = azure `#408CFF`, used on the menu bar icon, the session row icons, and the allowance pills (already). The menu bar icon is solid orange when only Claude works, solid blue when only Codex works, and cross-fades blue <-> orange (~3s each way) when both work. The popover summary names the active agents.
 

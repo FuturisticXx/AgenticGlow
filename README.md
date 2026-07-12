@@ -1,6 +1,6 @@
 # AgenticGlow
 
-AgenticGlow is a local macOS menu bar app that shows the status of your AI coding agent sessions. It notifies you when an agent needs your permission or your usage allowance runs low, hints low allowance on the menu bar icon, and can optionally show provider service incidents.
+AgenticGlow is a local macOS menu bar app that shows the status of your AI coding agent sessions. It notifies you when an agent needs your permission, warns once when a usage window runs low, alerts once when the window is exhausted, hints low allowance on the menu bar icon, and can optionally show provider service incidents.
 
 ## Requirements
 
@@ -9,13 +9,13 @@ AgenticGlow is a local macOS menu bar app that shows the status of your AI codin
 
 ## Supported Providers
 
-- **Codex**: CLI sessions
-- **Claude**: Desktop app sessions
+- **Codex**: Codex app and CLI sessions
+- **Claude**: Claude Code sessions
 
 ## Installation
 
-No public release has been published yet. The commands below apply after the
-first signed and notarized release is available.
+The latest signed and notarized public release is
+[v0.4.7](https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.4.7).
 
 ### DMG
 

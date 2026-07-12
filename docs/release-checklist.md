@@ -2,7 +2,7 @@
 
 This checklist must be completed and documented with dated evidence before any release.
 
-## Current Private RC Evidence
+## Historical Release Evidence
 
 Recorded 2026-06-29 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 
@@ -139,13 +139,22 @@ Public release 0.4.6 evidence recorded 2026-07-11:
 - Released DMG SHA-256 `bb4f08803938fc8472f3693e517c5458bd005cfac9673a576ec99a63b2e60276`; downloaded asset matched checksum, staple, and Gatekeeper.
 - Cask regenerated and pushed to main and the official tap (tap commit `494623e`); /Applications updated to 0.4.6 and relaunched.
 
+Public release 0.4.7 evidence recorded 2026-07-12:
+
+- Released from commit `236c642` (tag `v0.4.7`) with state-based quota alert deduplication, one immediate exhausted alert at 0 percent, reset-time guidance, stable notification replacement identifiers, and recovery-based re-arming.
+- A real Codex event from the canonical AgenticGlow workspace recorded `thinking` with source process `48031`, matching the live Codex app-server process. The deleted Klarity path was not recreated and Codex private state was not edited.
+- The complete non-UI suite passed 234 tests with zero failures. Release CI run `29181689044` passed on the release commit, and final documentation CI run `29181811779` passed.
+- Apple accepted notarization submission `1e60e111-ed51-437f-9271-7f72640e4205`. The signed universal app and DMG passed strict signature, stapler, and Gatekeeper verification.
+- Released DMG SHA-256 `62792a04c0f526497037bd9925e68e81bc4b7f6f96783d6f2baa840c2ea625ea`; the downloaded GitHub asset matched the checksum and passed staple and Gatekeeper verification.
+- The official Homebrew tap was updated at commit `49a90e4`. Homebrew installed v0.4.7 into `/Applications`, the app passed signature and Gatekeeper checks, and it relaunched successfully.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.
 
 Next unblocked work:
 
-1. Monitor v0.4.6 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy.
+1. Monitor v0.4.7 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy.
 
 ## Legal and Branding
 
@@ -222,7 +231,7 @@ Next unblocked work:
   - Code signing disabled for local verification
   - This does not replace signed DMG, notarization, or Gatekeeper verification
 
-- [x] **Signed and notarized DMG build verified locally** (date: 2026-07-05)
+- [x] **Signed and notarized DMG build verified locally** (date: 2026-07-12)
   - DMG builds successfully with code signing
   - DMG installs correctly on clean macOS 14.0+ system
   - App launches and functions correctly
@@ -230,13 +239,15 @@ Next unblocked work:
   - Notarization submission `ea62125b-5c96-4b32-8692-4d8f53c14d77` accepted
   - Stapler validation and Gatekeeper assessment passed for the app and DMG
   - Fresh DMG installation and launch passed; Homebrew install, uninstall, reinstall, and launch passed
+  - v0.4.7 notarization, signature, staple, Gatekeeper, downloaded-asset checksum, installation, and relaunch checks passed
 
-- [x] **Homebrew cask verified** (date: 2026-07-05)
+- [x] **Homebrew cask verified** (date: 2026-07-12)
   - Cask formula builds successfully
   - `brew install --cask FuturisticXx/agenticglow/agenticglow` installs correctly
   - App launches and functions correctly after install
   - Document cask version and test system
   - Version 0.1.1 install, launch, uninstall, integration cleanup, reinstall, and relaunch passed from the public tap
+  - Version 0.4.7 upgraded through the public tap, launched, and passed installed signature and Gatekeeper verification
 
 ## Release Gates
 
@@ -262,16 +273,12 @@ Scripts/verify-release-gates.sh
   - Apple notarization submission `1e60e111-ed51-437f-9271-7f72640e4205` accepted
   - Published DMG SHA-256: `62792a04c0f526497037bd9925e68e81bc4b7f6f96783d6f2baa840c2ea625ea`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes published, covering 0.3.0 and 0.4.0 work since v0.3.0 was never tagged
-  - Notarized DMG uploaded to the release and re-verified after download (checksum, staple, Gatekeeper)
-  - Tag `v0.4.0` pushed to the repository at commit `703c467`
-  - Prior public releases: v0.1.0, v0.1.1, v0.2.0 (2026-07-05)
+  - Release notes document the state-based low and exhausted usage notification behavior
 
 - [x] **Cask updated in the official tap** (date: 2026-07-12, version 0.4.7)
   - Official tap updated to v0.4.7 at commit `49a90e4`
   - Homebrew upgraded the installed app through the public tap; installed v0.4.7 passed code-signing and Gatekeeper checks and launched successfully
-  - `Cask/agenticglow.rb` regenerated with the 0.4.0 checksum and pushed on main (`5dc7abb`)
-  - Tap `FuturisticXx/homebrew-agenticglow` updated to 0.4.0 (tap commit `6bb0916`)
+  - `Cask/agenticglow.rb` regenerated with the v0.4.7 checksum and pushed on main (`d0da0f7`)
 
 - [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask

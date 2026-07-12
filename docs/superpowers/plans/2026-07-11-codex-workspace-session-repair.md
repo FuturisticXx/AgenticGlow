@@ -8,6 +8,8 @@
 
 **Tech Stack:** Codex Desktop, Codex CLI 0.144.0-alpha.4, AgenticGlow hook helper, macOS process inspection
 
+**Status:** Repair completed with supported workspace registration and a real current-process event. Resolver-level active-session evidence was verified; a separate direct popover capture was not recorded.
+
 ## Global Constraints
 
 - Use `/Volumes/Liquid/2DaMax Development/AgenticGlow` as the canonical checkout.
@@ -31,7 +33,7 @@
 - Consumes: supported `codex app [PATH]`, installed AgenticGlow Codex hooks, `agenticglow-event`
 - Produces: a real state file whose source process matches the current Codex process and a visible AgenticGlow session row
 
-- [ ] **Step 1: Capture pre-repair evidence**
+- [x] **Step 1: Capture pre-repair evidence**
 
 ```bash
 test ! -d '/Volumes/Liquid/2DaMax Development/Klarity'
@@ -43,7 +45,7 @@ find "$HOME/Library/Application Support/AgenticGlow/Sessions" \
 
 Expected: Klarity is absent, AgenticGlow exists, both applications run, and no state file represents the current Codex app-server process.
 
-- [ ] **Step 2: Open the canonical workspace through the supported Codex command**
+- [x] **Step 2: Open the canonical workspace through the supported Codex command**
 
 ```bash
 '/Applications/ChatGPT.app/Contents/Resources/codex' app \
@@ -52,13 +54,13 @@ Expected: Klarity is absent, AgenticGlow exists, both applications run, and no s
 
 Expected: Codex Desktop opens or focuses AgenticGlow without a compatibility path or private-state edit.
 
-- [ ] **Step 3: Start or reopen a task under the canonical workspace**
+- [x] **Step 3: Start or reopen a task under the canonical workspace**
 
 In Codex Desktop, create or reopen a task whose displayed workspace is AgenticGlow, then send one ordinary prompt. Do not use the stale task if its environment still reports the Klarity path.
 
 Expected: Codex runs `SessionStart` or `UserPromptSubmit` from the real AgenticGlow directory.
 
-- [ ] **Step 4: Verify a real current-process session file**
+- [x] **Step 4: Verify a real current-process session file**
 
 ```bash
 codex_pid="$(pgrep -f '/Applications/ChatGPT.app/Contents/Resources/codex.*app-server' | head -1)"
@@ -71,11 +73,15 @@ Expected: a fresh Codex event has `workingDirectory` set to AgenticGlow and `sou
 
 - [ ] **Step 5: Verify AgenticGlow presents the real session**
 
+Resolver-level verification passed because the event remained in `thinking` and
+its recorded Codex app-server process was alive. Direct visual confirmation of
+the popover row was not captured, so this presentation step remains open.
+
 Open the AgenticGlow popover while the task is thinking or using a tool.
 
 Expected: the summary no longer says `0 sessions`; the task row shows Codex and its current phase.
 
-- [ ] **Step 6: Confirm cleanup state**
+- [x] **Step 6: Confirm cleanup state**
 
 ```bash
 defaults read com.twodamax.agenticglow diagnosticsEnabled
@@ -85,7 +91,7 @@ git status --short --branch
 
 Expected: diagnostics is `0`, the synthetic diagnostic file is absent, and only intentional repository changes remain.
 
-- [ ] **Step 7: Record factual repair evidence**
+- [x] **Step 7: Record factual repair evidence**
 
 Add the corrected workspace, real event timestamp, process match, and visible result to `gotdone.md`. Do not claim the stale task was migrated unless its environment changed.
 
