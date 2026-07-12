@@ -86,6 +86,60 @@ enum UITestFixtureFactory {
                     updatedAt: Date()
                 )
             ]
+        case "permission-and-working":
+            return [
+                .init(
+                    schemaVersion: 1,
+                    provider: .claude,
+                    surface: .desktop,
+                    sessionID: "mix-permission",
+                    turnID: "turn",
+                    phase: .permission,
+                    label: "Awaiting permission",
+                    toolCategory: nil,
+                    projectName: "Example",
+                    workingDirectory: "/tmp/Example",
+                    sourceBundleID: "com.anthropic.claudefordesktop",
+                    sourceProcessID: nil,
+                    sourceProcessStartedAt: nil,
+                    turnStartedAt: Date(),
+                    updatedAt: Date()
+                ),
+                .init(
+                    schemaVersion: 1,
+                    provider: .claude,
+                    surface: .cli,
+                    sessionID: "mix-claude-thinking",
+                    turnID: "turn",
+                    phase: .thinking,
+                    label: "Thinking",
+                    toolCategory: nil,
+                    projectName: "horizon-app",
+                    workingDirectory: "/tmp/horizon-app",
+                    sourceBundleID: "com.apple.Terminal",
+                    sourceProcessID: nil,
+                    sourceProcessStartedAt: nil,
+                    turnStartedAt: Date(),
+                    updatedAt: Date()
+                ),
+                .init(
+                    schemaVersion: 1,
+                    provider: .codex,
+                    surface: .cli,
+                    sessionID: "mix-codex-building",
+                    turnID: "turn",
+                    phase: .usingTool,
+                    label: "Editing main.swift",
+                    toolCategory: .edit,
+                    projectName: "AgenticGlow",
+                    workingDirectory: "/tmp/AgenticGlow",
+                    sourceBundleID: "com.apple.Terminal",
+                    sourceProcessID: nil,
+                    sourceProcessStartedAt: nil,
+                    turnStartedAt: Date(),
+                    updatedAt: Date()
+                )
+            ]
         default:
             return nil
         }
