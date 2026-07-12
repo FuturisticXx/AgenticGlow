@@ -1,5 +1,11 @@
 # Got done
 
+## 2026-07-11 - Quota alerts deduplicated by usage state
+
+- Replaced reset-timestamp notification keys with per-provider, per-window low and exhausted states. Moving reset times no longer create repeat alerts, 0 percent is a distinct transition, and healthy recovery re-arms the next cycle.
+- Added regression coverage for repeated low readings, low to exhausted, first observation at 0 percent, moving reset timestamps, recovery, and independent providers and windows.
+- TDD evidence: the focused test first failed because semantic alert levels did not exist, then `NotificationPolicyTests` passed 10 tests with 0 failures.
+
 ## 2026-07-11 - Isolated implementation workspace preparation
 
 - Added `.worktrees/` to the repository ignore rules before creating the approved isolated implementation worktree, preventing linked checkout contents from appearing in project status or commits.

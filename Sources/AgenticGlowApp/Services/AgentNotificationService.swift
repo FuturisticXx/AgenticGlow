@@ -70,7 +70,8 @@ final class AgentNotificationService: AgentNotifying {
 
     func allowanceUpdated(provider: AgentProvider, allowance: ProviderAllowance) {
         guard quotaEnabled() else { return }
-        for window in quotaTracker.newAlerts(provider: provider, allowance: allowance) {
+        for alert in quotaTracker.newAlerts(provider: provider, allowance: allowance) {
+            let window = alert.window
             let windowName = window.label == "week" ? "Weekly window" : "5-hour window"
             enqueue { scheduler in
                 await scheduler.add(

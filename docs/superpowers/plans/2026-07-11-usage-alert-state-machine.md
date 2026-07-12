@@ -25,6 +25,7 @@
 
 **Files:**
 - Modify: `Sources/AgenticGlowCore/Notifications/NotificationPolicy.swift`
+- Modify: `Sources/AgenticGlowApp/Services/AgentNotificationService.swift`
 - Modify: `Tests/AgenticGlowCoreTests/NotificationPolicyTests.swift`
 - Modify: `gotdone.md`
 
@@ -173,6 +174,8 @@ public struct QuotaAlertTracker: Sendable {
     }
 }
 ```
+
+Mechanically unwrap `alert.window` in `AgentNotificationService` so the existing copy continues to compile. Do not change copy or branch on `alert.level` until Task 2.
 
 - [ ] **Step 4: Run the focused core test and verify GREEN**
 

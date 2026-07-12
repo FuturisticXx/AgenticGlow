@@ -44,48 +44,90 @@ final class NotificationPolicyTests: XCTestCase {
         XCTAssertEqual(fired, [])
     }
 
-    func testQuotaTrackerFiresOncePerWindow() {
+    func testQuotaTrackerWarnsOnceWhileLow() {
         var tracker = QuotaAlertTracker()
-        let low = allowance(currentUsed: 95, currentResetAt: now.addingTimeInterval(3_600))
 
         XCTAssertEqual(
-            tracker.newAlerts(provider: .codex, allowance: low).map(\.label),
-            ["5h"]
+            tracker.newAlerts(
+                provider: .claude,
+                allowance: allowance(currentUsed: 92)
+            ).map(\.level),
+            [.low]
         )
-        XCTAssertEqual(tracker.newAlerts(provider: .codex, allowance: low), [])
-    }
-
-    func testQuotaTrackerRefiresForNewWindow() {
-        var tracker = QuotaAlertTracker()
-        let first = allowance(currentUsed: 95, currentResetAt: now.addingTimeInterval(3_600))
-        let second = allowance(currentUsed: 95, currentResetAt: now.addingTimeInterval(7_200))
-
-        _ = tracker.newAlerts(provider: .codex, allowance: first)
-
         XCTAssertEqual(
-            tracker.newAlerts(provider: .codex, allowance: second).map(\.label),
-            ["5h"]
-        )
-    }
-
-    func testQuotaTrackerKeepsProvidersIndependent() {
-        var tracker = QuotaAlertTracker()
-        let low = allowance(currentUsed: 95, currentResetAt: now.addingTimeInterval(3_600))
-
-        _ = tracker.newAlerts(provider: .codex, allowance: low)
-
-        XCTAssertEqual(
-            tracker.newAlerts(provider: .claude, allowance: low).map(\.label),
-            ["5h"]
-        )
-    }
-
-    func testQuotaTrackerIgnoresHealthyAllowance() {
-        var tracker = QuotaAlertTracker()
-
-        XCTAssertEqual(
-            tracker.newAlerts(provider: .codex, allowance: allowance(currentUsed: 40)),
+            tracker.newAlerts(provider: .claude, allowance: allowance(currentUsed: 95)),
             []
+        )
+    }
+
+    func testQuotaTrackerAlertsWhenLowWindowBecomesExhausted() {
+        var tracker = QuotaAlertTracker()
+        _ = tracker.newAlerts(provider: .claude, allowance: allowance(currentUsed: 92))
+
+        let alerts = tracker.newAlerts(
+            provider: .claude,
+            allowance: allowance(currentUsed: 100)
+        )
+
+        XCTAssertEqual(alerts.map(\.level), [.exhausted])
+    }
+
+    func testQuotaTrackerFirstObservationAtZeroEmitsOnlyExhausted() {
+        var tracker = QuotaAlertTracker()
+
+        let alerts = tracker.newAlerts(
+            provider: .claude,
+            allowance: allowance(currentUsed: 100)
+        )
+
+        XCTAssertEqual(alerts.map(\.level), [.exhausted])
+    }
+
+    func testQuotaTrackerIgnoresMovingResetTimestampDuringSameLowState() {
+        var tracker = QuotaAlertTracker()
+        let first = allowance(
+            currentUsed: 95,
+            currentResetAt: now.addingTimeInterval(3_600)
+        )
+        let moved = allowance(
+            currentUsed: 95,
+            currentResetAt: now.addingTimeInterval(3_900)
+        )
+        _ = tracker.newAlerts(provider: .claude, allowance: first)
+
+        XCTAssertEqual(tracker.newAlerts(provider: .claude, allowance: moved), [])
+    }
+
+    func testQuotaTrackerStaysExhaustedUntilHealthyRecovery() {
+        var tracker = QuotaAlertTracker()
+        _ = tracker.newAlerts(provider: .claude, allowance: allowance(currentUsed: 100))
+
+        XCTAssertEqual(
+            tracker.newAlerts(provider: .claude, allowance: allowance(currentUsed: 95)),
+            []
+        )
+
+        _ = tracker.newAlerts(provider: .claude, allowance: allowance(currentUsed: 40))
+
+        XCTAssertEqual(
+            tracker.newAlerts(
+                provider: .claude,
+                allowance: allowance(currentUsed: 95)
+            ).map(\.level),
+            [.low]
+        )
+    }
+
+    func testQuotaTrackerKeepsWindowsAndProvidersIndependent() {
+        var tracker = QuotaAlertTracker()
+        let bothLow = allowance(currentUsed: 95, weeklyUsed: 95)
+
+        let codexAlerts = tracker.newAlerts(provider: .codex, allowance: bothLow)
+        XCTAssertEqual(codexAlerts.map(\.window.label), ["5h", "week"])
+        XCTAssertEqual(codexAlerts.map(\.level), [.low, .low])
+        XCTAssertEqual(
+            tracker.newAlerts(provider: .claude, allowance: bothLow).map(\.level),
+            [.low, .low]
         )
     }
 
@@ -103,14 +145,19 @@ final class NotificationPolicyTests: XCTestCase {
         )
     }
 
-    private func allowance(currentUsed: Double?, currentResetAt: Date? = nil) -> ProviderAllowance {
+    private func allowance(
+        currentUsed: Double?,
+        currentResetAt: Date? = nil,
+        weeklyUsed: Double? = 20,
+        weeklyResetAt: Date? = nil
+    ) -> ProviderAllowance {
         ProviderAllowance(
             provider: .codex,
             currentWindowLabel: "5h",
             currentPercentUsed: currentUsed,
             currentResetAt: currentResetAt,
-            weeklyPercentUsed: 20,
-            weeklyResetAt: nil,
+            weeklyPercentUsed: weeklyUsed,
+            weeklyResetAt: weeklyResetAt,
             fetchedAt: now
         )
     }
