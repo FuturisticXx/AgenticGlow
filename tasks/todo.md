@@ -224,3 +224,13 @@ Plan (bug fix, autonomous path):
 - Reduce Motion static-violet path: could not flip the live accessibility setting via `defaults write` (the system caches it), so not captured on screen. Verified by construction: it calls the same proven `setSymbol` with `ProviderColor.bothBlend`, gated by the same `model.reduceMotion` that already gates rotation. Confirm live if desired by toggling Reduce Motion in System Settings.
 - Incident line: made neutral (`.secondary`, keeps the warning triangle) so orange stays "Claude" in the color language.
 - Incident severity: `StatusPageNormalizer` now only reports `major`/`critical` as incidents; `none`/`minor`/`maintenance` are operational. This kills a false alarm where OpenAI's unrelated FedRAMP component (minor) implied Codex was down.
+
+## Current work (2026-07-12): permission + working dissolve
+
+Plan: docs/superpowers/plans/2026-07-12-permission-working-dissolve.md
+
+- [x] Task 1: PermissionDissolve timeline -> verified: 5/5 unit tests
+- [x] Task 2: StatusPresentation combined state -> verified: 21/21 StatusPresentationTests
+- [x] Task 3: Controller per-frame dissolve rendering -> verified: full unit suite 78/78
+- [x] Task 4: Fixture + visual verification -> verified: 14-frame capture series shows dwells, soft fades, continuous rotation and color sweep; 7/7 UI tests signed
+- [x] Final whole-branch review -> verdict READY, no blocking findings
