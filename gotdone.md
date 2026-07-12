@@ -1,5 +1,11 @@
 # Got done
 
+## 2026-07-11 - Usage alert verification complete
+
+- Verified deterministic XcodeGen regeneration with no `project.pbxproj` diff.
+- Full unsigned non-UI suite passed 234 tests with 0 failures and no Keychain prompt.
+- Standalone helper verification, privacy verification, and `git diff --check` all passed.
+
 ## 2026-07-11 - Helpful low and exhausted usage notifications
 
 - Low-usage alerts now include the provider reset time when available. Reaching 0 percent emits a distinct provider and window-specific exhausted alert with availability guidance or a clear fallback when no reset is known.
