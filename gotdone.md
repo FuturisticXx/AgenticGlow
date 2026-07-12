@@ -1,5 +1,11 @@
 # Got done
 
+## 2026-07-11 - Usage alert and Codex session repair design
+
+- Traced repeated Claude 0 percent notifications to reset-timestamp-based quota deduplication and approved a state-transition design with one low warning, one exhausted alert, recovery-based re-arming, reset-time copy, and notification replacement.
+- Traced the missing live Codex session to this task's deleted Klarity working directory. Verified that the installed AgenticGlow helper writes a valid current-process session event when launched from the real AgenticGlow directory.
+- Added `docs/superpowers/specs/2026-07-11-usage-alerts-and-codex-session-repair-design.md` as the implementation contract. No runtime code changed in this design step.
+
 ## 2026-07-11 - Published v0.4.6
 
 - Patch release for the "/" project-name fix: sessions with a root working directory now fall back to the provider name (HookNormalizer), with a TDD test that reproduced the symptom first; AgentProvider.displayName made public in Core.
