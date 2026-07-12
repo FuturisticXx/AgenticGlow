@@ -1,5 +1,11 @@
 # Got done
 
+## 2026-07-11 - Usage alert and Codex workspace implementation plans
+
+- Split the approved work into two executable plans: a test-first usage alert state machine and a supported Codex workspace session repair.
+- Locked the notification plan to one low alert, one exhausted alert, stable replacement IDs, reset-time copy, recovery-based re-arming, and the full non-UI verification surface.
+- Kept the workspace repair outside AgenticGlow runtime code: use `codex app PATH`, avoid private Codex state edits and compatibility symlinks, then require a real current-process hook event as proof.
+
 ## 2026-07-11 - Usage alert and Codex session repair design
 
 - Traced repeated Claude 0 percent notifications to reset-timestamp-based quota deduplication and approved a state-transition design with one low warning, one exhausted alert, recovery-based re-arming, reset-time copy, and notification replacement.
