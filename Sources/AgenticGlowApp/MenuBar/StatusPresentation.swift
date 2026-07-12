@@ -14,6 +14,10 @@ struct StatusPresentation: Equatable {
     /// controller resolves actual colors per menu bar appearance at render
     /// time, so the icon can adapt when the wallpaper flips the bar.
     let activeProviders: [AgentProvider]
+    /// True when a session awaits permission while at least one other session
+    /// works and Reduce Motion is off: the controller alternates the icon
+    /// between the working hexagon and the yellow exclamation.
+    let pulsesPermission: Bool
 
     init(
         resolved: ResolvedSessions,
@@ -27,11 +31,18 @@ struct StatusPresentation: Equatable {
         case .permission:
             symbolName = "exclamationmark.circle.fill"
             title = resolved.permissionCount > 1 ? "\(resolved.permissionCount)" : ""
-            phaseLabel = resolved.permissionCount == 1
+            let workingCount = resolved.activeCount - resolved.permissionCount
+            var label = resolved.permissionCount == 1
                 ? "AgenticGlow, 1 session needs permission"
                 : "AgenticGlow, \(resolved.permissionCount) sessions need permission"
+            if workingCount == 1 {
+                label += ", 1 active session"
+            } else if workingCount > 1 {
+                label += ", \(workingCount) active sessions"
+            }
+            phaseLabel = label
             color = .systemYellow
-            animates = false
+            animates = workingCount > 0 && !reduceMotion
         case .usingTool, .thinking:
             symbolName = "circle.hexagongrid"
             let workingSession = resolved.sessions.first {
@@ -64,10 +75,14 @@ struct StatusPresentation: Equatable {
             color = .labelColor
             animates = false
         }
+        let workingProviders = [AgentProvider.claude, .codex].filter {
+            resolved.activeProviders.contains($0)
+        }
         let working = [SessionPhase.thinking, .usingTool].contains(resolved.dominantPhase)
-        activeProviders = working
-            ? [.claude, .codex].filter { resolved.activeProviders.contains($0) }
-            : []
+        pulsesPermission = resolved.dominantPhase == .permission
+            && !workingProviders.isEmpty
+            && !reduceMotion
+        activeProviders = working || pulsesPermission ? workingProviders : []
 
         accessibilityLabel = lowAllowance ? "\(phaseLabel), usage low" : phaseLabel
     }

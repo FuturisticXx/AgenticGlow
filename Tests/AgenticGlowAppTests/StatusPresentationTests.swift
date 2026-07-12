@@ -8,7 +8,7 @@ final class StatusPresentationTests: XCTestCase {
             resolved: .init(
                 sessions: [],
                 dominantPhase: .permission,
-                activeCount: 3,
+                activeCount: 2,
                 permissionCount: 2,
                 activeProviders: []
             ),
@@ -211,6 +211,95 @@ final class StatusPresentationTests: XCTestCase {
             reduceMotion: false
         )
         XCTAssertTrue(presentation.activeProviders.isEmpty)
+    }
+
+    func testPermissionWithWorkersPulsesAndKeepsProviders() {
+        let presentation = StatusPresentation(
+            resolved: .init(
+                sessions: [],
+                dominantPhase: .permission,
+                activeCount: 3,
+                permissionCount: 1,
+                activeProviders: [.codex, .claude]
+            ),
+            showTimer: false,
+            reduceMotion: false
+        )
+
+        XCTAssertTrue(presentation.pulsesPermission)
+        XCTAssertEqual(presentation.activeProviders, [.claude, .codex])
+        XCTAssertTrue(presentation.animates)
+        XCTAssertEqual(presentation.symbolName, "exclamationmark.circle.fill")
+        XCTAssertEqual(
+            presentation.accessibilityLabel,
+            "AgenticGlow, 1 session needs permission, 2 active sessions"
+        )
+    }
+
+    func testPermissionWithOneWorkerReadsSingularActiveSession() {
+        let presentation = StatusPresentation(
+            resolved: .init(
+                sessions: [],
+                dominantPhase: .permission,
+                activeCount: 2,
+                permissionCount: 1,
+                activeProviders: [.codex]
+            ),
+            showTimer: false,
+            reduceMotion: false
+        )
+
+        XCTAssertTrue(presentation.pulsesPermission)
+        XCTAssertEqual(presentation.activeProviders, [.codex])
+        XCTAssertEqual(
+            presentation.accessibilityLabel,
+            "AgenticGlow, 1 session needs permission, 1 active session"
+        )
+    }
+
+    func testPermissionWithWorkersUnderReduceMotionStaysStatic() {
+        let presentation = StatusPresentation(
+            resolved: .init(
+                sessions: [],
+                dominantPhase: .permission,
+                activeCount: 3,
+                permissionCount: 1,
+                activeProviders: [.codex, .claude]
+            ),
+            showTimer: false,
+            reduceMotion: true
+        )
+
+        XCTAssertFalse(presentation.pulsesPermission)
+        XCTAssertTrue(presentation.activeProviders.isEmpty)
+        XCTAssertFalse(presentation.animates)
+    }
+
+    func testPermissionAloneDoesNotPulse() {
+        let presentation = StatusPresentation(
+            resolved: .init(
+                sessions: [],
+                dominantPhase: .permission,
+                activeCount: 1,
+                permissionCount: 1,
+                activeProviders: []
+            ),
+            showTimer: false,
+            reduceMotion: false
+        )
+
+        XCTAssertFalse(presentation.pulsesPermission)
+        XCTAssertTrue(presentation.activeProviders.isEmpty)
+        XCTAssertFalse(presentation.animates)
+        XCTAssertEqual(
+            presentation.accessibilityLabel,
+            "AgenticGlow, 1 session needs permission"
+        )
+    }
+
+    func testWorkingStateDoesNotPulsePermission() {
+        let presentation = working(activeProviders: [.claude, .codex])
+        XCTAssertFalse(presentation.pulsesPermission)
     }
 
     private func working(activeProviders: Set<AgentProvider>) -> StatusPresentation {
