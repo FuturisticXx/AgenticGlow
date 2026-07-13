@@ -268,17 +268,17 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-12, latest: v0.4.7)
-  - v0.4.7 published from commit `236c642`; CI run `29181689044` passed
-  - Apple notarization submission `1e60e111-ed51-437f-9271-7f72640e4205` accepted
-  - Published DMG SHA-256: `62792a04c0f526497037bd9925e68e81bc4b7f6f96783d6f2baa840c2ea625ea`
+- [x] **GitHub release published** (date: 2026-07-12, latest: v0.4.8)
+  - v0.4.8 published from commit `e31c8f6`; CI run `29219769154` passed
+  - Apple notarization submission `f91123d4-424f-4e96-86e5-33625d552caf` accepted
+  - Published DMG SHA-256: `f54b105d8674bf92d767d13a37735581ee3ad5ebeecdf4419d478695819aa24a`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes document the state-based low and exhausted usage notification behavior
+  - Release notes document the permission + working dissolve and hour-scale timers
 
-- [x] **Cask updated in the official tap** (date: 2026-07-12, version 0.4.7)
-  - Official tap updated to v0.4.7 at commit `49a90e4`
-  - Homebrew upgraded the installed app through the public tap; installed v0.4.7 passed code-signing and Gatekeeper checks and launched successfully
-  - `Cask/agenticglow.rb` regenerated with the v0.4.7 checksum and pushed on main (`d0da0f7`)
+- [x] **Cask updated in the official tap** (date: 2026-07-12, version 0.4.8)
+  - Official tap updated to v0.4.8 at commit `120ca64`
+  - Installed v0.4.8 to /Applications from the notarized build; version, signature, and Gatekeeper verified; app relaunched
+  - `Cask/agenticglow.rb` regenerated with the v0.4.8 checksum and pushed on main (`3f95328`)
 
 - [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask

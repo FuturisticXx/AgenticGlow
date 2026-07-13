@@ -309,3 +309,11 @@
 - Added a `permission-and-working` UI test fixture (Claude permission + Claude thinking + Codex using a tool).
 - Verified visually with that fixture: 14 menu bar captures across ~13 seconds show the yellow dwell, soft cross-fades with no hard snap, visible rotation between hexagon frames, and the blue-to-orange sweep resuming mid-hue after the yellow dwell, proving the clocks kept running. Full test suite green: 78 app + core unit tests, 7 UI tests signed. Whole-branch adversarial review verdict: READY (no blocking findings).
 - Commits: 1b71529, 1fd1658, be17a32, 7b950e3 (plus spec 9140f8b and plan ff7b374).
+
+## 2026-07-12: Released v0.4.8
+
+- Rolled the permission + working dissolve and hour-scale timers into v0.4.8: privacy gate passed, signed universal build stamped 0.4.8, DMG notarized (submission f91123d4, Accepted), stapled, and Gatekeeper-accepted.
+- Installed the notarized build to /Applications (reports 0.4.8, running).
+- Pushed main and tag v0.4.8 (release commit e31c8f6); CI green on both. Published https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.4.8 with the DMG (SHA-256 f54b105d...).
+- Downloaded the published asset back: checksum identical, staple valid, Gatekeeper accepts.
+- Cask bumped to 0.4.8 in the main repo (3f95328) and the official tap (120ca64). Release checklist post-release section updated to v0.4.8.
