@@ -40,6 +40,30 @@ final class StatusPresentationTests: XCTestCase {
         XCTAssertEqual(later, presentation)
     }
 
+    func testWorkingPresentationShowsHoursAboveOneHour() {
+        let mixed = StatusPresentation(
+            resolved: resolved(phase: .thinking, elapsedSeconds: 3_665),
+            showTimer: true,
+            reduceMotion: false
+        )
+        XCTAssertEqual(mixed.title, "1h 1m")
+
+        let exact = StatusPresentation(
+            resolved: resolved(phase: .thinking, elapsedSeconds: 7_200),
+            showTimer: true,
+            reduceMotion: false
+        )
+        XCTAssertEqual(exact.title, "2h")
+    }
+
+    @MainActor
+    func testSessionRowTimerShowsHoursAboveOneHour() {
+        XCTAssertEqual(SessionRowView.format(59), "59s")
+        XCTAssertEqual(SessionRowView.format(3_599), "59m 59s")
+        XCTAssertEqual(SessionRowView.format(3_665), "1h 1m")
+        XCTAssertEqual(SessionRowView.format(7_200), "2h")
+    }
+
     func testWorkingPresentationShowsSecondsBelowOneMinute() {
         let presentation = StatusPresentation(
             resolved: resolved(phase: .thinking, elapsedSeconds: 54),

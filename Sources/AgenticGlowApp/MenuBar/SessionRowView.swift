@@ -63,8 +63,12 @@ struct SessionRowView: View {
         "\(session.provider.displayName), \(session.projectName), \(session.label), \(session.surface.displayName)"
     }
 
-    private static func format(_ seconds: Int) -> String {
-        seconds < 60 ? "\(seconds)s" : "\(seconds / 60)m \(seconds % 60)s"
+    /// Seconds drop out at the hour scale so long-running rows stay calm.
+    static func format(_ seconds: Int) -> String {
+        if seconds < 60 { return "\(seconds)s" }
+        if seconds < 3_600 { return "\(seconds / 60)m \(seconds % 60)s" }
+        let minutes = (seconds % 3_600) / 60
+        return minutes == 0 ? "\(seconds / 3_600)h" : "\(seconds / 3_600)h \(minutes)m"
     }
 }
 
