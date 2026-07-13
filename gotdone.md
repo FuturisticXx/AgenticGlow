@@ -324,3 +324,10 @@
 - Verified the fix live on screen before releasing: capture series shows clear orange every cycle.
 - Released v0.4.9: privacy gate passed, signed universal build, DMG notarized (submission 8572539a, Accepted), stapled, Gatekeeper-accepted, installed to /Applications (reports 0.4.9, running).
 - Published https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.4.9 (SHA-256 b919767d...); downloaded asset re-verified. Cask bumped in main (817b587) and tap (446db4f). Checklist updated.
+
+## 2026-07-13: Fixed stuck-Thinking ghost Codex sessions
+
+- Root-caused John's "duplicate session" report: two identical "Permisight · Thinking" popover rows, one stuck for 7+ hours. Codex's `app-server` is a single long-lived process backing every conversation opened that day, so `SessionResolver`'s process-alive staleness check was always true and could never detect a session whose `stop` hook event never arrived.
+- Added a 30-minute time-based staleness cutoff for `thinking`/`usingTool` sessions (`SessionResolver.staleActiveDuration`), independent of process liveness. Pending permission prompts are exempt. 3 new regression tests; full Core suite 163/163 green.
+- Verified live: rebuilt Debug, quit the pre-fix running instance, relaunched the new build, and confirmed via popover screenshot that both `Permisight` rows now read "Idle" instead of one showing a false "Thinking" state.
+- Documented the shared-process behavior in `docs/integrations.md` ("One Process Backs Every Session") and logged the diagnostic pattern in `tasks/lessons.md` for future staleness-check work.

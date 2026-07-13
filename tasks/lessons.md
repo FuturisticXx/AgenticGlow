@@ -85,6 +85,14 @@ Repeated xcodebuild runs prompted John's keychain for the signing key on every b
 - After any repair that rewrites `~/.codex/hooks.json`, Codex (the ChatGPT app) must be fully quit (`Cmd+Q`, confirm no `codex`/`Codex Framework`/`ChatGPT` processes remain in `ps aux`) and relaunched before new hook events will fire. Simply closing session windows or restarting AgenticGlow is not enough — Codex is the one caching the config.
 - Multiple hook-consuming apps (AgenticGlow, Klarity, Sessionlet) share the same `hooks.json`/`settings.json` — when diagnosing, don't assume an empty-looking managed-entries block means all integrations are broken; check specifically for this app's marker, since another app's entries can be present and healthy while this one's are missing.
 
+## A shared long-lived process defeats process-liveness staleness checks (2026-07-13)
+
+**What happened:** John reported two identical-looking "Permisight · Thinking" Codex entries in the popover. One was a live session; the other was a conversation that finished 7+ hours earlier but never sent its `stop` hook event. `SessionResolver`'s only staleness signal for an active-phase session was "is `sourceProcessID` still alive," and Codex's `app-server` is a single process that backs every conversation you open that day — it never exits between tasks. So "process alive" was always true, and the orphaned session displayed as "Thinking" forever (would have persisted up to the 24h file-retention ceiling).
+
+**Fix:** Added a time-based fallback independent of process liveness: `thinking`/`usingTool` sessions roll over to Idle after 30 minutes without an update (`SessionResolver.staleActiveDuration`), regardless of whether the backing process is alive. `permission` phase is exempt — a pending approval can legitimately wait a long time for the user.
+
+**Rule:** When a staleness or liveness check keys off a process ID, verify first whether that process is dedicated to one session or shared across many (`ps -p <pid>` plus checking how many session files reference the same PID). A shared process makes "is it alive" meaningless as a per-session signal; you need a time-based or event-based fallback alongside it. Documented in `docs/integrations.md` under "One Process Backs Every Session."
+
 ## 2026-07-12: Screen captures at the lock screen show only wallpaper
 
 - `screencapture` at the macOS lock screen returns the displays with no menu bar, windows, or dock, so pixel verification silently sees nothing without any error. Before concluding an icon or window is missing, check lock state: `CGSessionCopyCurrentDictionary()` contains `CGSSessionScreenIsLocked = 1` while locked (the key disappears when unlocked). Poll for unlock and resume instead of debugging phantom rendering failures.

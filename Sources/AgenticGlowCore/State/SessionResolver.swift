@@ -4,6 +4,7 @@ public enum SessionResolver {
     public static let completionDisplayDuration: TimeInterval = 8
     public static let disconnectedDisplayDuration: TimeInterval = 15
     public static let unknownProcessExpiration: TimeInterval = 4 * 60 * 60
+    public static let staleActiveDuration: TimeInterval = 30 * 60
     public static let fileRetention: TimeInterval = 24 * 60 * 60
 
     public static func resolve(
@@ -43,6 +44,13 @@ public enum SessionResolver {
                     }
                     phase = .disconnected
                 } else if event.phase == .completed && age > completionDisplayDuration {
+                    memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
+                    phase = .idle
+                } else if [.thinking, .usingTool].contains(event.phase) && age > staleActiveDuration {
+                    // A single long-lived provider process (e.g. Codex's shared
+                    // app-server) backs many independent sessions, so "process is
+                    // alive" cannot detect a session whose turn finished without
+                    // sending its terminal event. Fall back to a time-based cutoff.
                     memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
                     phase = .idle
                 } else {

@@ -234,6 +234,54 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertEqual(resolved.activeProviders, [.claude, .codex])
     }
 
+    func testStuckThinkingWithLiveProcessBecomesIdleAfterStaleActiveDuration() {
+        let event = event(provider: .codex, session: "stuck", phase: .thinking, updated: 100)
+        var memory = ResolutionMemory()
+
+        let stillThinking = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration - 1),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+        XCTAssertEqual(stillThinking.sessions.first?.phase, .thinking)
+
+        let resolved = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 1),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+        XCTAssertEqual(resolved.sessions.first?.phase, .idle)
+        XCTAssertEqual(resolved.sessions.first?.label, "Idle")
+    }
+
+    func testStuckUsingToolWithLiveProcessBecomesIdleAfterStaleActiveDuration() {
+        let event = event(provider: .codex, session: "stuck-tool", phase: .usingTool, updated: 100)
+        var memory = ResolutionMemory()
+
+        let resolved = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 1),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+        XCTAssertEqual(resolved.sessions.first?.phase, .idle)
+    }
+
+    func testPendingPermissionWithLiveProcessNeverGoesStale() {
+        let event = event(provider: .codex, session: "waiting", phase: .permission, updated: 100)
+        var memory = ResolutionMemory()
+
+        let resolved = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 3_600),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+        XCTAssertEqual(resolved.sessions.first?.phase, .permission)
+    }
+
     func testUnknownProcessExpiresAfterFourHours() {
         var event = event(provider: .codex, session: "old", phase: .thinking, updated: 100)
         event = NormalizedEvent(

@@ -73,6 +73,16 @@ relaunch it before new hook events will fire. Restarting AgenticGlow or closing
 individual session windows is not sufficient. Codex will also prompt to re-trust
 the hooks (`/hooks`) after they change; accept the AgenticGlow entries.
 
+### One Process Backs Every Session
+The same `app-server` process reports `sourceProcessID` for every Codex
+conversation you have open or have had open that day; it does not exit between
+tasks. This means "the source process is alive" cannot detect a single session
+whose turn finished without its `stop` event reaching AgenticGlow. `SessionResolver`
+falls back to a 30-minute staleness cutoff for `thinking`/`usingTool` sessions
+(`SessionResolver.staleActiveDuration`) so an orphaned turn rolls over to Idle
+instead of displaying as active indefinitely. Pending permission prompts are
+exempt, since those can legitimately wait a long time for you.
+
 ## Helper Installation
 
 ### Destination Path
