@@ -358,8 +358,17 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             let bar = barAppearance
             let claude = ProviderColor.nsColor(for: providers[0], on: bar)
             let codex = ProviderColor.nsColor(for: providers[1], on: bar)
-            let phase = seconds.truncatingRemainder(dividingBy: 2 * Motion.crossfadePeriod)
-            let blueShare = (1 - cos(.pi * phase / Motion.crossfadePeriod)) / 2
+            // While dissolving, the sweep is synced to the dissolve cycle so
+            // the orange peak always lands mid-dwell where it is visible; the
+            // free-running sweep drifts against the 11s cycle and kept hiding
+            // its orange inside the yellow dwell.
+            let blueShare: Double
+            if dissolvesPermission {
+                blueShare = PermissionDissolve.sweepBlueShare(at: seconds)
+            } else {
+                let phase = seconds.truncatingRemainder(dividingBy: 2 * Motion.crossfadePeriod)
+                blueShare = (1 - cos(.pi * phase / Motion.crossfadePeriod)) / 2
+            }
             // Providers are Claude-then-Codex. The cosine dwells at its
             // extremes, so an uncapped sweep parks on full orange, which reads
             // as an alert. Cap the orange end and let blue saturate fully: the
