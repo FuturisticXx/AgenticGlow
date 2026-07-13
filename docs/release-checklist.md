@@ -148,6 +148,16 @@ Public release 0.4.7 evidence recorded 2026-07-12:
 - Released DMG SHA-256 `62792a04c0f526497037bd9925e68e81bc4b7f6f96783d6f2baa840c2ea625ea`; the downloaded GitHub asset matched the checksum and passed staple and Gatekeeper verification.
 - The official Homebrew tap was updated at commit `49a90e4`. Homebrew installed v0.4.7 into `/Applications`, the app passed signature and Gatekeeper checks, and it relaunched successfully.
 
+Public release 0.4.10 evidence recorded 2026-07-13:
+
+- Released from commit `fa40ce5` (tag `v0.4.10`): `thinking`/`usingTool` Codex and Claude sessions now expire to Idle after 30 minutes without an update (`SessionResolver.staleActiveDuration`), independent of whether the backing process is alive. Fixes a Codex conversation that finished without its `stop` hook event displaying as "Thinking" indefinitely, which made unrelated sessions in the same project look like duplicates.
+- The complete non-UI suite passed 247 tests with zero failures (163 core, 84 app); the privacy gate passed.
+- Both release gate variables were confirmed with the owner in chat before use, naming `AGENTICGLOW_NAME_CLEARED` and `AGENTICGLOW_RELEASE_BUILD_APPROVED` explicitly.
+- Signed universal `arm64`/`x86_64` build passed strict code-signature checks. Apple accepted notarization submission `6262e063-120b-40fd-a9aa-e6f4121e69a7`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Released DMG SHA-256 `6ba22e06a40cd291aa8b3c0bebc3804225fa608c4ced8d5e4249e6ba1288e1d2`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.4.10 checksum (main commit `36bc0e6`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `dabc1d2`).
+- The installed `/Applications` app was replaced with the notarized 0.4.10 build, relaunched, and its popover was screenshot-verified showing both previously-stuck sessions as Idle.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.
@@ -268,17 +278,17 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-12, latest: v0.4.9)
-  - v0.4.9 published from commit `6c9a4ab`
-  - Apple notarization submission `8572539a-1a3c-4dac-aa7a-44d1841775af` accepted
-  - Published DMG SHA-256: `b919767dbb94dfdeec966c7aaf2485a22fc25bd5f95547944e3d19b323471960`
+- [x] **GitHub release published** (date: 2026-07-13, latest: v0.4.10)
+  - v0.4.10 published from commit `fa40ce5`
+  - Apple notarization submission `6262e063-120b-40fd-a9aa-e6f4121e69a7` accepted
+  - Published DMG SHA-256: `6ba22e06a40cd291aa8b3c0bebc3804225fa608c4ced8d5e4249e6ba1288e1d2`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes document the dissolve-synced color sweep fix
+  - Release notes document the stuck-Thinking/UsingTool session staleness fix
 
-- [x] **Cask updated in the official tap** (date: 2026-07-12, version 0.4.9)
-  - Official tap updated to v0.4.9 at commit `446db4f`
-  - Installed v0.4.9 to /Applications from the notarized build; version, signature, and Gatekeeper verified; app relaunched
-  - `Cask/agenticglow.rb` regenerated with the v0.4.9 checksum and pushed on main (`817b587`)
+- [x] **Cask updated in the official tap** (date: 2026-07-13, version 0.4.10)
+  - Official tap updated to v0.4.10 at commit `dabc1d2`
+  - Installed v0.4.10 to /Applications from the notarized build; version, signature, and Gatekeeper verified; app relaunched
+  - `Cask/agenticglow.rb` regenerated with the v0.4.10 checksum and pushed on main (`36bc0e6`)
 
 - [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask

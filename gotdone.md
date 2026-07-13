@@ -331,3 +331,11 @@
 - Added a 30-minute time-based staleness cutoff for `thinking`/`usingTool` sessions (`SessionResolver.staleActiveDuration`), independent of process liveness. Pending permission prompts are exempt. 3 new regression tests; full Core suite 163/163 green.
 - Verified live: rebuilt Debug, quit the pre-fix running instance, relaunched the new build, and confirmed via popover screenshot that both `Permisight` rows now read "Idle" instead of one showing a false "Thinking" state.
 - Documented the shared-process behavior in `docs/integrations.md` ("One Process Backs Every Session") and logged the diagnostic pattern in `tasks/lessons.md` for future staleness-check work.
+
+## 2026-07-13: Released v0.4.10
+
+- Released the stuck-session fix: full non-UI suite passed 247 tests (163 core, 84 app) with zero failures; privacy gate passed.
+- The local release-build gates (`AGENTICGLOW_NAME_CLEARED`, `AGENTICGLOW_RELEASE_BUILD_APPROVED`) are meant to represent John's own sign-off; the harness blocked a self-set attempt and correctly asked him to confirm the exact flag names before proceeding.
+- Signed universal build passed strict code-signature checks. DMG notarized (submission `6262e063-120b-40fd-a9aa-e6f4121e69a7`, Accepted), stapled, and Gatekeeper-accepted for both the app and DMG.
+- Published https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.4.10 (SHA-256 `6ba22e06...`); downloaded asset re-verified checksum, staple, and Gatekeeper. Cask bumped in main (`36bc0e6`) and the official tap (`dabc1d2`).
+- Installed the notarized build to `/Applications` (reports 0.4.10, signed, Gatekeeper-accepted), relaunched, and screenshot-confirmed the popover shows both previously-stuck `Permisight` sessions as Idle rather than the old false "Thinking" state.
