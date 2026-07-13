@@ -317,3 +317,10 @@
 - Pushed main and tag v0.4.8 (release commit e31c8f6); CI green on both. Published https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.4.8 with the DMG (SHA-256 f54b105d...).
 - Downloaded the published asset back: checksum identical, staple valid, Gatekeeper accepts.
 - Cask bumped to 0.4.8 in the main repo (3f95328) and the official tap (120ca64). Release checklist post-release section updated to v0.4.8.
+
+## 2026-07-12: Released v0.4.9
+
+- Fixed the barely visible orange John reported: the 10s provider color sweep drifted against the 11s dissolve, parking its orange peak inside the yellow dwell. While dissolving, the sweep now locks to the dissolve cycle (one full blue-orange-blue pass per hexagon dwell, peak at center). Free-running sweep unchanged for the plain working state. 4 new sweep unit tests; 84 unit + 7 UI tests green.
+- Verified the fix live on screen before releasing: capture series shows clear orange every cycle.
+- Released v0.4.9: privacy gate passed, signed universal build, DMG notarized (submission 8572539a, Accepted), stapled, Gatekeeper-accepted, installed to /Applications (reports 0.4.9, running).
+- Published https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.4.9 (SHA-256 b919767d...); downloaded asset re-verified. Cask bumped in main (817b587) and tap (446db4f). Checklist updated.

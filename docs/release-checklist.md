@@ -268,17 +268,17 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-12, latest: v0.4.8)
-  - v0.4.8 published from commit `e31c8f6`; CI run `29219769154` passed
-  - Apple notarization submission `f91123d4-424f-4e96-86e5-33625d552caf` accepted
-  - Published DMG SHA-256: `f54b105d8674bf92d767d13a37735581ee3ad5ebeecdf4419d478695819aa24a`
+- [x] **GitHub release published** (date: 2026-07-12, latest: v0.4.9)
+  - v0.4.9 published from commit `6c9a4ab`
+  - Apple notarization submission `8572539a-1a3c-4dac-aa7a-44d1841775af` accepted
+  - Published DMG SHA-256: `b919767dbb94dfdeec966c7aaf2485a22fc25bd5f95547944e3d19b323471960`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes document the permission + working dissolve and hour-scale timers
+  - Release notes document the dissolve-synced color sweep fix
 
-- [x] **Cask updated in the official tap** (date: 2026-07-12, version 0.4.8)
-  - Official tap updated to v0.4.8 at commit `120ca64`
-  - Installed v0.4.8 to /Applications from the notarized build; version, signature, and Gatekeeper verified; app relaunched
-  - `Cask/agenticglow.rb` regenerated with the v0.4.8 checksum and pushed on main (`3f95328`)
+- [x] **Cask updated in the official tap** (date: 2026-07-12, version 0.4.9)
+  - Official tap updated to v0.4.9 at commit `446db4f`
+  - Installed v0.4.9 to /Applications from the notarized build; version, signature, and Gatekeeper verified; app relaunched
+  - `Cask/agenticglow.rb` regenerated with the v0.4.9 checksum and pushed on main (`817b587`)
 
 - [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask
