@@ -123,7 +123,11 @@ struct SessionListView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(model.resolved.sessions) { session in
-                        SessionRowView(session: session) { model.activate(session) }
+                        SessionRowView(
+                            session: session,
+                            action: { model.activate(session) },
+                            onRemove: { model.removeSession(session) }
+                        )
                     }
                 }
             }

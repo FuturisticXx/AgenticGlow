@@ -4,9 +4,10 @@ import SwiftUI
 struct SessionRowView: View {
     let session: SessionSnapshot
     let action: () -> Void
+    let onRemove: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        let row = Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .foregroundStyle(color)
@@ -33,6 +34,18 @@ struct SessionRowView: View {
         .accessibilityIdentifier("AgenticGlow.Session.\(session.id)")
         .accessibilityLabel(Self.accessibilityLabel(for: session))
         .accessibilityHint("Activates the source application")
+
+        if isRemovable {
+            row.contextMenu {
+                Button("Remove", systemImage: "xmark.circle", role: .destructive, action: onRemove)
+            }
+        } else {
+            row
+        }
+    }
+
+    private var isRemovable: Bool {
+        [.idle, .disconnected, .completed, .permission].contains(session.phase)
     }
 
     private var detail: String {
