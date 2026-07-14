@@ -333,6 +333,42 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertTrue(memory.hiddenRecords.isEmpty)
     }
 
+    func testHiddenDisconnectedSessionStaysExcludedAndRevealsOnNewerEvent() {
+        let deadEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 100)
+        var memory = ResolutionMemory()
+
+        let disconnected = SessionResolver.resolve(
+            events: [deadEvent],
+            now: Date(timeIntervalSince1970: 100),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertEqual(disconnected.sessions.first?.phase, .disconnected)
+
+        memory.hide(
+            SessionKey(provider: .claude, sessionID: "dead"),
+            eventUpdatedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        let hidden = SessionResolver.resolve(
+            events: [deadEvent],
+            now: Date(timeIntervalSince1970: 105),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertTrue(hidden.sessions.isEmpty)
+
+        let newerEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 200)
+        let revealed = SessionResolver.resolve(
+            events: [newerEvent],
+            now: Date(timeIntervalSince1970: 205),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+        XCTAssertEqual(revealed.sessions.first?.sessionID, "dead")
+        XCTAssertEqual(revealed.sessions.first?.phase, .thinking)
+    }
+
     func testUnknownProcessExpiresAfterFourHours() {
         var event = event(provider: .codex, session: "old", phase: .thinking, updated: 100)
         event = NormalizedEvent(
