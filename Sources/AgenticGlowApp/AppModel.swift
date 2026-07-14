@@ -141,6 +141,14 @@ final class AppModel {
         activator.activate(bundleIdentifier: session.sourceBundleID)
     }
 
+    func removeSession(_ session: SessionSnapshot) {
+        resolutionMemory.hide(
+            SessionKey(provider: session.provider, sessionID: session.sessionID),
+            eventUpdatedAt: session.updatedAt
+        )
+        refresh()
+    }
+
     func allowanceState(for provider: AgentProvider) -> AllowanceAvailability {
         allowanceStates[provider] ?? .off
     }

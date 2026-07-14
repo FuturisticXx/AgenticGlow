@@ -88,6 +88,26 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(activator.bundleIdentifiers, ["com.anthropic.claudefordesktop"])
     }
 
+    func testRemoveSessionHidesItFromResolvedSessions() {
+        let store = InMemorySessionStore(events: [
+            .testEvent(provider: .codex, phase: .permission, turnStartedAt: nil)
+        ])
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            now: { Date(timeIntervalSince1970: 120) }
+        )
+        model.refresh()
+        XCTAssertEqual(model.resolved.sessions.count, 1)
+        let session = model.resolved.sessions[0]
+
+        model.removeSession(session)
+
+        XCTAssertTrue(model.resolved.sessions.isEmpty)
+        XCTAssertEqual(store.events.count, 1, "removal must not touch the underlying session file")
+    }
+
     func testRefreshReportsStoreLoadFailure() {
         let model = AppModel(
             store: FailingSessionStore(),
