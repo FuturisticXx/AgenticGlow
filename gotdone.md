@@ -350,3 +350,12 @@
 - Live-verified against the `signals` UI-test fixture (one permission row, one thinking row) via direct accessibility scripting, since the computer-use tool can't grant screen access to a menu-bar-only (LSUIElement) app: right-clicking the permission row showed a single red "Remove" item; clicking it removed the row instantly and the popover header updated from "1 agent needs you" to "Codex working". The thinking row's button exposed only `AXScrollToVisible, AXPress` at the accessibility level — no `AXShowMenu` action at all, confirmed twice independently, proving no context menu is attached (not just visually empty).
 - Full non-UI suite: 166 Core + 85 App tests, 0 failures.
 - Not pushed yet — commits are local on `main`, pending final whole-branch review.
+
+## 2026-07-14: Diagnosed "Claude sessions showing blue" as a stale duplicate install, not a code bug
+
+- John reported Claude session rows rendering with Codex's blue color. Verified `SessionRowView.color`, `ProviderColor`, `NormalizedEvent` decoding, and `SessionResolver` were all correct by reading each directly, then used the row's live `AXIdentifier` (bakes in `session.id` = `provider:sessionID`) via the accessibility API to prove the underlying data was genuinely `provider: claude` — ruling out a data bug.
+- Root-caused via `ps aux`: `/Applications/AgenticGlow-0.2.0.app` (built 2026-07-05) was still running. Per-provider row coloring shipped 2026-07-09 (`34b81db`), four days later, so the old build predates the feature and renders every active row in one default color regardless of provider. Confirmed with `git merge-base --is-ancestor`.
+- Also found a stray Login Item pointing at a Debug build path in Xcode's DerivedData instead of either `/Applications` copy.
+- Cleanup: quit the v0.2.0 process, moved `/Applications/AgenticGlow-0.2.0.app` to Trash, repointed the Login Item at `/Applications/AgenticGlow.app` (0.4.10), relaunched the real app.
+- Verified the fix with the existing `both-working` UI-test fixture (one Claude thinking session, one Codex using-tool session) with no duplicate process running: Claude renders orange, Codex renders blue, correctly distinct.
+- Logged the diagnostic pattern in `tasks/lessons.md` — check for a duplicate running instance and stale Login Items before chasing a "code is right but screen is wrong" bug further into source.
