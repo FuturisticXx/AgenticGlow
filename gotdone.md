@@ -339,3 +339,14 @@
 - Signed universal build passed strict code-signature checks. DMG notarized (submission `6262e063-120b-40fd-a9aa-e6f4121e69a7`, Accepted), stapled, and Gatekeeper-accepted for both the app and DMG.
 - Published https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.4.10 (SHA-256 `6ba22e06...`); downloaded asset re-verified checksum, staple, and Gatekeeper. Cask bumped in main (`36bc0e6`) and the official tap (`dabc1d2`).
 - Installed the notarized build to `/Applications` (reports 0.4.10, signed, Gatekeeper-accepted), relaunched, and screenshot-confirmed the popover shows both previously-stuck `Permisight` sessions as Idle rather than the old false "Thinking" state.
+
+## 2026-07-13: Added right-click Remove for stale sessions
+
+- Brainstormed and spec'd a client-side "Remove" action for stale session rows (`docs/superpowers/specs/2026-07-13-session-remove-client-side-hide-design.md`): right-click `.idle`/`.disconnected`/`.completed`/`.permission` rows to dismiss them; `.thinking`/`.usingTool` rows get no menu since they already self-heal via the 30-minute staleness timeout. Fully client-side — never touches `SessionStateStore` or the on-disk session file; a hidden session reappears silently the instant a newer event supersedes it, and hides don't survive an AgenticGlow relaunch.
+- Executed via subagent-driven-development, 3 tasks, direct commits to `main` (no feature branch, matching this repo's established convention):
+  - `ResolutionMemory.hide(_:eventUpdatedAt:)` + `SessionResolver` exclude/reveal/prune logic (`d22f03a`) — 3 new tests, task review clean.
+  - `AppModel.removeSession(_:)` (`321dc92`) — 1 new test confirming the underlying store file is genuinely untouched, task review clean.
+  - Right-click `.contextMenu` on `SessionRowView` gated by `isRemovable`, wired through `SessionListView` (`abbc728`) — task review confirmed the `.thinking` row has no `.contextMenu` attached at all (not an empty one), clean.
+- Live-verified against the `signals` UI-test fixture (one permission row, one thinking row) via direct accessibility scripting, since the computer-use tool can't grant screen access to a menu-bar-only (LSUIElement) app: right-clicking the permission row showed a single red "Remove" item; clicking it removed the row instantly and the popover header updated from "1 agent needs you" to "Codex working". The thinking row's button exposed only `AXScrollToVisible, AXPress` at the accessibility level — no `AXShowMenu` action at all, confirmed twice independently, proving no context menu is attached (not just visually empty).
+- Full non-UI suite: 166 Core + 85 App tests, 0 failures.
+- Not pushed yet — commits are local on `main`, pending final whole-branch review.
