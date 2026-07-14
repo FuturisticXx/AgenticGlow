@@ -19,10 +19,20 @@ public enum SessionResolver {
         memory.disconnectedRecords = memory.disconnectedRecords.filter {
             retainedKeys.contains($0.key)
         }
+        memory.hiddenRecords = memory.hiddenRecords.filter {
+            retainedKeys.contains($0.key)
+        }
 
         let snapshots = events.compactMap { event -> SessionSnapshot? in
             let age = now.timeIntervalSince(event.updatedAt)
             if age > fileRetention { return nil }
+
+            if let hidden = memory.hiddenRecords[SessionKey(event)] {
+                if hidden.eventUpdatedAt == event.updatedAt {
+                    return nil
+                }
+                memory.hiddenRecords.removeValue(forKey: SessionKey(event))
+            }
 
             let phase: SessionPhase
             if let pid = event.sourceProcessID {

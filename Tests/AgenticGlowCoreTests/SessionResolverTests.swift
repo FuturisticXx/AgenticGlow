@@ -282,6 +282,57 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertEqual(resolved.sessions.first?.phase, .permission)
     }
 
+    func testHiddenSessionIsExcludedFromResolvedSessions() {
+        let ev = event(provider: .codex, session: "stale", phase: .permission, updated: 100)
+        var memory = ResolutionMemory()
+        memory.hide(
+            SessionKey(provider: .codex, sessionID: "stale"),
+            eventUpdatedAt: Date(timeIntervalSince1970: 100)
+        )
+
+        let resolved = SessionResolver.resolve(
+            events: [ev],
+            now: Date(timeIntervalSince1970: 105),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+
+        XCTAssertTrue(resolved.sessions.isEmpty)
+    }
+
+    func testHiddenSessionReappearsWhenNewerEventArrives() {
+        let key = SessionKey(provider: .codex, sessionID: "stale")
+        var memory = ResolutionMemory()
+        memory.hide(key, eventUpdatedAt: Date(timeIntervalSince1970: 100))
+
+        let newerEvent = event(provider: .codex, session: "stale", phase: .thinking, updated: 200)
+        let resolved = SessionResolver.resolve(
+            events: [newerEvent],
+            now: Date(timeIntervalSince1970: 205),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+
+        XCTAssertEqual(resolved.sessions.first?.sessionID, "stale")
+        XCTAssertEqual(resolved.sessions.first?.phase, .thinking)
+    }
+
+    func testHiddenRecordPrunedWhenKeyExpiresFromRetention() {
+        let key = SessionKey(provider: .codex, sessionID: "stale")
+        var memory = ResolutionMemory()
+        memory.hide(key, eventUpdatedAt: Date(timeIntervalSince1970: 100))
+        let ev = event(provider: .codex, session: "stale", phase: .permission, updated: 100)
+
+        _ = SessionResolver.resolve(
+            events: [ev],
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.fileRetention + 1),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+
+        XCTAssertTrue(memory.hiddenRecords.isEmpty)
+    }
+
     func testUnknownProcessExpiresAfterFourHours() {
         var event = event(provider: .codex, session: "old", phase: .thinking, updated: 100)
         event = NormalizedEvent(

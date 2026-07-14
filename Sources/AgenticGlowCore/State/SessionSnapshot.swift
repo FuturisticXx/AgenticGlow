@@ -28,8 +28,20 @@ struct DisconnectionRecord: Sendable {
     let detectedAt: Date
 }
 
+struct HiddenRecord: Sendable {
+    let eventUpdatedAt: Date
+}
+
 public struct ResolutionMemory: Sendable {
     var disconnectedRecords: [SessionKey: DisconnectionRecord] = [:]
+    var hiddenRecords: [SessionKey: HiddenRecord] = [:]
 
     public init() {}
+
+    /// Records a client-side hide for `key`. The session stays excluded from
+    /// resolved sessions until a newer event (a different `updatedAt`)
+    /// arrives for the same key. Never touches the underlying session file.
+    public mutating func hide(_ key: SessionKey, eventUpdatedAt: Date) {
+        hiddenRecords[key] = HiddenRecord(eventUpdatedAt: eventUpdatedAt)
+    }
 }
