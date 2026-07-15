@@ -1,5 +1,13 @@
 # Got done
 
+## 2026-07-14 - Allowance low-window warning shipped
+
+- Popover now visually highlights whichever allowance window (current or weekly, per provider) triggered the menu bar's low-usage badge: the caption swaps to an orange warning triangle + orange semibold text instead of plain gray, while bar/pill fill colors stay in the provider's own color.
+- Two-task build: `AllowancePresentation.currentIsLow`/`.weeklyIsLow` flags (with test coverage) landed first, then `AllowanceSectionView.swift` consumed them via a new `allowanceCaption(_:isLow:)` helper.
+- Files changed: `Sources/AgenticGlowApp/MenuBar/AllowancePresentation.swift`, `Sources/AgenticGlowApp/MenuBar/AllowanceSectionView.swift`, `Tests/AgenticGlowAppTests/AllowancePresentationTests.swift`.
+- Build (`xcodebuild build`) succeeded; full unit suite passed 88/88 with 0 failures.
+- Live-verified with the `signals` UI-test fixture (Codex forced to 8% current / 5% weekly, both below the 10% threshold) on a Debug build launched via `--ui-test-fixture signals`. Screenshot of the open popover confirmed both Codex captions render with the orange warning triangle and orange text, while both bar fills stayed Codex blue. Display note: the menu bar icon's orange badge dot and the popover's warning color only rendered at full saturation on the active display (BenQ, Display 3, matching macOS's known inactive-display dimming); the debug instance was quit and the real `/Applications/AgenticGlow.app` relaunched afterward, confirmed as the sole running instance.
+
 ## 2026-07-11 - Codex workspace session reporting repaired
 
 - Registered and opened the canonical `/Volumes/Liquid/2DaMax Development/AgenticGlow` project without recreating the deleted Klarity path or editing Codex private state.
