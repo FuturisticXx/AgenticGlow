@@ -359,3 +359,9 @@
 - Cleanup: quit the v0.2.0 process, moved `/Applications/AgenticGlow-0.2.0.app` to Trash, repointed the Login Item at `/Applications/AgenticGlow.app` (0.4.10), relaunched the real app.
 - Verified the fix with the existing `both-working` UI-test fixture (one Claude thinking session, one Codex using-tool session) with no duplicate process running: Claude renders orange, Codex renders blue, correctly distinct.
 - Logged the diagnostic pattern in `tasks/lessons.md` — check for a duplicate running instance and stale Login Items before chasing a "code is right but screen is wrong" bug further into source.
+
+## 2026-07-14: Verified Remove live in the app; confirmed the Codex outage banner is real
+
+- John asked to verify the right-click Remove feature live and flagged the "Codex: Partial System Outage" banner in the popover. Checked `https://status.openai.com/api/v2/status.json` directly — it currently reports `indicator: "major"`, `description: "Partial System Outage"`, confirming AgenticGlow is correctly relaying a real OpenAI outage (see `StatusPageClient.swift`'s major/critical-only surfacing rule), not a bug.
+- Live-verified Remove against a rebuilt Debug build with the `permission` UI-test fixture. Hit the same duplicate-instance AppleScript ambiguity from the color-bug investigation, this time self-inflicted by running the fixture build alongside production for testing — quit production, tested against the isolated fixture, then relaunched production. Right-clicking the removable "Example" (Claude, permission) row and clicking "Remove" via the accessibility API hid it instantly; popover header updated live from "1 agent needs you" to "Codex working."
+- Logged the dual-instance testing gotcha in `tasks/lessons.md`.
