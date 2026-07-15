@@ -79,9 +79,7 @@ private struct ProviderAllowanceRow: View {
             tint: tint
         )
         .accessibilityLabel(presentation.accessibilityCurrent)
-        Text(presentation.currentDetail)
-            .font(.caption)
-            .foregroundStyle(.secondary)
+        allowanceCaption(presentation.currentDetail, isLow: presentation.currentIsLow)
         if let weeklyProgress = presentation.weeklyProgress {
             AllowanceBar(
                 value: weeklyProgress,
@@ -89,9 +87,7 @@ private struct ProviderAllowanceRow: View {
                 tint: tint
             )
             .accessibilityLabel(presentation.accessibilityWeekly ?? "Weekly allowance")
-            Text(weeklyCaption(presentation))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            allowanceCaption(weeklyCaption(presentation), isLow: presentation.weeklyIsLow)
         }
         if freshness == .stale {
             Text("Updated \(allowance.fetchedAt.formatted(.relative(presentation: .named)))")
@@ -105,6 +101,19 @@ private struct ProviderAllowanceRow: View {
             return "Week · resets \(reset)"
         }
         return "Week"
+    }
+
+    @ViewBuilder
+    private func allowanceCaption(_ text: String, isLow: Bool) -> some View {
+        if isLow {
+            Label(text, systemImage: "exclamationmark.triangle.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color(nsColor: .systemOrange))
+        } else {
+            Text(text)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var tint: Color {
