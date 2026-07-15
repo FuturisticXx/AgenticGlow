@@ -39,4 +39,58 @@ final class AllowancePresentationTests: XCTestCase {
         XCTAssertEqual(presentation.currentProgress, 0.39, accuracy: 0.001)
         XCTAssertEqual(presentation.weeklyValue, "Week 80% · 20% used")
     }
+
+    func testCurrentWindowBelowThresholdIsLowAndSpokenAloud() {
+        let allowance = ProviderAllowance(
+            provider: .codex,
+            currentWindowLabel: "5h",
+            currentPercentUsed: 91,
+            currentResetAt: nil,
+            weeklyPercentUsed: 50,
+            weeklyResetAt: nil,
+            fetchedAt: Date()
+        )
+        let presentation = AllowancePresentation(allowance: allowance, now: Date())
+
+        XCTAssertTrue(presentation.currentIsLow)
+        XCTAssertFalse(presentation.weeklyIsLow)
+        XCTAssertTrue(presentation.accessibilityCurrent.contains("low"))
+        XCTAssertFalse(presentation.accessibilityWeekly!.contains("low"))
+    }
+
+    func testExactThresholdIsNotLowInPresentation() {
+        let allowance = ProviderAllowance(
+            provider: .codex,
+            currentWindowLabel: "5h",
+            currentPercentUsed: 90,
+            currentResetAt: nil,
+            weeklyPercentUsed: 90,
+            weeklyResetAt: nil,
+            fetchedAt: Date()
+        )
+        let presentation = AllowancePresentation(allowance: allowance, now: Date())
+
+        XCTAssertFalse(presentation.currentIsLow)
+        XCTAssertFalse(presentation.weeklyIsLow)
+        XCTAssertFalse(presentation.accessibilityCurrent.contains("low"))
+        XCTAssertFalse(presentation.accessibilityWeekly!.contains("low"))
+    }
+
+    func testWeeklyWindowBelowThresholdIsLowIndependentlyOfCurrent() {
+        let allowance = ProviderAllowance(
+            provider: .codex,
+            currentWindowLabel: "5h",
+            currentPercentUsed: 50,
+            currentResetAt: nil,
+            weeklyPercentUsed: 95,
+            weeklyResetAt: nil,
+            fetchedAt: Date()
+        )
+        let presentation = AllowancePresentation(allowance: allowance, now: Date())
+
+        XCTAssertFalse(presentation.currentIsLow)
+        XCTAssertTrue(presentation.weeklyIsLow)
+        XCTAssertFalse(presentation.accessibilityCurrent.contains("low"))
+        XCTAssertTrue(presentation.accessibilityWeekly!.contains("low"))
+    }
 }

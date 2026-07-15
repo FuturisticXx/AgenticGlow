@@ -14,6 +14,8 @@ struct AllowancePresentation {
     let weeklyProgress: Double?
     let accessibilityCurrent: String
     let accessibilityWeekly: String?
+    let currentIsLow: Bool
+    let weeklyIsLow: Bool
 
     init(allowance: ProviderAllowance, now: Date) {
         currentLeftPercent = allowance.currentPercentLeft.map(Self.percent)
@@ -21,6 +23,10 @@ struct AllowancePresentation {
         weeklyLeftPercent = allowance.weeklyPercentLeft.map(Self.percent)
         weeklyUsedPercent = allowance.weeklyPercentUsed.map(Self.percent)
         weeklyResetValue = allowance.weeklyResetAt.map(Self.weeklyReset)
+        let currentLowValue = (allowance.currentPercentLeft ?? .infinity) < AllowanceWarning.thresholdPercentLeft
+        let weeklyLowValue = (allowance.weeklyPercentLeft ?? .infinity) < AllowanceWarning.thresholdPercentLeft
+        currentIsLow = currentLowValue
+        weeklyIsLow = weeklyLowValue
         let currentLeft = currentLeftPercent ?? "Unavailable"
         let currentUsed = currentUsedPercent
         if allowance.provider == .claude, let currentUsed {
@@ -54,7 +60,8 @@ struct AllowancePresentation {
             window: allowance.currentWindowLabel,
             left: allowance.currentPercentLeft,
             used: allowance.currentPercentUsed,
-            reset: allowance.currentResetAt
+            reset: allowance.currentResetAt,
+            isLow: currentLowValue
         )
         accessibilityWeekly = allowance.weeklyPercentLeft.map {
             Self.spoken(
@@ -62,7 +69,8 @@ struct AllowancePresentation {
                 window: "weekly",
                 left: $0,
                 used: allowance.weeklyPercentUsed,
-                reset: allowance.weeklyResetAt
+                reset: allowance.weeklyResetAt,
+                isLow: weeklyLowValue
             )
         }
     }
@@ -88,7 +96,8 @@ struct AllowancePresentation {
         window: String,
         left: Double?,
         used: Double?,
-        reset: Date?
+        reset: Date?,
+        isLow: Bool
     ) -> String {
         var parts = [provider == .codex ? "Codex" : "Claude", window]
         if let left { parts.append("\(percent(left)) percent left") }
@@ -96,6 +105,7 @@ struct AllowancePresentation {
         if let reset {
             parts.append("resets \(reset.formatted(date: .abbreviated, time: .shortened))")
         }
+        if isLow { parts.append("low") }
         return parts.joined(separator: ", ")
     }
 }
