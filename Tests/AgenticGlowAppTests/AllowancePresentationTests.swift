@@ -93,4 +93,40 @@ final class AllowancePresentationTests: XCTestCase {
         XCTAssertFalse(presentation.accessibilityCurrent.contains("low"))
         XCTAssertTrue(presentation.accessibilityWeekly!.contains("low"))
     }
+
+    func testBothWindowsBelowThresholdAreLowSimultaneously() {
+        let allowance = ProviderAllowance(
+            provider: .codex,
+            currentWindowLabel: "5h",
+            currentPercentUsed: 92,
+            currentResetAt: nil,
+            weeklyPercentUsed: 95,
+            weeklyResetAt: nil,
+            fetchedAt: Date()
+        )
+        let presentation = AllowancePresentation(allowance: allowance, now: Date())
+
+        XCTAssertTrue(presentation.currentIsLow)
+        XCTAssertTrue(presentation.weeklyIsLow)
+        XCTAssertTrue(presentation.accessibilityCurrent.contains("low"))
+        XCTAssertTrue(presentation.accessibilityWeekly!.contains("low"))
+    }
+
+    func testMissingPercentagesAreNotLow() {
+        let allowance = ProviderAllowance(
+            provider: .codex,
+            currentWindowLabel: "5h",
+            currentPercentUsed: nil,
+            currentResetAt: nil,
+            weeklyPercentUsed: nil,
+            weeklyResetAt: nil,
+            fetchedAt: Date()
+        )
+        let presentation = AllowancePresentation(allowance: allowance, now: Date())
+
+        XCTAssertFalse(presentation.currentIsLow)
+        XCTAssertFalse(presentation.weeklyIsLow)
+        XCTAssertFalse(presentation.accessibilityCurrent.contains("low"))
+        XCTAssertNil(presentation.accessibilityWeekly)
+    }
 }
