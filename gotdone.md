@@ -1,5 +1,13 @@
 # Got done
 
+## 2026-07-15 - Released v0.4.11
+
+- Released the allowance low-window warning: full non-UI suite passed 257 tests (167 core, 90 app) with zero failures; privacy gate passed.
+- Both release gate variables (`AGENTICGLOW_NAME_CLEARED`, `AGENTICGLOW_RELEASE_BUILD_APPROVED`) were confirmed with the owner in chat before use, per the established pattern.
+- Signed universal build passed strict code-signature checks. DMG notarized (submission `05999765-8e15-49fe-ab08-acf86e60bf30`, Accepted), stapled, and Gatekeeper-accepted for both the app and DMG.
+- Published https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.4.11 (SHA-256 `2f319a01...`); downloaded asset re-verified checksum, staple, and Gatekeeper. Cask bumped in main (`e10cab8`) and the official tap (`a1c2a7b`).
+- Installed the notarized build to `/Applications` (reports 0.4.11, signed, Gatekeeper-accepted) and relaunched.
+
 ## 2026-07-14 - Allowance low-window warning shipped
 
 - Popover now visually highlights whichever allowance window (current or weekly, per provider) triggered the menu bar's low-usage badge: the caption swaps to an orange warning triangle + orange semibold text instead of plain gray, while bar/pill fill colors stay in the provider's own color.

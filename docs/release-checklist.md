@@ -158,6 +158,18 @@ Public release 0.4.10 evidence recorded 2026-07-13:
 - `Cask/agenticglow.rb` was regenerated with the 0.4.10 checksum (main commit `36bc0e6`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `dabc1d2`).
 - The installed `/Applications` app was replaced with the notarized 0.4.10 build, relaunched, and its popover was screenshot-verified showing both previously-stuck sessions as Idle.
 
+Public release 0.4.11 evidence recorded 2026-07-15:
+
+- Released from commit `e10cab8` (tag `v0.4.11`): the popover now highlights whichever allowance window (current or weekly, per provider) triggered the menu bar's low-usage badge with an orange warning triangle and orange caption text, reusing the badge's own `NSColor.systemOrange`. Provider bar/pill coloring is unchanged.
+- Brainstormed, spec'd, and planned via the standard workflow; implemented via subagent-driven development across two independently-reviewed tasks, plus a final whole-branch review (opus, READY with non-blocking notes). Two optional test-coverage gaps it flagged (both-windows-low, missing-percentage) were closed directly.
+- The complete non-UI suite passed 257 tests with zero failures (167 core, 90 app); the privacy gate passed.
+- Live-verified with the existing `signals` UI-test fixture (which already drives Codex's allowance below the 10% threshold on both windows) via direct accessibility-API screenshot verification: both Codex captions rendered the warning triangle and orange text, bar/pill colors stayed Codex blue.
+- Both release gate variables were confirmed with the owner in chat before use, naming `AGENTICGLOW_NAME_CLEARED` and `AGENTICGLOW_RELEASE_BUILD_APPROVED` explicitly.
+- Signed universal `arm64`/`x86_64` build passed strict code-signature checks. Apple accepted notarization submission `05999765-8e15-49fe-ab08-acf86e60bf30`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Released DMG SHA-256 `2f319a019c2281c74bec8f54d4b9ce121dffff30bbbcb0b6656431f8155c0983`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.4.11 checksum (main commit `e10cab8`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `a1c2a7b`).
+- The installed `/Applications` app was replaced with the notarized 0.4.11 build, relaunched, and confirmed running with a valid Gatekeeper-accepted signature.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.
@@ -278,17 +290,17 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-13, latest: v0.4.10)
-  - v0.4.10 published from commit `fa40ce5`
-  - Apple notarization submission `6262e063-120b-40fd-a9aa-e6f4121e69a7` accepted
-  - Published DMG SHA-256: `6ba22e06a40cd291aa8b3c0bebc3804225fa608c4ced8d5e4249e6ba1288e1d2`
+- [x] **GitHub release published** (date: 2026-07-15, latest: v0.4.11)
+  - v0.4.11 published from commit `e10cab8`
+  - Apple notarization submission `05999765-8e15-49fe-ab08-acf86e60bf30` accepted
+  - Published DMG SHA-256: `2f319a019c2281c74bec8f54d4b9ce121dffff30bbbcb0b6656431f8155c0983`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes document the stuck-Thinking/UsingTool session staleness fix
+  - Release notes document the allowance low-window warning
 
-- [x] **Cask updated in the official tap** (date: 2026-07-13, version 0.4.10)
-  - Official tap updated to v0.4.10 at commit `dabc1d2`
-  - Installed v0.4.10 to /Applications from the notarized build; version, signature, and Gatekeeper verified; app relaunched
-  - `Cask/agenticglow.rb` regenerated with the v0.4.10 checksum and pushed on main (`36bc0e6`)
+- [x] **Cask updated in the official tap** (date: 2026-07-15, version 0.4.11)
+  - Official tap updated to v0.4.11 at commit `a1c2a7b`
+  - Installed v0.4.11 to /Applications from the notarized build; version, signature, and Gatekeeper verified; app relaunched
+  - `Cask/agenticglow.rb` regenerated with the v0.4.11 checksum and pushed on main (`e10cab8`)
 
 - [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask
