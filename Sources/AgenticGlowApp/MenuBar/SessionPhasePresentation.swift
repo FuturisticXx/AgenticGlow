@@ -26,6 +26,7 @@ enum SessionPhasePresentation {
             case .permission: "exclamationmark.circle.fill"
             case .completed: "checkmark.circle.fill"
             case .disconnected: "bolt.slash.circle"
+            case .failed: "xmark.circle.fill"
             case .idle: "circle"
             case .thinking, .usingTool: "sparkle"
             }
@@ -34,6 +35,7 @@ enum SessionPhasePresentation {
             case .permission: "exclamationmark.circle.fill"
             case .completed: "checkmark.circle.fill"
             case .disconnected: "bolt.slash.circle"
+            case .failed: "xmark.circle.fill"
             case .idle, .thinking, .usingTool: "circle.hexagongrid"
             }
         }
@@ -48,6 +50,7 @@ enum SessionPhasePresentation {
         case .permission: .systemYellow
         case .completed: .systemGreen
         case .disconnected: .secondaryLabelColor
+        case .failed: .systemRed
         case .idle: .labelColor
         case .thinking, .usingTool: .controlAccentColor
         }

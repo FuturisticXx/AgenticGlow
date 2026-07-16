@@ -35,7 +35,7 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertEqual(resolved.sessions.first?.phase, .idle)
     }
 
-    func testDeadProcessBecomesDisconnected() {
+    func testDeadProcessMidTaskBecomesFailed() {
         let event = event(provider: .claude, session: "dead", phase: .thinking, updated: 100)
         var memory = ResolutionMemory()
         let resolved = SessionResolver.resolve(
@@ -44,7 +44,7 @@ final class SessionResolverTests: XCTestCase {
             memory: &memory,
             isProcessAlive: { _, _ in false }
         )
-        XCTAssertEqual(resolved.sessions.first?.phase, .disconnected)
+        XCTAssertEqual(resolved.sessions.first?.phase, .failed)
 
         let expired = SessionResolver.resolve(
             events: [event],
@@ -53,6 +53,86 @@ final class SessionResolverTests: XCTestCase {
             isProcessAlive: { _, _ in false }
         )
         XCTAssertTrue(expired.sessions.isEmpty)
+    }
+
+    func testDeadProcessMidToolUseBecomesFailed() {
+        let event = event(provider: .codex, session: "dead-tool", phase: .usingTool, updated: 100)
+        var memory = ResolutionMemory()
+        let resolved = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 1_000),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertEqual(resolved.sessions.first?.phase, .failed)
+    }
+
+    func testDeadProcessAfterCompletionStaysDisconnected() {
+        let event = event(provider: .claude, session: "done", phase: .completed, updated: 100)
+        var memory = ResolutionMemory()
+        let resolved = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 1_000),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertEqual(resolved.sessions.first?.phase, .disconnected)
+    }
+
+    func testDeadProcessFromIdleStaysDisconnected() {
+        let event = event(provider: .claude, session: "idle", phase: .idle, updated: 100)
+        var memory = ResolutionMemory()
+        let resolved = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 1_000),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertEqual(resolved.sessions.first?.phase, .disconnected)
+    }
+
+    func testFailedSessionPreservesLastActionLabel() {
+        let event = event(provider: .codex, session: "dead-tool", phase: .usingTool, updated: 100)
+        var memory = ResolutionMemory()
+        let resolved = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 1_000),
+            memory: &memory,
+            isProcessAlive: { _, _ in false }
+        )
+        XCTAssertEqual(resolved.sessions.first?.label, "usingTool")
+    }
+
+    func testFailedOutranksCompletedInDominantPhase() {
+        let events = [
+            deadPidEvent(pid: 43, provider: .claude, session: "failed", phase: .thinking, updated: 998),
+            event(provider: .codex, session: "done", phase: .completed, updated: 997)
+        ]
+        var memory = ResolutionMemory()
+        let resolved = SessionResolver.resolve(
+            events: events,
+            now: Date(timeIntervalSince1970: 1_000),
+            memory: &memory,
+            isProcessAlive: { pid, _ in pid == 42 }
+        )
+        XCTAssertEqual(resolved.dominantPhase, .failed)
+        XCTAssertEqual(resolved.sessions.map(\.sessionID), ["failed", "done"])
+    }
+
+    func testActiveSessionOutranksFailedInDominantPhase() {
+        let events = [
+            event(provider: .codex, session: "working", phase: .usingTool, updated: 999),
+            deadPidEvent(pid: 43, provider: .claude, session: "failed", phase: .thinking, updated: 998)
+        ]
+        var memory = ResolutionMemory()
+        let resolved = SessionResolver.resolve(
+            events: events,
+            now: Date(timeIntervalSince1970: 1_000),
+            memory: &memory,
+            isProcessAlive: { pid, _ in pid == 42 }
+        )
+        XCTAssertEqual(resolved.dominantPhase, .usingTool)
+        XCTAssertEqual(resolved.sessions.map(\.sessionID), ["working", "failed"])
     }
 
     func testExpiredDeadEventStaysHiddenOnRepeatedResolution() {
@@ -83,7 +163,7 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertTrue(repeated.sessions.isEmpty)
     }
 
-    func testNewDeadEventWithSameKeyGetsFreshDisconnectedWindowAfterOlderEventExpires() {
+    func testNewDeadEventWithSameKeyGetsFreshFailedWindowAfterOlderEventExpires() {
         let oldEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 100)
         let newEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 1_005)
         var memory = ResolutionMemory()
@@ -94,7 +174,7 @@ final class SessionResolverTests: XCTestCase {
             memory: &memory,
             isProcessAlive: { _, _ in false }
         )
-        XCTAssertEqual(initial.sessions.first?.phase, .disconnected)
+        XCTAssertEqual(initial.sessions.first?.phase, .failed)
 
         let expired = SessionResolver.resolve(
             events: [oldEvent],
@@ -110,7 +190,7 @@ final class SessionResolverTests: XCTestCase {
             memory: &memory,
             isProcessAlive: { _, _ in false }
         )
-        XCTAssertEqual(refreshed.sessions.first?.phase, .disconnected)
+        XCTAssertEqual(refreshed.sessions.first?.phase, .failed)
 
         let stillVisible = SessionResolver.resolve(
             events: [newEvent],
@@ -118,7 +198,7 @@ final class SessionResolverTests: XCTestCase {
             memory: &memory,
             isProcessAlive: { _, _ in false }
         )
-        XCTAssertEqual(stillVisible.sessions.first?.phase, .disconnected)
+        XCTAssertEqual(stillVisible.sessions.first?.phase, .failed)
 
         let reExpired = SessionResolver.resolve(
             events: [newEvent],
@@ -129,7 +209,7 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertTrue(reExpired.sessions.isEmpty)
     }
 
-    func testNewerDeadPayloadWithOlderTimestampGetsFreshDisconnectedWindow() {
+    func testNewerDeadPayloadWithOlderTimestampGetsFreshFailedWindow() {
         let oldEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 100)
         let newEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 900)
         var memory = ResolutionMemory()
@@ -148,7 +228,7 @@ final class SessionResolverTests: XCTestCase {
             isProcessAlive: { _, _ in false }
         )
 
-        XCTAssertEqual(resolved.sessions.first?.phase, .disconnected)
+        XCTAssertEqual(resolved.sessions.first?.phase, .failed)
     }
 
     func testAbsentEventRemovesDisconnectedMemory() {
@@ -333,7 +413,7 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertTrue(memory.hiddenRecords.isEmpty)
     }
 
-    func testHiddenDisconnectedSessionStaysExcludedAndRevealsOnNewerEvent() {
+    func testHiddenFailedSessionStaysExcludedAndRevealsOnNewerEvent() {
         let deadEvent = event(provider: .claude, session: "dead", phase: .thinking, updated: 100)
         var memory = ResolutionMemory()
 
@@ -343,7 +423,7 @@ final class SessionResolverTests: XCTestCase {
             memory: &memory,
             isProcessAlive: { _, _ in false }
         )
-        XCTAssertEqual(disconnected.sessions.first?.phase, .disconnected)
+        XCTAssertEqual(disconnected.sessions.first?.phase, .failed)
 
         memory.hide(
             SessionKey(provider: .claude, sessionID: "dead"),
@@ -432,4 +512,35 @@ private func event(
         turnStartedAt: Date(timeIntervalSince1970: 90),
         updatedAt: Date(timeIntervalSince1970: updated)
     )
+}
+
+/// Like `event(...)` but with a distinct `sourceProcessID`, so a test's
+/// `isProcessAlive` closure can report this one session's process as dead
+/// while other sessions in the same `resolve` call stay alive.
+private func deadPidEvent(
+    pid: Int32,
+    provider: AgentProvider,
+    session: String,
+    phase: SessionPhase,
+    updated: TimeInterval
+) -> NormalizedEvent {
+    var base = event(provider: provider, session: session, phase: phase, updated: updated)
+    base = NormalizedEvent(
+        schemaVersion: base.schemaVersion,
+        provider: base.provider,
+        surface: base.surface,
+        sessionID: base.sessionID,
+        turnID: base.turnID,
+        phase: base.phase,
+        label: base.label,
+        toolCategory: base.toolCategory,
+        projectName: base.projectName,
+        workingDirectory: base.workingDirectory,
+        sourceBundleID: base.sourceBundleID,
+        sourceProcessID: pid,
+        sourceProcessStartedAt: base.sourceProcessStartedAt,
+        turnStartedAt: base.turnStartedAt,
+        updatedAt: base.updatedAt
+    )
+    return base
 }

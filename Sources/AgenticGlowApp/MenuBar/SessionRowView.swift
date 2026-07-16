@@ -45,7 +45,7 @@ struct SessionRowView: View {
     }
 
     private var isRemovable: Bool {
-        [.idle, .disconnected, .completed, .permission].contains(session.phase)
+        [.idle, .disconnected, .completed, .permission, .failed].contains(session.phase)
     }
 
     private var detail: String {

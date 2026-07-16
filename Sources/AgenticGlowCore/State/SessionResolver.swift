@@ -52,7 +52,10 @@ public enum SessionResolver {
                     guard now.timeIntervalSince(record.detectedAt) <= disconnectedDisplayDuration else {
                         return nil
                     }
-                    phase = .disconnected
+                    // A process that dies mid-task (never reaching .completed)
+                    // reads as a failure; one that dies from idle/completed/
+                    // permission is a clean exit.
+                    phase = [.thinking, .usingTool].contains(event.phase) ? .failed : .disconnected
                 } else if event.phase == .completed && age > completionDisplayDuration {
                     memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
                     phase = .idle
@@ -120,9 +123,10 @@ public enum SessionResolver {
         case .permission: 0
         case .usingTool: 1
         case .thinking: 2
-        case .completed: 3
-        case .disconnected: 4
-        case .idle: 5
+        case .failed: 3
+        case .completed: 4
+        case .disconnected: 5
+        case .idle: 6
         }
     }
 }

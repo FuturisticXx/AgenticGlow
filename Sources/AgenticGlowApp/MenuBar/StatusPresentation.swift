@@ -68,6 +68,12 @@ struct StatusPresentation: Equatable {
             phaseLabel = "AgenticGlow, integration disconnected"
             color = SessionPhasePresentation.nsColor(for: .disconnected)
             animates = false
+        case .failed:
+            symbolName = SessionPhasePresentation.symbolName(for: .failed, in: .menuBar)
+            title = ""
+            phaseLabel = "AgenticGlow, session stopped unexpectedly"
+            color = SessionPhasePresentation.nsColor(for: .failed)
+            animates = false
         case .idle:
             symbolName = SessionPhasePresentation.symbolName(for: .idle, in: .menuBar)
             title = ""
