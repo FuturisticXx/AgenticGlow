@@ -29,7 +29,7 @@ struct StatusPresentation: Equatable {
         let phaseLabel: String
         switch resolved.dominantPhase {
         case .permission:
-            symbolName = "exclamationmark.circle.fill"
+            symbolName = SessionPhasePresentation.symbolName(for: .permission, in: .menuBar)
             title = resolved.permissionCount > 1 ? "\(resolved.permissionCount)" : ""
             let workingCount = resolved.activeCount - resolved.permissionCount
             var label = resolved.permissionCount == 1
@@ -41,10 +41,10 @@ struct StatusPresentation: Equatable {
                 label += ", \(workingCount) active sessions"
             }
             phaseLabel = label
-            color = .systemYellow
+            color = SessionPhasePresentation.nsColor(for: .permission)
             animates = workingCount > 0 && !reduceMotion
         case .usingTool, .thinking:
-            symbolName = "circle.hexagongrid"
+            symbolName = SessionPhasePresentation.symbolName(for: resolved.dominantPhase, in: .menuBar)
             let workingSession = resolved.sessions.first {
                 [.usingTool, .thinking].contains($0.phase)
             }
@@ -54,25 +54,25 @@ struct StatusPresentation: Equatable {
             phaseLabel = resolved.activeCount == 1
                 ? "AgenticGlow, 1 active session"
                 : "AgenticGlow, \(resolved.activeCount) active sessions"
-            color = .controlAccentColor
+            color = SessionPhasePresentation.nsColor(for: resolved.dominantPhase)
             animates = !reduceMotion
         case .completed:
-            symbolName = "checkmark.circle.fill"
+            symbolName = SessionPhasePresentation.symbolName(for: .completed, in: .menuBar)
             title = ""
             phaseLabel = "AgenticGlow, session completed"
-            color = .systemGreen
+            color = SessionPhasePresentation.nsColor(for: .completed)
             animates = false
         case .disconnected:
-            symbolName = "bolt.slash.circle"
+            symbolName = SessionPhasePresentation.symbolName(for: .disconnected, in: .menuBar)
             title = ""
             phaseLabel = "AgenticGlow, integration disconnected"
-            color = .secondaryLabelColor
+            color = SessionPhasePresentation.nsColor(for: .disconnected)
             animates = false
         case .idle:
-            symbolName = "circle.hexagongrid"
+            symbolName = SessionPhasePresentation.symbolName(for: .idle, in: .menuBar)
             title = ""
             phaseLabel = "AgenticGlow, idle"
-            color = .labelColor
+            color = SessionPhasePresentation.nsColor(for: .idle)
             animates = false
         }
         let workingProviders = [AgentProvider.claude, .codex].filter {

@@ -53,22 +53,13 @@ struct SessionRowView: View {
     }
 
     private var icon: String {
-        switch session.phase {
-        case .permission: "exclamationmark.circle.fill"
-        case .completed: "checkmark.circle.fill"
-        case .disconnected: "bolt.slash.circle"
-        case .idle: "circle"
-        case .thinking, .usingTool: "sparkle"
-        }
+        SessionPhasePresentation.symbolName(for: session.phase, in: .row)
     }
 
     private var color: Color {
         switch session.phase {
-        case .permission: Color(nsColor: .systemYellow)
-        case .completed: Color(nsColor: .systemGreen)
-        case .disconnected: .secondary
-        case .idle: .primary
         case .thinking, .usingTool: ProviderColor.color(for: session.provider)
+        default: SessionPhasePresentation.color(for: session.phase)
         }
     }
 
