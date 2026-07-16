@@ -6,6 +6,73 @@
 
 The sections below are completed historical plans retained for implementation context.
 
+# Session card redesign: failure state, live row indicator, tool-category icons, expand-to-detail (2026-07-16)
+
+**Status:** Planned, not started. Needs John's confirmation before implementation begins.
+
+**Goal:** Bring the popover session row to the design John approved in the card-redesign mockup (`docs/session-redesign-research.md`, `session-card-mockup.html`): a failure state distinct from a clean disconnect, a subtle live indicator on the row that is actually active (not just the menu bar icon), a per-action icon from the tool-category data the app already collects, and a hover/click detail view built from data already on the model.
+
+**Explicitly frozen, do not touch:** `Sources/AgenticGlowApp/MenuBar/LiquidGlassSurface.swift`, the `PopoverAura` view in `SessionListView.swift`, `AllowanceSectionView.swift`, `AllowancePresentation.swift`.
+
+## Key design decision: how "failed" is actually detected
+
+AgenticGlow's hook events carry no explicit error/exit-code signal today. `HookNormalizer` only sees sessionStart/sessionEnd, userPromptSubmit/postToolUse, preToolUse, notification/permissionRequest, and stop. There is no "task failed" event in the schema.
+
+So "failed" cannot be a literal error message from the agent, only an inference: a session whose process disconnects (or goes stale) while its last known phase was `.thinking`/`.usingTool` — i.e. it died mid-task, never reaching `.completed` — is very likely a crash or forced quit, as opposed to a process that disconnects after `.completed` or from `.idle`, which is a clean exit. This is derivable entirely from state `SessionResolver` already tracks, so no new hook payload field is required.
+
+Given that, shipped copy should say something honest like "stopped while working" or "disconnected mid-task," not "build failed" or "exited with error." The mockup's copy overstated what the data actually supports — it was fine for illustrating the visual treatment, not accurate for the real feature.
+
+## Global constraints
+
+- macOS 14.0 deployment target; CI builds with Xcode 16.4. Guard anything newer than macOS 14 with `#available`; compiler-guard anything newer than the CI SDK.
+- No em dashes in any user-facing string.
+- Scripts use only tools preinstalled on GitHub runners.
+- Surgical changes only; match existing style.
+- No push, no release, no version bump. Commits stay local for John's review.
+
+## Tasks
+
+### Task 1: Unify status -> icon/color mapping
+- Create a single source of truth mapping each `SessionPhase` (plus the new failed case) to an icon name and semantic color. Both `SessionRowView` and `StatusPresentation` read from it instead of each hand-rolling its own table.
+- Tests first: lock the mapping table, one entry per phase, matches current visual intent for every existing phase.
+- [ ] Failing tests, implement, pass, commit
+
+### Task 2: Add the inferred failed phase
+- Add `.failed` to `SessionPhase`. Update `SessionResolver`: a process disconnect (or existing staleness timeout) while the last known phase was `.thinking`/`.usingTool` resolves to `.failed` instead of `.disconnected`. Disconnects from `.idle`/`.completed`/`.permission` keep today's behavior.
+- Update the priority/sort order: `permission > usingTool > thinking > failed > completed > disconnected > idle`.
+- Tests first in SessionResolverTests: mid-task disconnect -> failed; disconnect after completed -> disconnected unchanged; disconnect from idle -> disconnected unchanged; sort order includes failed correctly.
+- [ ] Failing tests, implement, pass, commit
+
+### Task 3: Wire ToolCategory to the row
+- Thread `ToolCategory` from `NormalizedEvent` through `SessionSnapshot` to `SessionRowView`, so the row icon differentiates edit/read/search/run/delegate instead of one flat `sparkle` for every working state.
+- Tests first: `SessionSnapshot` carries category; row icon changes per category.
+- [ ] Failing tests, implement, pass, commit
+
+### Task 4: Per-row live indicator
+- Add a subtle, Reduce-Motion-safe indicator (opacity breathe on the status glyph only, not the whole row) for sessions in `.thinking`/`.usingTool`. Animate a SwiftUI `.opacity`/`.scaleEffect` modifier directly — per the existing lesson "never swap the image under a symbol effect," do not swap images or use `SymbolEffect`.
+- Fix the Reduce Motion staleness bug first: `model.reduceMotion` is currently read once at launch from `NSWorkspace.shared.accessibilityDisplayShouldReduceMotion` and never re-observed. This new animation must not inherit that bug.
+- Tests first / verification: Reduce Motion toggled mid-session actually updates the live app, not just at next launch.
+- [ ] Failing tests / verification, implement, pass, commit
+
+### Task 5: VoiceOver elapsed time
+- Remove the blanket `.accessibilityHidden(true)` on the elapsed `Text`; fold its value into the row's existing composed accessibility label/value instead, so it is spoken once, not silently dropped and not double-announced.
+- Tests first: accessibility label includes elapsed time when present, omits it when absent (idle/permission rows).
+- [ ] Failing tests, implement, pass, commit
+
+### Task 6: Expand-to-detail tier
+- Add a per-row expand affordance (click or a disclosure) revealing a detail panel below the row: current step/tool, last-updated relative time (from `session.updatedAt`, already collected but unused today), surface, and for `.failed`, the honest "stopped while working" copy from the design decision above.
+- Stays inside the existing popover — no new window, no sheet, no NavigationLink — matching the app's current interaction model and the escalation-tier idea from the research doc.
+- Tests first: detail view renders the right fields per phase, collapses by default, reachable via VoiceOver.
+- [ ] Failing tests, implement, pass, commit
+
+### Task 7: Full verification (gate for done)
+- [ ] Full unit test suite passes.
+- [ ] `Scripts/verify-privacy.sh` passes.
+- [ ] Signed local build; screenshots of each state (thinking with live glyph, permission, failed, completed) in Light and Dark; VoiceOver spoken-label check for elapsed time and the failed state.
+- [ ] Update `gotdone.md`; final local commit. No push, no release.
+
+---
+
 # Adaptive menu bar icon colors (2026-07-09)
 
 **Status:** Complete and released in v0.4.0. This section is retained as historical implementation evidence.
