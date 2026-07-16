@@ -87,7 +87,8 @@ public enum SessionResolver {
                 projectName: event.projectName,
                 sourceBundleID: event.sourceBundleID,
                 elapsedSeconds: event.turnStartedAt.map { max(0, Int(now.timeIntervalSince($0))) },
-                updatedAt: event.updatedAt
+                updatedAt: event.updatedAt,
+                toolCategory: phase == .usingTool ? event.toolCategory : nil
             )
         }
         .sorted(by: sort)

@@ -449,6 +449,20 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertEqual(revealed.sessions.first?.phase, .thinking)
     }
 
+    func testResolvedSnapshotCarriesToolCategoryFromEvent() {
+        let resolved = resolve(
+            event(provider: .codex, session: "editing", phase: .usingTool, updated: 999)
+        )
+        XCTAssertEqual(resolved.sessions.first?.toolCategory, .edit)
+    }
+
+    func testResolvedSnapshotHasNoToolCategoryWhileThinking() {
+        let resolved = resolve(
+            event(provider: .codex, session: "thinking", phase: .thinking, updated: 999)
+        )
+        XCTAssertNil(resolved.sessions.first?.toolCategory)
+    }
+
     func testUnknownProcessExpiresAfterFourHours() {
         var event = event(provider: .codex, session: "old", phase: .thinking, updated: 100)
         event = NormalizedEvent(

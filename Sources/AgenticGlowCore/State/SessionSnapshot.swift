@@ -11,6 +11,31 @@ public struct SessionSnapshot: Identifiable, Equatable, Sendable {
     public let sourceBundleID: String?
     public let elapsedSeconds: Int?
     public let updatedAt: Date
+    public let toolCategory: ToolCategory?
+
+    public init(
+        provider: AgentProvider,
+        surface: SourceSurface,
+        sessionID: String,
+        phase: SessionPhase,
+        label: String,
+        projectName: String,
+        sourceBundleID: String?,
+        elapsedSeconds: Int?,
+        updatedAt: Date,
+        toolCategory: ToolCategory? = nil
+    ) {
+        self.provider = provider
+        self.surface = surface
+        self.sessionID = sessionID
+        self.phase = phase
+        self.label = label
+        self.projectName = projectName
+        self.sourceBundleID = sourceBundleID
+        self.elapsedSeconds = elapsedSeconds
+        self.updatedAt = updatedAt
+        self.toolCategory = toolCategory
+    }
 }
 
 public struct ResolvedSessions: Equatable, Sendable {

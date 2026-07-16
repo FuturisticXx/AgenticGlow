@@ -53,7 +53,7 @@ struct SessionRowView: View {
     }
 
     private var icon: String {
-        SessionPhasePresentation.symbolName(for: session.phase, in: .row)
+        SessionPhasePresentation.symbolName(for: session.phase, toolCategory: session.toolCategory, in: .row)
     }
 
     private var color: Color {

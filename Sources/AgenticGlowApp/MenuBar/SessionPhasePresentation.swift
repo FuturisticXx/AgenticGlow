@@ -19,10 +19,17 @@ enum SessionPhasePresentation {
         case menuBar
     }
 
-    static func symbolName(for phase: SessionPhase, in context: Context) -> String {
+    static func symbolName(
+        for phase: SessionPhase,
+        toolCategory: ToolCategory? = nil,
+        in context: Context
+    ) -> String {
         switch context {
         case .row:
-            switch phase {
+            if phase == .usingTool, let toolCategory {
+                return categorySymbolName(for: toolCategory)
+            }
+            return switch phase {
             case .permission: "exclamationmark.circle.fill"
             case .completed: "checkmark.circle.fill"
             case .disconnected: "bolt.slash.circle"
@@ -31,13 +38,27 @@ enum SessionPhasePresentation {
             case .thinking, .usingTool: "sparkle"
             }
         case .menuBar:
-            switch phase {
+            return switch phase {
             case .permission: "exclamationmark.circle.fill"
             case .completed: "checkmark.circle.fill"
             case .disconnected: "bolt.slash.circle"
             case .failed: "xmark.circle.fill"
             case .idle, .thinking, .usingTool: "circle.hexagongrid"
             }
+        }
+    }
+
+    /// Only used on the row: the menu bar icon stays a flat glyph per state
+    /// regardless of what tool is running, per its own tuning constraints.
+    private static func categorySymbolName(for category: ToolCategory) -> String {
+        switch category {
+        case .read: "doc.text"
+        case .edit: "pencil"
+        case .search: "magnifyingglass"
+        case .browse: "globe"
+        case .command: "terminal"
+        case .delegate: "arrow.triangle.branch"
+        case .other: "sparkle"
         }
     }
 
