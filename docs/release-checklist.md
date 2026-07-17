@@ -179,6 +179,16 @@ Public release 0.5.0 evidence recorded 2026-07-16:
 - Released DMG SHA-256 `b2d5bfacd4fdf78c72e9e10463b9d894026d9ec00152cc19b50b6bb19163fbdf`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
 - `Cask/agenticglow.rb` was regenerated with the 0.5.0 checksum (main commit `27e439c`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `d069e2c`).
 
+Public release 0.5.1 evidence recorded 2026-07-17:
+
+- Released from commit `29b1996` (tag `v0.5.1`): the low-allowance warning caption no longer uses a single bright orange for both the icon and text. The exclamation triangle is now a fixed red; the caption text takes the provider's own accent color (Codex blue, Claude orange) instead, matching the bars above it.
+- The full suite passed on the release commit: 310 tests (180 core, 6 event, 124 app) with zero failures; the privacy gate passed.
+- Both release gate variables were confirmed with the owner in chat before use, naming `AGENTICGLOW_NAME_CLEARED` and `AGENTICGLOW_RELEASE_BUILD_APPROVED` explicitly.
+- Signed universal `arm64`/`x86_64` build passed strict code-signature checks. Apple accepted notarization submission `26a4236b-1ba6-465d-adc1-5c828765c349`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Released DMG SHA-256 `36240e1f599c9f916181b957ad3bd3cf25744d89a067c48b2593dbf26c2b5f57`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.5.1 checksum (main commit `a611cff`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `10d3167`).
+- The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.1 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.
@@ -299,17 +309,17 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-16, latest: v0.5.0)
-  - v0.5.0 published from commit `ce27d2d`
-  - Apple notarization submission `00d3f3b2-e22d-4d14-bc9f-3fcddba06e97` accepted
-  - Published DMG SHA-256: `b2d5bfacd4fdf78c72e9e10463b9d894026d9ec00152cc19b50b6bb19163fbdf`
+- [x] **GitHub release published** (date: 2026-07-17, latest: v0.5.1)
+  - v0.5.1 published from commit `29b1996`
+  - Apple notarization submission `26a4236b-1ba6-465d-adc1-5c828765c349` accepted
+  - Published DMG SHA-256: `36240e1f599c9f916181b957ad3bd3cf25744d89a067c48b2593dbf26c2b5f57`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes document the session card redesign and the Codex weekly-label fix
+  - Release notes document the low-allowance warning color split
 
-- [x] **Cask updated in the official tap** (date: 2026-07-16, version 0.5.0)
-  - Official tap updated to v0.5.0 at commit `d069e2c`
-  - `Cask/agenticglow.rb` regenerated with the v0.5.0 checksum and pushed on main (`27e439c`)
-  - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.0 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install
+- [x] **Cask updated in the official tap** (date: 2026-07-17, version 0.5.1)
+  - Official tap updated to v0.5.1 at commit `10d3167`
+  - `Cask/agenticglow.rb` regenerated with the v0.5.1 checksum and pushed on main (`a611cff`)
+  - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.1 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install
 
 - [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask

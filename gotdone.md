@@ -1,5 +1,16 @@
 # Got done
 
+## 2026-07-17 - Released v0.5.1
+
+- Released the low-allowance warning color split (patch bump, matching how small single-fix changes like 0.4.6 and 0.4.10 were versioned, unlike the minor 0.5.0 bundle).
+- Verified the Claude side of the fix live before releasing: the shared `allowanceCaption` code already resolves `tint` per provider, so no separate Claude-specific code was needed, confirmed by temporarily forcing Claude's allowance low in a debug build (reverted after verification, not part of the shipped diff).
+- Full suite passed on the release commit (`29b1996`): 310 tests (180 core, 6 event, 124 app), zero failures; privacy gate passed.
+- Both release gate variables confirmed and used: `AGENTICGLOW_NAME_CLEARED=1`, `AGENTICGLOW_RELEASE_BUILD_APPROVED=1`.
+- Signed universal build passed strict code-signature checks. Notarization submission `26a4236b-1ba6-465d-adc1-5c828765c349` accepted; DMG stapled, validated, Gatekeeper accepted app and DMG as `Notarized Developer ID`.
+- Published `v0.5.1` at commit `29b1996`, DMG SHA-256 `36240e1f599c9f916181b957ad3bd3cf25744d89a067c48b2593dbf26c2b5f57`. Downloaded the release asset back and independently verified checksum, staple, and Gatekeeper.
+- Cask regenerated and pushed to main (`a611cff`) and the official tap (`10d3167`).
+- Running `/Applications/AgenticGlow.app` replaced with the notarized 0.5.1 build and relaunched; version, signature, and Gatekeeper verified.
+
 ## 2026-07-16 - Released v0.5.0
 
 - Released the session card redesign, its code-review fix pass, and the Codex weekly-label fix together as v0.5.0 (a minor bump, matching how 0.4.0 was used for a comparably-sized bundle of visible feature work).
