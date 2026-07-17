@@ -7,6 +7,7 @@ struct SessionRowView: View {
     let onRemove: () -> Void
 
     @State private var isPulsing = false
+    @State private var isExpanded = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -44,13 +45,66 @@ struct SessionRowView: View {
         .accessibilityAddTraits(Self.accessibilityValue(for: session) != nil ? .updatesFrequently : [])
         .accessibilityHint("Activates the source application")
 
-        if isRemovable {
-            row.contextMenu {
-                Button("Remove", systemImage: "xmark.circle", role: .destructive, action: onRemove)
+        let header = HStack(spacing: 4) {
+            if isRemovable {
+                row.contextMenu {
+                    Button("Remove", systemImage: "xmark.circle", role: .destructive, action: onRemove)
+                }
+            } else {
+                row
             }
-        } else {
-            row
+            expandButton
         }
+
+        VStack(alignment: .leading, spacing: 0) {
+            header
+            if isExpanded {
+                detailPanel
+            }
+        }
+    }
+
+    private var expandButton: some View {
+        Button {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                isExpanded.toggle()
+            }
+        } label: {
+            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 20, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("AgenticGlow.Session.\(session.id).Expand")
+        .accessibilityLabel(isExpanded ? "Hide details" : "Show details")
+    }
+
+    private var detailPanel: some View {
+        let fields = SessionDetailPresentation.detail(for: session, now: Date())
+        return VStack(alignment: .leading, spacing: 3) {
+            detailRow("Current step", fields.currentStep)
+            detailRow("Surface", fields.surface)
+            detailRow("Last updated", fields.lastUpdated)
+            if let note = fields.note {
+                Text(note)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.leading, 32)
+        .padding(.top, 4)
+        .padding(.bottom, 2)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func detailRow(_ label: String, _ value: String) -> some View {
+        HStack(spacing: 4) {
+            Text(label).foregroundStyle(.secondary)
+            Text(value)
+        }
+        .font(.caption2)
     }
 
     private var isRemovable: Bool {
@@ -118,7 +172,7 @@ private extension AgentProvider {
     }
 }
 
-private extension SourceSurface {
+extension SourceSurface {
     var displayName: String {
         switch self {
         case .cli: "CLI"
