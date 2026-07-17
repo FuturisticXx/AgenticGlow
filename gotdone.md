@@ -1,5 +1,11 @@
 # Got done
 
+## 2026-07-16 - Fixed Codex allowance label showing "Current, 152h 7m"
+
+- John spotted the live popover showing "Current, 152h 7m" for Codex's usage window instead of a sensible label. Root cause found by querying Codex's app-server directly (same account/rateLimits/read JSON-RPC call AgenticGlow uses): this account (ChatGPT Plus) is currently returning its weekly limit as the primary window (windowDurationMins: 10080, secondary: null) instead of the usual 5h-primary-plus-weekly-secondary pair. CodexAllowanceNormalizer only recognized windowDurationMins == 300 as "5h" and fell back to a vague "Current" for anything else, including this legitimate weekly-scale reading.
+- Fix: label by known duration (300 min to "5h", 10,080 min to "Weekly", anything else keeps the "Current" fallback) instead of a single binary check. Verified against real live data pulled straight from the Codex app-server, not just a synthetic fixture.
+- Verified: full suite 310/310 (180 Core, 6 Event, 124 App); privacy gate and git diff --check both pass.
+
 ## 2026-07-16 - Code review fix pass on the session card redesign
 
 - Ran /code-review (8 finder angles, 1-vote verify) on the 8-commit redesign branch. 10 findings survived verification; fixed all of them.

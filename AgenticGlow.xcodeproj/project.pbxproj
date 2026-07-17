@@ -54,6 +54,7 @@
 		4BA78FF28099354B057B2A2E /* HookNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9B2E99889D9DD3C4DA034D /* HookNormalizer.swift */; };
 		4DDA0BA62FB1B7928256ACB6 /* LiquidGlassSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2938FAB242A16FFE3A8CD74 /* LiquidGlassSurface.swift */; };
 		5148B4D61979ABE2A235797F /* AgenticGlowLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AFB630BA9BD83DF76A64083 /* AgenticGlowLaunchTests.swift */; };
+		534ECB7B81784C02D38764AA /* CodexAllowanceNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECF9ACAFFE9332A1571AF7B5 /* CodexAllowanceNormalizerTests.swift */; };
 		560F13E337C8692F0D32C9DB /* TestSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216B6EA781EC14324868BEB0 /* TestSupport.swift */; };
 		5849F73C1F73685AB1F96B5D /* GlassAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0EBA8B2074D34DDA9B6CF9E /* GlassAppearance.swift */; };
 		586DE423544315B499BEE64C /* CodexAllowanceAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF901100AB66864CABD16C7E /* CodexAllowanceAdapterTests.swift */; };
@@ -322,6 +323,7 @@
 		E56337F47EF2714D05823D2E /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		E7D5F748819AA3331177D6D4 /* DiagnosticLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagnosticLogger.swift; sourceTree = "<group>"; };
 		E9D6527B9D899D9AE37E6513 /* AgenticGlowEventCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenticGlowEventCommand.swift; sourceTree = "<group>"; };
+		ECF9ACAFFE9332A1571AF7B5 /* CodexAllowanceNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAllowanceNormalizerTests.swift; sourceTree = "<group>"; };
 		EF55C0928A839C5F09DD4F50 /* StatusPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusPresentationTests.swift; sourceTree = "<group>"; };
 		EF901100AB66864CABD16C7E /* CodexAllowanceAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexAllowanceAdapterTests.swift; sourceTree = "<group>"; };
 		F102D015A8E47912D9FE45D7 /* DurationTierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DurationTierTests.swift; sourceTree = "<group>"; };
@@ -666,6 +668,7 @@
 				31BF7055F3651BD7573A69A2 /* ClaudeAllowanceAdapterTests.swift */,
 				BAD0B9B8E1037AAFBDD11437 /* ClaudeIntegrationManagerTests.swift */,
 				EF901100AB66864CABD16C7E /* CodexAllowanceAdapterTests.swift */,
+				ECF9ACAFFE9332A1571AF7B5 /* CodexAllowanceNormalizerTests.swift */,
 				5EEBCA97BDCCEF19F99C91BA /* CodexIntegrationManagerTests.swift */,
 				1F16F21073C05BCF4BE52185 /* DiagnosticLoggerTests.swift */,
 				919C32C56CA9405F36015736 /* ExecutableLocatorTests.swift */,
@@ -1095,6 +1098,7 @@
 				EB82B8C6A44750FD5D9EF35B /* ClaudeAllowanceAdapterTests.swift in Sources */,
 				F1682E6AE910E5B9A2A04E77 /* ClaudeIntegrationManagerTests.swift in Sources */,
 				586DE423544315B499BEE64C /* CodexAllowanceAdapterTests.swift in Sources */,
+				534ECB7B81784C02D38764AA /* CodexAllowanceNormalizerTests.swift in Sources */,
 				B782EFFA66668A475E4B0622 /* CodexIntegrationManagerTests.swift in Sources */,
 				B9785B941DEDFFA28C9717BF /* DiagnosticLoggerTests.swift in Sources */,
 				D63891268110C4C55073CA71 /* ExecutableLocatorTests.swift in Sources */,
