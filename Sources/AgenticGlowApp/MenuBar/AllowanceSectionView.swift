@@ -106,9 +106,14 @@ private struct ProviderAllowanceRow: View {
     @ViewBuilder
     private func allowanceCaption(_ text: String, isLow: Bool) -> some View {
         if isLow {
-            Label(text, systemImage: "exclamationmark.triangle.fill")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Color(nsColor: .systemOrange))
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Color(nsColor: .systemRed))
+                    .accessibilityHidden(true)
+                Text(text)
+                    .foregroundStyle(tint)
+            }
+            .font(.caption.weight(.semibold))
         } else {
             Text(text)
                 .font(.caption)
