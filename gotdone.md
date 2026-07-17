@@ -1,5 +1,15 @@
 # Got done
 
+## 2026-07-16 - Released v0.5.0
+
+- Released the session card redesign, its code-review fix pass, and the Codex weekly-label fix together as v0.5.0 (a minor bump, matching how 0.4.0 was used for a comparably-sized bundle of visible feature work).
+- README's install link updated from the stale v0.4.7 to v0.5.0; privacy docs needed no changes since the redesign added no new data collection or endpoints.
+- Full suite passed on the release commit (`ce27d2d`): 310 tests (180 core, 6 event, 124 app), zero failures; privacy gate passed.
+- Both release gate variables confirmed and used: `AGENTICGLOW_NAME_CLEARED=1`, `AGENTICGLOW_RELEASE_BUILD_APPROVED=1`.
+- Signed universal build passed strict code-signature checks. Notarization submission `00d3f3b2-e22d-4d14-bc9f-3fcddba06e97` accepted; DMG stapled, validated, Gatekeeper accepted app and DMG as `Notarized Developer ID`.
+- Published `v0.5.0` at commit `ce27d2d`, DMG SHA-256 `b2d5bfacd4fdf78c72e9e10463b9d894026d9ec00152cc19b50b6bb19163fbdf`. Downloaded the release asset back and independently verified checksum, staple, and Gatekeeper before trusting it.
+- Cask regenerated and pushed to main (`27e439c`) and the official tap `FuturisticXx/homebrew-agenticglow` (`d069e2c`).
+
 ## 2026-07-16 - Fixed Codex allowance label showing "Current, 152h 7m"
 
 - John spotted the live popover showing "Current, 152h 7m" for Codex's usage window instead of a sensible label. Root cause found by querying Codex's app-server directly (same account/rateLimits/read JSON-RPC call AgenticGlow uses): this account (ChatGPT Plus) is currently returning its weekly limit as the primary window (windowDurationMins: 10080, secondary: null) instead of the usual 5h-primary-plus-weekly-secondary pair. CodexAllowanceNormalizer only recognized windowDurationMins == 300 as "5h" and fell back to a vague "Current" for anything else, including this legitimate weekly-scale reading.
