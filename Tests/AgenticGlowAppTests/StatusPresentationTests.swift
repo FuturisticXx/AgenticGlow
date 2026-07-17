@@ -153,6 +153,44 @@ final class StatusPresentationTests: XCTestCase {
         XCTAssertFalse(laterLabel.contains("1m 5s"))
     }
 
+    @MainActor
+    func testAccessibilityValueIncludesElapsedTimeWhileThinking() {
+        let value = SessionRowView.accessibilityValue(for: session(elapsedSeconds: 65))
+        XCTAssertEqual(value, "1m 5s")
+    }
+
+    @MainActor
+    func testAccessibilityValueIsNilWhenNotActivelyWorking() {
+        let idle = SessionSnapshot(
+            provider: .codex,
+            surface: .cli,
+            sessionID: "idle",
+            phase: .idle,
+            label: "Idle",
+            projectName: "AgenticGlow",
+            sourceBundleID: "com.apple.Terminal",
+            elapsedSeconds: 65,
+            updatedAt: Date()
+        )
+        XCTAssertNil(SessionRowView.accessibilityValue(for: idle))
+    }
+
+    @MainActor
+    func testAccessibilityValueIsNilWithoutElapsedSeconds() {
+        let noElapsed = SessionSnapshot(
+            provider: .codex,
+            surface: .cli,
+            sessionID: "no-elapsed",
+            phase: .usingTool,
+            label: "Using tool",
+            projectName: "AgenticGlow",
+            sourceBundleID: "com.apple.Terminal",
+            elapsedSeconds: nil,
+            updatedAt: Date()
+        )
+        XCTAssertNil(SessionRowView.accessibilityValue(for: noElapsed))
+    }
+
     func testLowAllowanceShowsBadgeAndExtendsAccessibility() {
         let presentation = StatusPresentation(
             resolved: resolved(phase: .idle, elapsedSeconds: nil),

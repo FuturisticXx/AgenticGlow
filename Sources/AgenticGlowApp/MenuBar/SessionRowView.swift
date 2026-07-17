@@ -40,6 +40,8 @@ struct SessionRowView: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier("AgenticGlow.Session.\(session.id)")
         .accessibilityLabel(Self.accessibilityLabel(for: session))
+        .accessibilityValue(Self.accessibilityValue(for: session) ?? "")
+        .accessibilityAddTraits(Self.accessibilityValue(for: session) != nil ? .updatesFrequently : [])
         .accessibilityHint("Activates the source application")
 
         if isRemovable {
@@ -86,6 +88,16 @@ struct SessionRowView: View {
 
     static func accessibilityLabel(for session: SessionSnapshot) -> String {
         "\(session.provider.displayName), \(session.projectName), \(session.label), \(session.surface.displayName)"
+    }
+
+    /// Spoken elapsed time, kept out of the label itself (which stays
+    /// stable) so VoiceOver doesn't re-announce the whole row every second.
+    /// `.updatesFrequently` lets VoiceOver re-poll this value periodically
+    /// while focus stays on the row, instead of never hearing it at all.
+    static func accessibilityValue(for session: SessionSnapshot) -> String? {
+        guard let elapsed = session.elapsedSeconds,
+              [.thinking, .usingTool].contains(session.phase) else { return nil }
+        return format(elapsed)
     }
 
     /// Seconds drop out at the hour scale so long-running rows stay calm.
