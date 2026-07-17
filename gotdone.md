@@ -1,12 +1,22 @@
 # Got done
 
+## 2026-07-16 - Code review fix pass on the session card redesign
+
+- Ran /code-review (8 finder angles, 1-vote verify) on the 8-commit redesign branch. 10 findings survived verification; fixed all of them.
+- Correctness: `.failed` sessions now get a distinct "stopped while working" VoiceOver suffix (SessionRowView.accessibilityLabel) instead of silently reusing the pre-crash label; AppModel's usage-quota refresh now fires on a transition into `.failed`, not just `.completed` (new testable `AppModel.endedThisRefresh` helper, matching the review's request for pure decision logic instead of ad-hoc inline branching).
+- Reuse: added `SessionPhase.isActive` as the one shared definition of "actively thinking or using a tool," replacing 8 independent `[.thinking, .usingTool].contains(...)` copies across Core and App. Added `DurationTier` so the row timer, menu bar timer, and detail panel's "last updated" text share one seconds-to-tier boundary decision instead of three independently hand-rolled ones (each formatter keeps its own exact string output, verified against existing tests).
+- Simplification: `SessionPhasePresentation.symbolName` collapsed from two full switches (4 of 6 cases duplicated verbatim) to one switch where only idle/thinking/usingTool branch by context. `SessionRowView` binds `accessibilityValue` once instead of computing it twice per render, and consolidated two of three pulse-trigger hooks into one `onChange` watching the derived `shouldPulse` boolean directly (the reviewer's literal suggestion to drop `@State` entirely was checked and rejected: it would have silently killed the repeating animation, since `.animation(_:value:)` only fires on actual value transitions, not a steady derived boolean).
+- Conventions: fixed a real, embarrassing one, 91 em dashes across `docs/session-redesign-research.md`, `gotdone.md`, and `tasks/todo.md`, all new content from this session, breaking my own standing "never use em dashes" rule.
+- Deliberately not fixed: a narrower edge case where a stale or dismissed `.failed` session can reappear looking "fresh" after a transient session-store read error resets `AppModel`'s resolution memory. Investigated a minimal fix (skip the reset) and found it doesn't actually work, `SessionResolver`'s own retention-pruning logic wipes the same memory anyway when called with zero events, which is itself required by the existing, deliberately-tested "fail closed on load error" contract (`testRefreshFailsClosedAfterStoreLoadFailure`). A real fix needs to distinguish "genuinely no events" from "transient read error" as a first-class case, which is bigger than a review fix-up; flagged for John rather than forcing a change that trades one bug for another. Also not restructured: `.failed` as a sibling `SessionPhase` case rather than a reason on `.disconnected`, a real architecture question (SessionPhase is Codable/persisted) that deserves an explicit decision, not a silent refactor.
+- Verified: full suite 307/307 (177 Core, 6 Event, 124 App); `Scripts/verify-privacy.sh` and `git diff --check` both pass.
+
 ## 2026-07-16 - Session card redesign (research + 6-task implementation)
 
 - Deep research pass (code audit, HCI/attention research, Apple design principles, competitive analysis) written to `docs/session-redesign-research.md`. John approved the card-redesign mockup; glow effect and usage bars explicitly frozen throughout.
 - `SessionPhasePresentation` unifies the session row and menu bar icon's icon/color tables, which had silently drifted (idle and working shared one menu bar glyph; the row used a third, different glyph for each).
 - Added an inferred `.failed` phase: a process that disconnects mid-task (`.thinking`/`.usingTool`) now reads as failed, distinct from a clean disconnect from idle/completed/permission. No error/exit-code signal exists in the hook payload, so this is a heuristic; priority order is permission > usingTool > thinking > failed > completed > disconnected > idle.
 - Session rows now show a per-action icon (pencil/doc.text/magnifyingglass/globe/terminal/arrow.triangle.branch) from `ToolCategory`, which the resolver already classified but never threaded to the view.
-- Actively-working rows breathe (opacity) on their own status glyph via the pure, testable `SessionRowMotion`, instead of relying solely on the menu bar icon for "something is happening." While researching this, found the Reduce Motion "read once at launch" bug described in the research doc doesn't actually exist (`ReduceMotionObserver` in `AppDelegate.swift` already handles it live, with passing tests) — corrected the doc rather than fixing a non-bug.
+- Actively-working rows breathe (opacity) on their own status glyph via the pure, testable `SessionRowMotion`, instead of relying solely on the menu bar icon for "something is happening." While researching this, found the Reduce Motion "read once at launch" bug described in the research doc doesn't actually exist (`ReduceMotionObserver` in `AppDelegate.swift` already handles it live, with passing tests), corrected the doc rather than fixing a non-bug.
 - Elapsed time is now exposed to VoiceOver via a separate `accessibilityValue` + `.updatesFrequently`, instead of being silently hidden.
 - Added an expand-to-detail tier: a disclosure chevron (sibling to the activate button, not nested) reveals current step, surface, and last-updated relative time (data already collected, never shown), plus an honest explanatory note for `.failed` sessions.
 - TDD throughout: every task RED before GREEN, one commit per task. Full suite 294/294 (175 Core, 6 Event, 113 App); `Scripts/verify-privacy.sh` passes.
@@ -169,7 +179,7 @@
 - Added a regression test for candidate ordering and verified live allowance refresh under the restricted GUI `PATH`.
 - Passed 154 non-UI tests, privacy verification, standalone-helper verification, and a universal local build.
 
-## 2026-07-05 — Public release and Homebrew distribution
+## 2026-07-05, Public release and Homebrew distribution
 
 - Published the AgenticGlow repository and releases `v0.1.0` and `v0.1.1` publicly.
 - Verified the public signed and notarized v0.1.1 DMG at SHA-256 `ead3891c296770f8e455c9495f68987530e24a96197539287dbbd2bcf14aec35`.
@@ -179,7 +189,7 @@
 - Verified Homebrew install, launch, uninstall, integration cleanup, removal, reinstall, signature, Gatekeeper status, and relaunch for version 0.1.1.
 - Documented that an upstream `homebrew/homebrew-cask` PR is deferred until AgenticGlow meets Homebrew's self-submission notability threshold.
 
-## 2026-07-04 — Standalone repository consolidation
+## 2026-07-04, Standalone repository consolidation
 
 - Replaced the linked AgenticGlow worktree with a self-contained repository at the same canonical path.
 - Archived superseded Task 9 source and tests on local branch `archive/task-9-superseded` at commit `77fe3bb` without merging it into `main`.
@@ -189,7 +199,7 @@
 - Verified deterministic project generation, 151 tests with 0 failures, privacy and standalone-helper checks, icon assets, legacy-name removal, and universal `x86_64 arm64` Release binaries.
 - Kept the canonical repository on local `main`; no push, merge, tag, notarization, publication, or release occurred during consolidation.
 
-## 2026-07-04 — Approved app icon, private release candidate, and canonical main
+## 2026-07-04, Approved app icon, private release candidate, and canonical main
 
 - Replaced the rejected application artwork with the approved Unified Spectrum icon while preserving the existing monochrome menu-bar symbol.
 - Added a deterministic AppKit renderer and regenerated every required macOS app-icon raster from the verified 1024px master.
@@ -202,7 +212,7 @@
 - Updated the implementation plans and release evidence, then established `main` as the canonical GitHub default branch.
 - No GitHub release, Homebrew submission, or public publication was created.
 
-## 2026-07-05 — Fixed CI failure emails: verify-privacy.sh now uses grep
+## 2026-07-05, Fixed CI failure emails: verify-privacy.sh now uses grep
 
 - Diagnosed the repeated "CI: All jobs have failed" emails: every push failed at the "Verify privacy contract" step because `Scripts/verify-privacy.sh` used `rg` (ripgrep), which is not preinstalled on GitHub macOS runners (exit 127, "command not found").
 - Rewrote the script to use `grep` (built into macOS and CI runners): word-boundary checks use `grep -w`, alternation patterns use `grep -E`, fixed strings use `grep -F`, directory scans use `grep -r`.
@@ -210,14 +220,14 @@
 - Pushed to `main` as `ea2a1a3` (this also pushed the earlier local commit `2fa7166` "fix: make provider usage reliable").
 - Confirmed CI run `28747603968` passed all steps including "Verify privacy contract". Failure emails stop from here.
 
-## 2026-07-05 — Bumped checkout to v5, added agent lessons files
+## 2026-07-05, Bumped checkout to v5, added agent lessons files
 
 - Bumped `actions/checkout@v4` to `@v5` in both `ci.yml` and `release.yml`, clearing the Node 20 deprecation warning from CI runs.
 - Created `tasks/lessons.md` with the CI-tooling lesson (CI scripts must only use tools preinstalled on GitHub runners) and the action-version lesson.
 - Created `AGENTS.md` so Codex sessions also read `tasks/lessons.md` and follow the same standing rules.
 - Pushed as `e3333ca`; CI run passed all steps with the Node deprecation annotation gone.
 
-## 2026-07-05 — Popover aura, redesigned allowance bars, seconds timer, icon refresh
+## 2026-07-05, Popover aura, redesigned allowance bars, seconds timer, icon refresh
 
 - Shipped the glowing popover aura after several rejected attempts: an embedded edge light in the app icon palette (azure, warm gold, soft green) built from one rotating angular gradient masked as a wide halo, mid diffusion, and thin filament. On macOS 26 the shape uses ConcentricRectangle to match the Liquid Glass popover corners.
 - Motion is calm but clearly alive after John could not perceive the first pass: 28-second color drift plus a 4-second breathing cycle. All animation stops when the popover closes (measured 0.0% CPU closed, ~7% open) and Reduce Motion gets a static version.
@@ -227,13 +237,13 @@
 - Refreshed the full app icon set.
 - Committed as 3862dac (seconds), 09d4185 (icons), 1af60c0 (aura + bars), plus this docs commit; pushed to main.
 
-## 2026-07-05 — Fixed CI break from macOS 26-only API
+## 2026-07-05, Fixed CI break from macOS 26-only API
 
 - The aura push failed CI: `ConcentricRectangle` does not exist in Xcode 16.4's macOS 15.5 SDK, and `#available` alone does not guard compile-time symbols. Wrapped it in `#if compiler(>=6.2)` with the rounded-rectangle fallback for older toolchains.
 - Note: CI-built binaries (Xcode 16.4) always use the fallback shape, so a release built there will not use ConcentricRectangle on macOS 26. Revisit when CI moves to Xcode 26.
 - Local tests green (25/25). Pushed and confirmed the CI run passed.
 
-## 2026-07-05 — Built 0.2.0 private release candidate
+## 2026-07-05, Built 0.2.0 private release candidate
 
 - Verified release readiness first: forced the pre-Xcode 26 fallback corner shape locally on macOS 26 and confirmed the shipped aura looks identical to the approved version.
 - Triggered the Private Release Candidate workflow for 0.2.0 (run 28761194156). All steps passed: gates, signed build, DMG packaging, verification, notarization, and Cask generation.
@@ -371,26 +381,26 @@
 
 ## 2026-07-13: Added right-click Remove for stale sessions
 
-- Brainstormed and spec'd a client-side "Remove" action for stale session rows (`docs/superpowers/specs/2026-07-13-session-remove-client-side-hide-design.md`): right-click `.idle`/`.disconnected`/`.completed`/`.permission` rows to dismiss them; `.thinking`/`.usingTool` rows get no menu since they already self-heal via the 30-minute staleness timeout. Fully client-side — never touches `SessionStateStore` or the on-disk session file; a hidden session reappears silently the instant a newer event supersedes it, and hides don't survive an AgenticGlow relaunch.
+- Brainstormed and spec'd a client-side "Remove" action for stale session rows (`docs/superpowers/specs/2026-07-13-session-remove-client-side-hide-design.md`): right-click `.idle`/`.disconnected`/`.completed`/`.permission` rows to dismiss them; `.thinking`/`.usingTool` rows get no menu since they already self-heal via the 30-minute staleness timeout. Fully client-side, never touches `SessionStateStore` or the on-disk session file; a hidden session reappears silently the instant a newer event supersedes it, and hides don't survive an AgenticGlow relaunch.
 - Executed via subagent-driven-development, 3 tasks, direct commits to `main` (no feature branch, matching this repo's established convention):
-  - `ResolutionMemory.hide(_:eventUpdatedAt:)` + `SessionResolver` exclude/reveal/prune logic (`d22f03a`) — 3 new tests, task review clean.
-  - `AppModel.removeSession(_:)` (`321dc92`) — 1 new test confirming the underlying store file is genuinely untouched, task review clean.
-  - Right-click `.contextMenu` on `SessionRowView` gated by `isRemovable`, wired through `SessionListView` (`abbc728`) — task review confirmed the `.thinking` row has no `.contextMenu` attached at all (not an empty one), clean.
-- Live-verified against the `signals` UI-test fixture (one permission row, one thinking row) via direct accessibility scripting, since the computer-use tool can't grant screen access to a menu-bar-only (LSUIElement) app: right-clicking the permission row showed a single red "Remove" item; clicking it removed the row instantly and the popover header updated from "1 agent needs you" to "Codex working". The thinking row's button exposed only `AXScrollToVisible, AXPress` at the accessibility level — no `AXShowMenu` action at all, confirmed twice independently, proving no context menu is attached (not just visually empty).
+  - `ResolutionMemory.hide(_:eventUpdatedAt:)` + `SessionResolver` exclude/reveal/prune logic (`d22f03a`), 3 new tests, task review clean.
+  - `AppModel.removeSession(_:)` (`321dc92`), 1 new test confirming the underlying store file is genuinely untouched, task review clean.
+  - Right-click `.contextMenu` on `SessionRowView` gated by `isRemovable`, wired through `SessionListView` (`abbc728`), task review confirmed the `.thinking` row has no `.contextMenu` attached at all (not an empty one), clean.
+- Live-verified against the `signals` UI-test fixture (one permission row, one thinking row) via direct accessibility scripting, since the computer-use tool can't grant screen access to a menu-bar-only (LSUIElement) app: right-clicking the permission row showed a single red "Remove" item; clicking it removed the row instantly and the popover header updated from "1 agent needs you" to "Codex working". The thinking row's button exposed only `AXScrollToVisible, AXPress` at the accessibility level, no `AXShowMenu` action at all, confirmed twice independently, proving no context menu is attached (not just visually empty).
 - Full non-UI suite: 166 Core + 85 App tests, 0 failures.
-- Not pushed yet — commits are local on `main`, pending final whole-branch review.
+- Not pushed yet, commits are local on `main`, pending final whole-branch review.
 
 ## 2026-07-14: Diagnosed "Claude sessions showing blue" as a stale duplicate install, not a code bug
 
-- John reported Claude session rows rendering with Codex's blue color. Verified `SessionRowView.color`, `ProviderColor`, `NormalizedEvent` decoding, and `SessionResolver` were all correct by reading each directly, then used the row's live `AXIdentifier` (bakes in `session.id` = `provider:sessionID`) via the accessibility API to prove the underlying data was genuinely `provider: claude` — ruling out a data bug.
+- John reported Claude session rows rendering with Codex's blue color. Verified `SessionRowView.color`, `ProviderColor`, `NormalizedEvent` decoding, and `SessionResolver` were all correct by reading each directly, then used the row's live `AXIdentifier` (bakes in `session.id` = `provider:sessionID`) via the accessibility API to prove the underlying data was genuinely `provider: claude`, ruling out a data bug.
 - Root-caused via `ps aux`: `/Applications/AgenticGlow-0.2.0.app` (built 2026-07-05) was still running. Per-provider row coloring shipped 2026-07-09 (`34b81db`), four days later, so the old build predates the feature and renders every active row in one default color regardless of provider. Confirmed with `git merge-base --is-ancestor`.
 - Also found a stray Login Item pointing at a Debug build path in Xcode's DerivedData instead of either `/Applications` copy.
 - Cleanup: quit the v0.2.0 process, moved `/Applications/AgenticGlow-0.2.0.app` to Trash, repointed the Login Item at `/Applications/AgenticGlow.app` (0.4.10), relaunched the real app.
 - Verified the fix with the existing `both-working` UI-test fixture (one Claude thinking session, one Codex using-tool session) with no duplicate process running: Claude renders orange, Codex renders blue, correctly distinct.
-- Logged the diagnostic pattern in `tasks/lessons.md` — check for a duplicate running instance and stale Login Items before chasing a "code is right but screen is wrong" bug further into source.
+- Logged the diagnostic pattern in `tasks/lessons.md`, check for a duplicate running instance and stale Login Items before chasing a "code is right but screen is wrong" bug further into source.
 
 ## 2026-07-14: Verified Remove live in the app; confirmed the Codex outage banner is real
 
-- John asked to verify the right-click Remove feature live and flagged the "Codex: Partial System Outage" banner in the popover. Checked `https://status.openai.com/api/v2/status.json` directly — it currently reports `indicator: "major"`, `description: "Partial System Outage"`, confirming AgenticGlow is correctly relaying a real OpenAI outage (see `StatusPageClient.swift`'s major/critical-only surfacing rule), not a bug.
-- Live-verified Remove against a rebuilt Debug build with the `permission` UI-test fixture. Hit the same duplicate-instance AppleScript ambiguity from the color-bug investigation, this time self-inflicted by running the fixture build alongside production for testing — quit production, tested against the isolated fixture, then relaunched production. Right-clicking the removable "Example" (Claude, permission) row and clicking "Remove" via the accessibility API hid it instantly; popover header updated live from "1 agent needs you" to "Codex working."
+- John asked to verify the right-click Remove feature live and flagged the "Codex: Partial System Outage" banner in the popover. Checked `https://status.openai.com/api/v2/status.json` directly, it currently reports `indicator: "major"`, `description: "Partial System Outage"`, confirming AgenticGlow is correctly relaying a real OpenAI outage (see `StatusPageClient.swift`'s major/critical-only surfacing rule), not a bug.
+- Live-verified Remove against a rebuilt Debug build with the `permission` UI-test fixture. Hit the same duplicate-instance AppleScript ambiguity from the color-bug investigation, this time self-inflicted by running the fixture build alongside production for testing, quit production, tested against the isolated fixture, then relaunched production. Right-clicking the removable "Example" (Claude, permission) row and clicking "Remove" via the accessibility API hid it instantly; popover header updated live from "1 agent needs you" to "Codex working."
 - Logged the dual-instance testing gotcha in `tasks/lessons.md`.

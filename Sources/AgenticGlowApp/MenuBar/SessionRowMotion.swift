@@ -6,6 +6,6 @@ import AgenticGlowCore
 /// isolating timing/state decisions from view rendering.
 enum SessionRowMotion {
     static func shouldPulse(phase: SessionPhase, reduceMotion: Bool) -> Bool {
-        !reduceMotion && [.thinking, .usingTool].contains(phase)
+        !reduceMotion && phase.isActive
     }
 }

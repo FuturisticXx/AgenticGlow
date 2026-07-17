@@ -11,6 +11,7 @@ struct SessionRowView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        let accessibilityValue = Self.accessibilityValue(for: session)
         let row = Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
@@ -18,8 +19,9 @@ struct SessionRowView: View {
                     .opacity(isPulsing ? 0.45 : 1)
                     .accessibilityHidden(true)
                     .onAppear(perform: updatePulse)
-                    .onChange(of: session.phase) { updatePulse() }
-                    .onChange(of: reduceMotion) { updatePulse() }
+                    .onChange(of: SessionRowMotion.shouldPulse(phase: session.phase, reduceMotion: reduceMotion)) {
+                        updatePulse()
+                    }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(session.projectName)
                         .font(.body.weight(.medium))
@@ -28,8 +30,7 @@ struct SessionRowView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                if let elapsed = session.elapsedSeconds,
-                   [.thinking, .usingTool].contains(session.phase) {
+                if let elapsed = session.elapsedSeconds, session.phase.isActive {
                     Text(Self.format(elapsed))
                         .monospacedDigit()
                         .font(.caption)
@@ -41,8 +42,8 @@ struct SessionRowView: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier("AgenticGlow.Session.\(session.id)")
         .accessibilityLabel(Self.accessibilityLabel(for: session))
-        .accessibilityValue(Self.accessibilityValue(for: session) ?? "")
-        .accessibilityAddTraits(Self.accessibilityValue(for: session) != nil ? .updatesFrequently : [])
+        .accessibilityValue(accessibilityValue ?? "")
+        .accessibilityAddTraits(accessibilityValue != nil ? .updatesFrequently : [])
         .accessibilityHint("Activates the source application")
 
         let header = HStack(spacing: 4) {
@@ -140,8 +141,13 @@ struct SessionRowView: View {
         }
     }
 
+    /// `.failed` gets a distinct spoken suffix rather than a rewritten
+    /// label, so VoiceOver users can tell a crashed session from one still
+    /// working, without losing `session.label`'s last-action text (which
+    /// the expanded detail panel also relies on).
     static func accessibilityLabel(for session: SessionSnapshot) -> String {
-        "\(session.provider.displayName), \(session.projectName), \(session.label), \(session.surface.displayName)"
+        let base = "\(session.provider.displayName), \(session.projectName), \(session.label), \(session.surface.displayName)"
+        return session.phase == .failed ? "\(base), stopped while working" : base
     }
 
     /// Spoken elapsed time, kept out of the label itself (which stays
@@ -149,17 +155,17 @@ struct SessionRowView: View {
     /// `.updatesFrequently` lets VoiceOver re-poll this value periodically
     /// while focus stays on the row, instead of never hearing it at all.
     static func accessibilityValue(for session: SessionSnapshot) -> String? {
-        guard let elapsed = session.elapsedSeconds,
-              [.thinking, .usingTool].contains(session.phase) else { return nil }
+        guard let elapsed = session.elapsedSeconds, session.phase.isActive else { return nil }
         return format(elapsed)
     }
 
     /// Seconds drop out at the hour scale so long-running rows stay calm.
     static func format(_ seconds: Int) -> String {
-        if seconds < 60 { return "\(seconds)s" }
-        if seconds < 3_600 { return "\(seconds / 60)m \(seconds % 60)s" }
-        let minutes = (seconds % 3_600) / 60
-        return minutes == 0 ? "\(seconds / 3_600)h" : "\(seconds / 3_600)h \(minutes)m"
+        switch DurationTier(seconds: seconds) {
+        case .seconds(let s): return "\(s)s"
+        case .minutes(let m, let s): return "\(m)m \(s)s"
+        case .hours(let h, let m): return m == 0 ? "\(h)h" : "\(h)h \(m)m"
+        }
     }
 }
 

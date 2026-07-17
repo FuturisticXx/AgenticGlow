@@ -45,9 +45,7 @@ struct StatusPresentation: Equatable {
             animates = workingCount > 0 && !reduceMotion
         case .usingTool, .thinking:
             symbolName = SessionPhasePresentation.symbolName(for: resolved.dominantPhase, in: .menuBar)
-            let workingSession = resolved.sessions.first {
-                [.usingTool, .thinking].contains($0.phase)
-            }
+            let workingSession = resolved.sessions.first { $0.phase.isActive }
             let timer = showTimer ? workingSession?.elapsedSeconds.map(Self.format) : nil
             let count = resolved.activeCount > 1 ? "\(resolved.activeCount)" : nil
             title = [count, timer].compactMap { $0 }.joined(separator: " · ")
@@ -84,7 +82,7 @@ struct StatusPresentation: Equatable {
         let workingProviders = [AgentProvider.claude, .codex].filter {
             resolved.activeProviders.contains($0)
         }
-        let working = [SessionPhase.thinking, .usingTool].contains(resolved.dominantPhase)
+        let working = resolved.dominantPhase.isActive
         pulsesPermission = resolved.dominantPhase == .permission
             && !workingProviders.isEmpty
             && !reduceMotion
@@ -94,9 +92,10 @@ struct StatusPresentation: Equatable {
     }
 
     private static func format(_ seconds: Int) -> String {
-        if seconds < 60 { return "\(seconds)s" }
-        if seconds < 3_600 { return "\(seconds / 60)m" }
-        let minutes = (seconds % 3_600) / 60
-        return minutes == 0 ? "\(seconds / 3_600)h" : "\(seconds / 3_600)h \(minutes)m"
+        switch DurationTier(seconds: seconds) {
+        case .seconds(let s): return "\(s)s"
+        case .minutes(let m, _): return "\(m)m"
+        case .hours(let h, let m): return m == 0 ? "\(h)h" : "\(h)h \(m)m"
+        }
     }
 }

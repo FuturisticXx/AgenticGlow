@@ -329,6 +329,43 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.weeklyResetCount, 1)
     }
 
+    func testEndedThisRefreshFiresOnTransitionIntoCompleted() {
+        let session = self.session(sessionID: "s", phase: .completed)
+        XCTAssertTrue(AppModel.endedThisRefresh(session, previousPhases: [session.id: .thinking]))
+    }
+
+    func testEndedThisRefreshFiresOnTransitionIntoFailed() {
+        let session = self.session(sessionID: "s", phase: .failed)
+        XCTAssertTrue(AppModel.endedThisRefresh(session, previousPhases: [session.id: .usingTool]))
+    }
+
+    func testEndedThisRefreshIgnoresSteadyCompletedOrFailed() {
+        let completed = session(sessionID: "c", phase: .completed)
+        XCTAssertFalse(AppModel.endedThisRefresh(completed, previousPhases: [completed.id: .completed]))
+
+        let failed = session(sessionID: "f", phase: .failed)
+        XCTAssertFalse(AppModel.endedThisRefresh(failed, previousPhases: [failed.id: .failed]))
+    }
+
+    func testEndedThisRefreshIgnoresOtherPhases() {
+        let thinking = session(sessionID: "t", phase: .thinking)
+        XCTAssertFalse(AppModel.endedThisRefresh(thinking, previousPhases: [:]))
+    }
+
+    private func session(sessionID: String, phase: SessionPhase) -> SessionSnapshot {
+        SessionSnapshot(
+            provider: .codex,
+            surface: .cli,
+            sessionID: sessionID,
+            phase: phase,
+            label: phase.rawValue,
+            projectName: "AgenticGlow",
+            sourceBundleID: "com.apple.Terminal",
+            elapsedSeconds: nil,
+            updatedAt: Date()
+        )
+    }
+
     func testServiceStatusFlowsFromMonitor() async {
         let monitor = ProviderStatusMonitor(
             requester: IncidentStatusRequester(),

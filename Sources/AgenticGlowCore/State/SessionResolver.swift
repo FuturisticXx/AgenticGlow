@@ -55,11 +55,11 @@ public enum SessionResolver {
                     // A process that dies mid-task (never reaching .completed)
                     // reads as a failure; one that dies from idle/completed/
                     // permission is a clean exit.
-                    phase = [.thinking, .usingTool].contains(event.phase) ? .failed : .disconnected
+                    phase = event.phase.isActive ? .failed : .disconnected
                 } else if event.phase == .completed && age > completionDisplayDuration {
                     memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
                     phase = .idle
-                } else if [.thinking, .usingTool].contains(event.phase) && age > staleActiveDuration {
+                } else if event.phase.isActive && age > staleActiveDuration {
                     // A single long-lived provider process (e.g. Codex's shared
                     // app-server) backs many independent sessions, so "process is
                     // alive" cannot detect a session whose turn finished without
@@ -104,7 +104,7 @@ public enum SessionResolver {
             permissionCount: snapshots.filter { $0.phase == .permission }.count,
             activeProviders: Set(
                 snapshots
-                    .filter { [.thinking, .usingTool].contains($0.phase) }
+                    .filter { $0.phase.isActive }
                     .map(\.provider)
             )
         )

@@ -31,4 +31,11 @@ public enum SessionPhase: String, Codable, Sendable {
     /// error/exit-code signal in the hook payload today, so this is a
     /// heuristic, not a confirmed failure reason.
     case failed
+
+    /// True while the session is actively thinking or using a tool. The
+    /// single source of truth for "is this session actively working" so
+    /// callers don't each hand-roll `[.thinking, .usingTool].contains(...)`.
+    public var isActive: Bool {
+        self == .thinking || self == .usingTool
+    }
 }

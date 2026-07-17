@@ -141,6 +141,40 @@ final class StatusPresentationTests: XCTestCase {
     }
 
     @MainActor
+    func testAccessibilityLabelAddsStoppedSuffixForFailedSessions() {
+        let failed = SessionSnapshot(
+            provider: .claude,
+            surface: .cli,
+            sessionID: "failed",
+            phase: .failed,
+            label: "Running swift build",
+            projectName: "weather-widget",
+            sourceBundleID: "com.apple.Terminal",
+            elapsedSeconds: nil,
+            updatedAt: Date()
+        )
+        let label = SessionRowView.accessibilityLabel(for: failed)
+        XCTAssertEqual(label, "Claude, weather-widget, Running swift build, CLI, stopped while working")
+    }
+
+    @MainActor
+    func testAccessibilityLabelOmitsStoppedSuffixForOtherPhases() {
+        let completed = SessionSnapshot(
+            provider: .claude,
+            surface: .cli,
+            sessionID: "done",
+            phase: .completed,
+            label: "Completed",
+            projectName: "2damax-site",
+            sourceBundleID: "com.apple.Terminal",
+            elapsedSeconds: nil,
+            updatedAt: Date()
+        )
+        let label = SessionRowView.accessibilityLabel(for: completed)
+        XCTAssertEqual(label, "Claude, 2damax-site, Completed, CLI")
+    }
+
+    @MainActor
     func testSessionRowAccessibilityLabelDoesNotChangeWithElapsedTime() {
         let early = session(elapsedSeconds: 5)
         let later = session(elapsedSeconds: 65)

@@ -14,37 +14,31 @@ import AgenticGlowCore
 /// StatusItemController). Recording both tables in one place, rather than
 /// two separate files, is what keeps them from drifting further.
 enum SessionPhasePresentation {
-    enum Context {
+    enum Context: Equatable {
         case row
         case menuBar
     }
 
+    /// permission/completed/disconnected/failed render identically on both
+    /// surfaces, so only idle/thinking/usingTool branch by context below
+    /// instead of two full switches duplicating the shared cases.
     static func symbolName(
         for phase: SessionPhase,
         toolCategory: ToolCategory? = nil,
         in context: Context
     ) -> String {
-        switch context {
-        case .row:
-            if phase == .usingTool, let toolCategory {
-                return categorySymbolName(for: toolCategory)
-            }
-            return switch phase {
-            case .permission: "exclamationmark.circle.fill"
-            case .completed: "checkmark.circle.fill"
-            case .disconnected: "bolt.slash.circle"
-            case .failed: "xmark.circle.fill"
-            case .idle: "circle"
-            case .thinking, .usingTool: "sparkle"
-            }
-        case .menuBar:
-            return switch phase {
-            case .permission: "exclamationmark.circle.fill"
-            case .completed: "checkmark.circle.fill"
-            case .disconnected: "bolt.slash.circle"
-            case .failed: "xmark.circle.fill"
-            case .idle, .thinking, .usingTool: "circle.hexagongrid"
-            }
+        if context == .row, phase == .usingTool, let toolCategory {
+            return categorySymbolName(for: toolCategory)
+        }
+        switch phase {
+        case .permission: return "exclamationmark.circle.fill"
+        case .completed: return "checkmark.circle.fill"
+        case .disconnected: return "bolt.slash.circle"
+        case .failed: return "xmark.circle.fill"
+        case .idle:
+            return context == .row ? "circle" : "circle.hexagongrid"
+        case .thinking, .usingTool:
+            return context == .row ? "sparkle" : "circle.hexagongrid"
         }
     }
 

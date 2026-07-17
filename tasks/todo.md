@@ -18,9 +18,9 @@ The sections below are completed historical plans retained for implementation co
 
 AgenticGlow's hook events carry no explicit error/exit-code signal today. `HookNormalizer` only sees sessionStart/sessionEnd, userPromptSubmit/postToolUse, preToolUse, notification/permissionRequest, and stop. There is no "task failed" event in the schema.
 
-So "failed" cannot be a literal error message from the agent, only an inference: a session whose process disconnects (or goes stale) while its last known phase was `.thinking`/`.usingTool` — i.e. it died mid-task, never reaching `.completed` — is very likely a crash or forced quit, as opposed to a process that disconnects after `.completed` or from `.idle`, which is a clean exit. This is derivable entirely from state `SessionResolver` already tracks, so no new hook payload field is required.
+So "failed" cannot be a literal error message from the agent, only an inference: a session whose process disconnects (or goes stale) while its last known phase was `.thinking`/`.usingTool`, i.e. it died mid-task, never reaching `.completed`, is very likely a crash or forced quit, as opposed to a process that disconnects after `.completed` or from `.idle`, which is a clean exit. This is derivable entirely from state `SessionResolver` already tracks, so no new hook payload field is required.
 
-Given that, shipped copy should say something honest like "stopped while working" or "disconnected mid-task," not "build failed" or "exited with error." The mockup's copy overstated what the data actually supports — it was fine for illustrating the visual treatment, not accurate for the real feature.
+Given that, shipped copy should say something honest like "stopped while working" or "disconnected mid-task," not "build failed" or "exited with error." The mockup's copy overstated what the data actually supports, it was fine for illustrating the visual treatment, not accurate for the real feature.
 
 ## Global constraints
 
@@ -50,7 +50,7 @@ Given that, shipped copy should say something honest like "stopped while working
 
 ### Task 4: Per-row live indicator
 - **Correction (2026-07-16):** the Reduce Motion staleness bug described in the research doc does not exist in the current code. `ReduceMotionObserver` (`AppDelegate.swift:427`) already observes `NSWorkspace.accessibilityDisplayOptionsDidChangeNotification` live and updates `model.reduceMotion`, with passing tests (`testReduceMotionObserverUpdatesModelAndDisablesActiveAnimation`, `testReduceMotionObserverStopsListening`). The research agent only audited `AppModel.swift`'s `init()` and missed this wiring in `AppDelegate.swift`. No fix needed here.
-- Add a subtle, Reduce-Motion-safe indicator (opacity breathe on the status glyph only, not the whole row) for sessions in `.thinking`/`.usingTool`. Use SwiftUI's own `@Environment(\.accessibilityReduceMotion)` in the row (it is already live, no extra wiring needed). Animate `.opacity` directly — per the existing lesson "never swap the image under a symbol effect," do not swap images or use `SymbolEffect`.
+- Add a subtle, Reduce-Motion-safe indicator (opacity breathe on the status glyph only, not the whole row) for sessions in `.thinking`/`.usingTool`. Use SwiftUI's own `@Environment(\.accessibilityReduceMotion)` in the row (it is already live, no extra wiring needed). Animate `.opacity` directly, per the existing lesson "never swap the image under a symbol effect," do not swap images or use `SymbolEffect`.
 - Extract the pulse decision (`shouldPulse(phase:reduceMotion:)`) into a small pure, testable helper, matching the `PermissionDissolve` pattern of separating decision logic from view code.
 - Tests first: the pure helper's truth table across phases and reduceMotion.
 - [ ] Failing tests, implement, pass, commit
@@ -62,7 +62,7 @@ Given that, shipped copy should say something honest like "stopped while working
 
 ### Task 6: Expand-to-detail tier
 - Add a per-row expand affordance (click or a disclosure) revealing a detail panel below the row: current step/tool, last-updated relative time (from `session.updatedAt`, already collected but unused today), surface, and for `.failed`, the honest "stopped while working" copy from the design decision above.
-- Stays inside the existing popover — no new window, no sheet, no NavigationLink — matching the app's current interaction model and the escalation-tier idea from the research doc.
+- Stays inside the existing popover, no new window, no sheet, no NavigationLink, matching the app's current interaction model and the escalation-tier idea from the research doc.
 - Tests first: detail view renders the right fields per phase, collapses by default, reachable via VoiceOver.
 - [ ] Failing tests, implement, pass, commit
 
@@ -255,7 +255,7 @@ Plan (bug fix, autonomous path):
 
 ## Tasks
 
-### Task 1: Core — active providers
+### Task 1: Core, active providers
 - Add `activeProviders: Set<AgentProvider>` to `ResolvedSessions` in `Sources/AgenticGlowCore/State/SessionSnapshot.swift`; populate it in `SessionResolver.resolve` from sessions whose phase is `.thinking` or `.usingTool`.
 - Tests first in `Tests/AgenticGlowCoreTests/SessionResolverTests.swift`: none working -> empty; only a Claude thinking/usingTool session -> `[.claude]`; only Codex -> `[.codex]`; both -> `[.claude, .codex]`; permission-only or idle/completed/disconnected -> empty.
 - [x] Failing tests, implement, pass -> verified: SessionResolverTests 14/14 green (5 new: none/Claude-only/Codex-only/both/permission-excluded); StatusPresentationTests 11/11 still green after adding the field
@@ -265,13 +265,13 @@ Plan (bug fix, autonomous path):
 - Point `AllowanceSectionView.tint` and `SessionRowView.color` (working state) at it; remove their local color literals.
 - [x] Implement -> verified: `ProviderColor` added; `AllowanceSectionView.tint` now reads from it. ProviderColorTests 3/3 lock the sRGB values; AllowancePresentationTests still green (pills unchanged). Note: `SessionRowView` color change moved to Task 5 (it was `.accentColor`, a behavior change, not a pure refactor).
 
-### Task 3: Presentation — provider tints on the icon
+### Task 3: Presentation, provider tints on the icon
 - `StatusPresentation`: in the `.usingTool` / `.thinking` case, expose the active provider colors from `resolved.activeProviders` as `activeTints: [NSColor]` (0, 1, or 2 entries) instead of the flat `.controlAccentColor`. Keep `color` for non-working states. Struct stays `Equatable`.
 - Tests in `Tests/AgenticGlowAppTests/StatusPresentationTests.swift`: working {claude} -> `[orange]`; {codex} -> `[blue]`; both -> `[orange, blue]`; permission -> yellow unchanged; idle/completed unchanged.
 - [x] Failing tests, implement, pass -> verified: `activeTints: [NSColor]` added (Claude-then-Codex order, empty unless dominant phase is working). StatusPresentationTests 16/16 green (5 new: Claude-only, Codex-only, both-order, permission-empty, idle-empty).
 
-### Task 4: Controller — cross-fade
-- `StatusItemController.update()`: set tint from `activeTints` — 1 color -> solid; 2 colors -> start cross-fade; 0 -> `presentation.color`. Celebration (green) still wins.
+### Task 4: Controller, cross-fade
+- `StatusItemController.update()`: set tint from `activeTints`, 1 color -> solid; 2 colors -> start cross-fade; 0 -> `presentation.color`. Celebration (green) still wins.
 - Cross-fade: a repeating `Task` interpolating `symbolView.contentTintColor` between the two colors on a sine ease (~3s each way, ~50ms steps). Store as `tintCrossfadeTask`; cancel on state change and in `stop()`. Under Reduce Motion, no task; set the static violet blend.
 - Rotation (`configureAnimation`) unchanged; already gated on `presentation.animates`.
 - [x] Implement -> verified: build succeeds. `applyTint` handles solid (1 tint) / cross-fade (2 tints) / fallback (0), celebration green wins. Cross-fade is a `tintCrossfadeTask` (cosine ease, 3s each way), cancelled on state change, in `stop()`, and when a celebration starts. Reduce Motion sets the static violet blend, no task. Runtime/visual confirmation pending Task 6.

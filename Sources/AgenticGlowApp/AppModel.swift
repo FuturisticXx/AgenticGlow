@@ -123,18 +123,23 @@ final class AppModel {
                 notifier.sessionsNeedPermission(newlyWaiting)
             }
         }
-        if resolved.sessions.contains(where: {
-            $0.phase == .completed && previousPhases[$0.id] != .completed
-        }) {
+        if resolved.sessions.contains(where: { Self.endedThisRefresh($0, previousPhases: previousPhases) }) {
             Task { [weak self] in
                 try? await Task.sleep(for: .seconds(AllowanceRefreshPolicy.turnCompletionDebounce))
                 await self?.refreshUsage(.turnCompleted)
             }
-        } else if [.thinking, .usingTool].contains(resolved.dominantPhase) {
+        } else if resolved.dominantPhase.isActive {
             Task { [weak self] in await self?.refreshUsage(.working) }
         } else if resolved.dominantPhase == .idle {
             Task { [weak self] in await self?.refreshUsage(.idle) }
         }
+    }
+
+    /// A session's turn just ended, cleanly or not, so usage may have
+    /// changed. `.failed` reaches this the same as `.completed`: both
+    /// consumed quota before their process stopped.
+    static func endedThisRefresh(_ session: SessionSnapshot, previousPhases: [String: SessionPhase]) -> Bool {
+        [.completed, .failed].contains(session.phase) && previousPhases[session.id] != session.phase
     }
 
     func activate(_ session: SessionSnapshot) {

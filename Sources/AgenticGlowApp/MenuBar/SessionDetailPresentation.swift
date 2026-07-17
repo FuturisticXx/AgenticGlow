@@ -31,8 +31,10 @@ enum SessionDetailPresentation {
     private static func relativeTime(from date: Date, to now: Date) -> String {
         let seconds = max(0, Int(now.timeIntervalSince(date)))
         if seconds < 5 { return "just now" }
-        if seconds < 60 { return "\(seconds)s ago" }
-        if seconds < 3_600 { return "\(seconds / 60)m ago" }
-        return "\(seconds / 3_600)h ago"
+        switch DurationTier(seconds: seconds) {
+        case .seconds(let s): return "\(s)s ago"
+        case .minutes(let m, _): return "\(m)m ago"
+        case .hours(let h, _): return "\(h)h ago"
+        }
     }
 }
