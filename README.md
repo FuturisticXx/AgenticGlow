@@ -15,7 +15,7 @@ AgenticGlow is a local macOS menu bar app that shows the status of your AI codin
 ## Installation
 
 The latest signed and notarized public release is
-[v0.5.0](https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.5.0).
+[v0.5.1](https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.5.1).
 
 ### DMG
 
