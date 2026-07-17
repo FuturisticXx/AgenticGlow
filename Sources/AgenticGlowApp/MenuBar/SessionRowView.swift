@@ -6,12 +6,19 @@ struct SessionRowView: View {
     let action: () -> Void
     let onRemove: () -> Void
 
+    @State private var isPulsing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         let row = Button(action: action) {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .foregroundStyle(color)
+                    .opacity(isPulsing ? 0.45 : 1)
                     .accessibilityHidden(true)
+                    .onAppear(perform: updatePulse)
+                    .onChange(of: session.phase) { updatePulse() }
+                    .onChange(of: reduceMotion) { updatePulse() }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(session.projectName)
                         .font(.body.weight(.medium))
@@ -46,6 +53,20 @@ struct SessionRowView: View {
 
     private var isRemovable: Bool {
         [.idle, .disconnected, .completed, .permission, .failed].contains(session.phase)
+    }
+
+    private func updatePulse() {
+        let shouldPulse = SessionRowMotion.shouldPulse(phase: session.phase, reduceMotion: reduceMotion)
+        guard shouldPulse != isPulsing else { return }
+        if shouldPulse {
+            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
+                isPulsing = true
+            }
+        } else {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isPulsing = false
+            }
+        }
     }
 
     private var detail: String {

@@ -49,10 +49,11 @@ Given that, shipped copy should say something honest like "stopped while working
 - [ ] Failing tests, implement, pass, commit
 
 ### Task 4: Per-row live indicator
-- Add a subtle, Reduce-Motion-safe indicator (opacity breathe on the status glyph only, not the whole row) for sessions in `.thinking`/`.usingTool`. Animate a SwiftUI `.opacity`/`.scaleEffect` modifier directly — per the existing lesson "never swap the image under a symbol effect," do not swap images or use `SymbolEffect`.
-- Fix the Reduce Motion staleness bug first: `model.reduceMotion` is currently read once at launch from `NSWorkspace.shared.accessibilityDisplayShouldReduceMotion` and never re-observed. This new animation must not inherit that bug.
-- Tests first / verification: Reduce Motion toggled mid-session actually updates the live app, not just at next launch.
-- [ ] Failing tests / verification, implement, pass, commit
+- **Correction (2026-07-16):** the Reduce Motion staleness bug described in the research doc does not exist in the current code. `ReduceMotionObserver` (`AppDelegate.swift:427`) already observes `NSWorkspace.accessibilityDisplayOptionsDidChangeNotification` live and updates `model.reduceMotion`, with passing tests (`testReduceMotionObserverUpdatesModelAndDisablesActiveAnimation`, `testReduceMotionObserverStopsListening`). The research agent only audited `AppModel.swift`'s `init()` and missed this wiring in `AppDelegate.swift`. No fix needed here.
+- Add a subtle, Reduce-Motion-safe indicator (opacity breathe on the status glyph only, not the whole row) for sessions in `.thinking`/`.usingTool`. Use SwiftUI's own `@Environment(\.accessibilityReduceMotion)` in the row (it is already live, no extra wiring needed). Animate `.opacity` directly — per the existing lesson "never swap the image under a symbol effect," do not swap images or use `SymbolEffect`.
+- Extract the pulse decision (`shouldPulse(phase:reduceMotion:)`) into a small pure, testable helper, matching the `PermissionDissolve` pattern of separating decision logic from view code.
+- Tests first: the pure helper's truth table across phases and reduceMotion.
+- [ ] Failing tests, implement, pass, commit
 
 ### Task 5: VoiceOver elapsed time
 - Remove the blanket `.accessibilityHidden(true)` on the elapsed `Text`; fold its value into the row's existing composed accessibility label/value instead, so it is spoken once, not silently dropped and not double-announced.
