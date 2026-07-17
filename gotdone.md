@@ -1,5 +1,16 @@
 # Got done
 
+## 2026-07-17 - Codex window raise on session click
+
+- John reported clicking a session row does "nothing visibly" on his multi-display setup. Root cause confirmed against Apple's own developer forums: `NSRunningApplication.activate()` called from a background/`.accessory` app (exactly what AgenticGlow is) is documented as unreliable on macOS 14+, especially across displays/Spaces, not a bug in AgenticGlow's code.
+- John declined full Accessibility permission (system-wide UI control of any app) as too broad, so implemented a narrower, Codex-only fix instead: AppleScript sent directly to Codex (which actually runs as `/Applications/ChatGPT.app`, bundle id `com.openai.codex`, confirmed live) asking it to raise itself and reorder the matching window to front, using its inherited Chromium AppleScript dictionary. This asks Codex to activate itself from within its own process, sidestepping the cross-app activation restriction that plain `NSRunningApplication.activate()` hits. Uses only a narrow, one-time, per-app "AgenticGlow wants to control ChatGPT" Apple Events automation prompt, not system-wide Accessibility. Claude.app has no AppleScript dictionary at all, so it is unaffected and keeps today's behavior.
+- New `CodexWindowScript` (pure, testable): builds the AppleScript source and safely escapes the project name used for title-matching (prevents AppleScript injection from a malicious project directory name).
+- `ApplicationActivating` protocol gained `activate(bundleIdentifier:projectName:)`, with the existing single-arg call site (the notification click handler) preserved via a protocol-extension default.
+- Falls back silently to the existing generic `activate()` behavior if the permission is denied, Codex has no matching window open, or for any other bundle id (Claude) - never surfaces an error, never re-prompts.
+- Added `NSAppleEventsUsageDescription` to `Config/AgenticGlow-Info.plist`; documented the new permission in `docs/privacy.md` (optional, Codex-only, degrades gracefully).
+- Verified: full suite 312/312 (188 Core, 124 App), zero failures; privacy gate passes. Live manual verification (granting the system permission prompt, confirming the window comes forward) still needed from John - not something Claude can do on his behalf.
+- Not committed to git yet, pending John's review.
+
 ## 2026-07-17 - Released v0.5.1
 
 - Released the low-allowance warning color split (patch bump, matching how small single-fix changes like 0.4.6 and 0.4.10 were versioned, unlike the minor 0.5.0 bundle).

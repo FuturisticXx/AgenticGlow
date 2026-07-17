@@ -24,6 +24,8 @@
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>AgenticGlow asks Codex to bring the window for a session you click to the front, on whichever display it is on.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 AgenticGlow contributors</string>
 </dict>

@@ -6,6 +6,51 @@
 
 The sections below are completed historical plans retained for implementation context.
 
+# Codex window raise on session click (2026-07-17)
+
+**Status:** Planned, approved by John ("implement the codex fix"). No new system permission beyond a one-time, per-app Automation prompt.
+
+**Goal:** Clicking a Codex session row currently only calls `NSRunningApplication.activate(options: .activateAllWindows)`, which Apple's own developer forums confirm is unreliable for background/`.accessory` apps on macOS 14+, especially across displays/Spaces (this is the root cause of John's report: "nothing visibly happens," inconsistent on his multi-display setup). John declined full Accessibility permission (system-wide UI control of any app) as too broad. Codex actually runs as `/Applications/ChatGPT.app` (bundle id `com.openai.codex`, confirmed live) and ships a real AppleScript dictionary (`window` class with a settable `index` and readable `name`/title) inherited from its Chromium base. Claude.app has no AppleScript dictionary at all, so this fix is Codex-only; Claude keeps today's behavior unchanged.
+
+**Mechanism:** Send an AppleScript command directly to Codex (`tell application id "com.openai.codex" to activate`, then reorder the matching window via `set index of window to 1`) instead of calling `NSRunningApplication.activate()` from the outside. This asks Codex to raise itself from within its own process context, which is not subject to the same cross-app activation-stealing restriction. This requires one new, narrow permission: Apple Events automation, scoped to controlling ChatGPT.app only (system prompt: "AgenticGlow wants to control ChatGPT"), not system-wide Accessibility.
+
+**Known limitation:** if Codex currently has zero open windows (confirmed possible: a session can be alive per hooks with no window open), there is nothing to raise; the code falls back to today's `activate()` behavior in that case, and also if the permission is denied.
+
+## Design decisions
+
+- `ApplicationActivating` protocol gains `activate(bundleIdentifier:projectName:) -> Bool`, with a default-implemented single-arg `activate(bundleIdentifier:)` overload (via protocol extension) preserving the existing call site in `AppDelegate`'s notification click handler, which has no project name available.
+- `AppModel.activate(_:)` passes `session.projectName` through so the row click has enough info to title-match the right window.
+- Window title matching is best-effort substring match (case-insensitive) against `projectName`; if no match, or AppleScript fails for any reason (permission denied, no windows, any error), fall back silently to the existing `NSRunningApplication.activate()` call. Never surface an error to the user, never repeatedly prompt (macOS only prompts once automatically; a denial is respected silently).
+- Script construction and the string-escaping needed to safely embed `projectName` (a directory basename, but still untrusted input) into an AppleScript source string live in a small pure, testable unit (`CodexWindowScript`), separate from the actual `NSAppleScript` execution, matching the existing pattern of keeping the untestable AppKit/system call thin and the decision logic pure and tested.
+- New `NSAppleEventsUsageDescription` key in `Config/AgenticGlow-Info.plist`, plain-language reason shown in the system prompt.
+- `docs/privacy.md` gets a short new paragraph: optional, Codex-only, one-time per-app Automation permission, used only to bring a specific session's window forward, degrades gracefully without it.
+
+## Tasks
+
+### Task 1: Pure script-building and escaping
+- `CodexWindowScript.source(projectName:) -> String` and `CodexWindowScript.escape(_:) -> String` in `Sources/AgenticGlowCore/Processes/`.
+- Tests first: escape handles embedded double quotes and backslashes (no injection possible even with a malicious project name like `"; do shell script ""`); source embeds the bundle id and escaped project name correctly.
+- [x] Failing tests, implement, pass -> verified: 7/7 `CodexWindowScriptTests` green (plain text, quotes, backslashes, backslash-before-quote ordering, bundle id embedded, escaped project name embedded, activate-before-reorder ordering)
+
+### Task 2: Wire into SourceApplicationActivator
+- Protocol gains the two-arg method; default single-arg extension preserves the notification call site untouched.
+- `SourceApplicationActivator`'s injectable closure becomes `@Sendable (String, String?) -> Bool`; real implementation tries the Codex AppleScript path only when `bundleIdentifier == "com.openai.codex"` and `projectName != nil`, falls back to today's `NSRunningApplication.activate()` on any failure or for every other bundle id.
+- Update `RecordingActivator` fake in `AppModelTests.swift` to implement the two-arg method (record both args).
+- `AppModel.activate(_:)` passes `session.projectName`.
+- Tests first: `AppModelTests` asserts `projectName` is threaded through on activate.
+- [x] Failing tests, implement, pass -> verified: `testActivateRoutesTheSessionBundleIdentifier` now also asserts `projectNames == ["AgenticGlow"]`; two pre-existing `SourceApplicationActivator` tests in `ProcessIdentityResolverTests.swift` updated for the two-arg closure, plus a new `testSourceApplicationActivatorForwardsProjectName`. Full suite 312/312 green (188 Core, 124 App).
+
+### Task 3: Info.plist and privacy docs
+- Add `NSAppleEventsUsageDescription` to `Config/AgenticGlow-Info.plist`.
+- Add the new paragraph to `docs/privacy.md`; run `Scripts/verify-privacy.sh`.
+- [x] Implement, verify-privacy.sh exit 0 -> verified
+
+### Task 4: Full verification (gate for done)
+- [x] `xcodegen generate`; full unit test suite passes -> verified: 312/312, 0 failures.
+- [ ] Signed local build; manually click a live Codex session row with an open window: confirm the one-time Automation permission prompt appears, grant it, confirm the correct window comes forward (title match). **Needs John** - granting a system permission prompt is not something Claude can do on his behalf.
+- [ ] Manually deny the permission once (or test on a session with zero open Codex windows) and confirm the silent fallback to today's `activate()` behavior, no crash, no repeated prompt. **Needs John**.
+- [ ] Update `gotdone.md`; local commit. No push, no release, per standing instruction.
+
 # Session card redesign: failure state, live row indicator, tool-category icons, expand-to-detail (2026-07-16)
 
 **Status:** Planned, not started. Needs John's confirmation before implementation begins.

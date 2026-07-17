@@ -61,6 +61,7 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         LSUIElement: true
+        NSAppleEventsUsageDescription: AgenticGlow asks Codex to bring the window for a session you click to the front, on whichever display it is on.
         NSHumanReadableCopyright: Copyright © 2026 AgenticGlow contributors
     entitlements:
       path: Config/AgenticGlow.entitlements

@@ -143,7 +143,7 @@ final class AppModel {
     }
 
     func activate(_ session: SessionSnapshot) {
-        activator.activate(bundleIdentifier: session.sourceBundleID)
+        activator.activate(bundleIdentifier: session.sourceBundleID, projectName: session.projectName)
     }
 
     func removeSession(_ session: SessionSnapshot) {

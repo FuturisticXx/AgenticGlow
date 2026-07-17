@@ -86,6 +86,7 @@ final class AppModelTests: XCTestCase {
         model.activate(session)
 
         XCTAssertEqual(activator.bundleIdentifiers, ["com.anthropic.claudefordesktop"])
+        XCTAssertEqual(activator.projectNames, ["AgenticGlow"])
     }
 
     func testRemoveSessionHidesItFromResolvedSessions() {
@@ -548,9 +549,11 @@ private final class FailingAfterFirstLoadStore: SessionStateStoring {
 
 private final class RecordingActivator: ApplicationActivating, @unchecked Sendable {
     private(set) var bundleIdentifiers: [String?] = []
+    private(set) var projectNames: [String?] = []
 
-    func activate(bundleIdentifier: String?) -> Bool {
+    func activate(bundleIdentifier: String?, projectName: String?) -> Bool {
         bundleIdentifiers.append(bundleIdentifier)
+        projectNames.append(projectName)
         return true
     }
 }

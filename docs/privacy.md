@@ -60,6 +60,18 @@ account data, or identifiers are sent. The normalized result (operational or
 incident description) is held in memory only, never written to disk, and is
 discarded when the toggle is turned off or the app quits.
 
+## Bringing a session's window forward
+
+Clicking a Codex session row asks Codex (macOS Apple Events automation) to raise
+the window matching that session's project, in addition to the existing generic
+app activation. The system shows a one-time permission prompt scoped to Codex
+only, not system-wide Accessibility access. If the permission is denied, or
+Codex has no matching window open, AgenticGlow silently falls back to today's
+generic app activation. No window content, title, or other data is read back or
+stored; the project name used to find the right window comes only from data
+already collected (see Stored session fields above). Claude sessions are
+unaffected: Claude's desktop app has no automation support to use here.
+
 ## Notifications
 
 Optional notifications (agent needs permission, usage running low, or usage

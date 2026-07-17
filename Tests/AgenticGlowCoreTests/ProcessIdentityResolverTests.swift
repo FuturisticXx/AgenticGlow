@@ -192,18 +192,27 @@ final class ProcessIdentityResolverTests: XCTestCase {
     }
 
     func testSourceApplicationActivatorRejectsNilBundle() {
-        let activator = SourceApplicationActivator(activateBundle: { _ in true })
+        let activator = SourceApplicationActivator(activateBundle: { _, _ in true })
 
         XCTAssertFalse(activator.activate(bundleIdentifier: nil))
     }
 
     func testSourceApplicationActivatorDelegatesBundleActivation() {
-        let activator = SourceApplicationActivator(activateBundle: { bundleIdentifier in
+        let activator = SourceApplicationActivator(activateBundle: { bundleIdentifier, _ in
             bundleIdentifier == "com.openai.codex"
         })
 
         XCTAssertTrue(activator.activate(bundleIdentifier: "com.openai.codex"))
         XCTAssertFalse(activator.activate(bundleIdentifier: "com.example.missing"))
+    }
+
+    func testSourceApplicationActivatorForwardsProjectName() {
+        let activator = SourceApplicationActivator(activateBundle: { _, projectName in
+            projectName == "AgenticGlow"
+        })
+
+        XCTAssertTrue(activator.activate(bundleIdentifier: "com.openai.codex", projectName: "AgenticGlow"))
+        XCTAssertFalse(activator.activate(bundleIdentifier: "com.openai.codex", projectName: "Other"))
     }
 }
 
