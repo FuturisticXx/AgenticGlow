@@ -1,5 +1,18 @@
 # Got done
 
+## 2026-07-16 - Session card redesign (research + 6-task implementation)
+
+- Deep research pass (code audit, HCI/attention research, Apple design principles, competitive analysis) written to `docs/session-redesign-research.md`. John approved the card-redesign mockup; glow effect and usage bars explicitly frozen throughout.
+- `SessionPhasePresentation` unifies the session row and menu bar icon's icon/color tables, which had silently drifted (idle and working shared one menu bar glyph; the row used a third, different glyph for each).
+- Added an inferred `.failed` phase: a process that disconnects mid-task (`.thinking`/`.usingTool`) now reads as failed, distinct from a clean disconnect from idle/completed/permission. No error/exit-code signal exists in the hook payload, so this is a heuristic; priority order is permission > usingTool > thinking > failed > completed > disconnected > idle.
+- Session rows now show a per-action icon (pencil/doc.text/magnifyingglass/globe/terminal/arrow.triangle.branch) from `ToolCategory`, which the resolver already classified but never threaded to the view.
+- Actively-working rows breathe (opacity) on their own status glyph via the pure, testable `SessionRowMotion`, instead of relying solely on the menu bar icon for "something is happening." While researching this, found the Reduce Motion "read once at launch" bug described in the research doc doesn't actually exist (`ReduceMotionObserver` in `AppDelegate.swift` already handles it live, with passing tests) — corrected the doc rather than fixing a non-bug.
+- Elapsed time is now exposed to VoiceOver via a separate `accessibilityValue` + `.updatesFrequently`, instead of being silently hidden.
+- Added an expand-to-detail tier: a disclosure chevron (sibling to the activate button, not nested) reveals current step, surface, and last-updated relative time (data already collected, never shown), plus an honest explanatory note for `.failed` sessions.
+- TDD throughout: every task RED before GREEN, one commit per task. Full suite 294/294 (175 Core, 6 Event, 113 App); `Scripts/verify-privacy.sh` passes.
+- Live-verified with a new `redesign-states` UI-test fixture (permission/working/failed/completed sessions) launched as a separate ad-hoc-signed Debug build alongside the running production app, screenshotted on Display 3. Confirmed live: the red failed icon on a mid-task-disconnected session, the pencil tool-category icon on the working session, and the expand chevron rendering on each row. Not live-verified: the actual click-to-expand interaction (avoided a multi-display coordinate click to stay clear of the running production instance), Dark mode (the fixture launch path and `--visual-qa` forced-appearance path are mutually exclusive in `AppDelegate` today), and VoiceOver's actual spoken output. Test build quit cleanly afterward; confirmed the production instance was the sole remaining process.
+- No push, no release, no version bump. All commits local for John's review.
+
 ## 2026-07-15 - Released v0.4.11
 
 - Released the allowance low-window warning: full non-UI suite passed 257 tests (167 core, 90 app) with zero failures; privacy gate passed.

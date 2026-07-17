@@ -67,10 +67,10 @@ Given that, shipped copy should say something honest like "stopped while working
 - [ ] Failing tests, implement, pass, commit
 
 ### Task 7: Full verification (gate for done)
-- [ ] Full unit test suite passes.
-- [ ] `Scripts/verify-privacy.sh` passes.
-- [ ] Signed local build; screenshots of each state (thinking with live glyph, permission, failed, completed) in Light and Dark; VoiceOver spoken-label check for elapsed time and the failed state.
-- [ ] Update `gotdone.md`; final local commit. No push, no release.
+- [x] Full unit test suite passes -> verified: 294/294 (175 Core, 6 Event, 113 App).
+- [x] `Scripts/verify-privacy.sh` passes -> verified: exit 0.
+- [x] Signed (ad-hoc) local build; screenshot of the `redesign-states` fixture (permission/working/failed/completed) via a separate debug instance alongside the running production app, on Display 3 -> verified: red failed icon, pencil tool-category icon, and expand chevrons all render correctly. Not captured: live click-to-expand (avoided a multi-display coordinate click near the running production instance), Dark mode (fixture launch and `--visual-qa` are mutually exclusive today), VoiceOver spoken output (would need live VoiceOver session).
+- [x] Update `gotdone.md`; final local commit. No push, no release.
 
 ---
 

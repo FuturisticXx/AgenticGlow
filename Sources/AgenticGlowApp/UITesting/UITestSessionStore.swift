@@ -140,6 +140,77 @@ enum UITestFixtureFactory {
                     updatedAt: Date()
                 )
             ]
+        case "redesign-states":
+            return [
+                .init(
+                    schemaVersion: 1,
+                    provider: .claude,
+                    surface: .cli,
+                    sessionID: "redesign-working",
+                    turnID: "turn",
+                    phase: .usingTool,
+                    label: "Editing StatusItemController.swift",
+                    toolCategory: .edit,
+                    projectName: "agenticglow",
+                    workingDirectory: "/tmp/agenticglow",
+                    sourceBundleID: "com.apple.Terminal",
+                    sourceProcessID: nil,
+                    sourceProcessStartedAt: nil,
+                    turnStartedAt: Date().addingTimeInterval(-54),
+                    updatedAt: Date()
+                ),
+                .init(
+                    schemaVersion: 1,
+                    provider: .codex,
+                    surface: .cli,
+                    sessionID: "redesign-permission",
+                    turnID: "turn",
+                    phase: .permission,
+                    label: "Awaiting permission",
+                    toolCategory: nil,
+                    projectName: "permisight",
+                    workingDirectory: "/tmp/permisight",
+                    sourceBundleID: "com.apple.Terminal",
+                    sourceProcessID: nil,
+                    sourceProcessStartedAt: nil,
+                    turnStartedAt: Date(),
+                    updatedAt: Date()
+                ),
+                .init(
+                    schemaVersion: 1,
+                    provider: .claude,
+                    surface: .cli,
+                    sessionID: "redesign-failed",
+                    turnID: "turn",
+                    phase: .failed,
+                    label: "Running swift build",
+                    toolCategory: nil,
+                    projectName: "weather-widget",
+                    workingDirectory: "/tmp/weather-widget",
+                    sourceBundleID: "com.apple.Terminal",
+                    sourceProcessID: nil,
+                    sourceProcessStartedAt: nil,
+                    turnStartedAt: nil,
+                    updatedAt: Date().addingTimeInterval(-120)
+                ),
+                .init(
+                    schemaVersion: 1,
+                    provider: .codex,
+                    surface: .cli,
+                    sessionID: "redesign-completed",
+                    turnID: "turn",
+                    phase: .completed,
+                    label: "Completed",
+                    toolCategory: nil,
+                    projectName: "2damax-site",
+                    workingDirectory: "/tmp/2damax-site",
+                    sourceBundleID: "com.apple.Terminal",
+                    sourceProcessID: nil,
+                    sourceProcessStartedAt: nil,
+                    turnStartedAt: nil,
+                    updatedAt: Date()
+                )
+            ]
         default:
             return nil
         }
