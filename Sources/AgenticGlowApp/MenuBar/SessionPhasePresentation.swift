@@ -40,7 +40,7 @@ enum SessionPhasePresentation {
         case .thinking:
             return context == .row ? "brain" : "circle.hexagongrid"
         case .usingTool:
-            return context == .row ? "sparkle" : "circle.hexagongrid"
+            return context == .row ? "wrench.and.screwdriver" : "circle.hexagongrid"
         }
     }
 
@@ -54,7 +54,7 @@ enum SessionPhasePresentation {
         case .browse: "globe"
         case .command: "terminal"
         case .delegate: "arrow.triangle.branch"
-        case .other: "sparkle"
+        case .other: "wrench.and.screwdriver"
         }
     }
 

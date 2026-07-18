@@ -9,7 +9,7 @@ final class SessionPhasePresentationTests: XCTestCase {
         XCTAssertEqual(SessionPhasePresentation.symbolName(for: .disconnected, in: .row), "bolt.slash.circle")
         XCTAssertEqual(SessionPhasePresentation.symbolName(for: .idle, in: .row), "circle")
         XCTAssertEqual(SessionPhasePresentation.symbolName(for: .thinking, in: .row), "brain")
-        XCTAssertEqual(SessionPhasePresentation.symbolName(for: .usingTool, in: .row), "sparkle")
+        XCTAssertEqual(SessionPhasePresentation.symbolName(for: .usingTool, in: .row), "wrench.and.screwdriver")
     }
 
     func testMenuBarSymbolNamesMatchExistingStatusIconography() {
@@ -42,11 +42,11 @@ final class SessionPhasePresentationTests: XCTestCase {
         XCTAssertEqual(SessionPhasePresentation.symbolName(for: .usingTool, toolCategory: .browse, in: .row), "globe")
         XCTAssertEqual(SessionPhasePresentation.symbolName(for: .usingTool, toolCategory: .command, in: .row), "terminal")
         XCTAssertEqual(SessionPhasePresentation.symbolName(for: .usingTool, toolCategory: .delegate, in: .row), "arrow.triangle.branch")
-        XCTAssertEqual(SessionPhasePresentation.symbolName(for: .usingTool, toolCategory: .other, in: .row), "sparkle")
+        XCTAssertEqual(SessionPhasePresentation.symbolName(for: .usingTool, toolCategory: .other, in: .row), "wrench.and.screwdriver")
     }
 
-    func testRowFallsBackToSparkleWhenUsingToolHasNoCategory() {
-        XCTAssertEqual(SessionPhasePresentation.symbolName(for: .usingTool, in: .row), "sparkle")
+    func testRowFallsBackToToolIconWhenUsingToolHasNoCategory() {
+        XCTAssertEqual(SessionPhasePresentation.symbolName(for: .usingTool, in: .row), "wrench.and.screwdriver")
     }
 
     func testRowIgnoresToolCategoryWhileThinking() {
