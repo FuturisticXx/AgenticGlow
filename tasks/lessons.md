@@ -2,6 +2,12 @@
 
 Rules learned from real mistakes in this project. Read in full at session start. Add a new entry after any correction from John.
 
+## Codex hooks may go silent after switching OpenAI accounts (2026-07-17)
+
+**What happened:** While testing the Codex window-raise fix, no new Codex hook events reached AgenticGlow at all (not even the old, pre-fix behavior) even after John sent new messages in Codex. `~/.codex/hooks.json` was confirmed correct and unchanged, the standalone helper binary at `~/Library/Application Support/AgenticGlow/bin/agenticglow-event` was confirmed working via a direct manual invocation, and Codex's own Settings > Hooks page showed all 18 hooks (across AgenticGlow, Klarity, and Sessionlet) toggled on with no visible untrusted state. John later confirmed the actual cause: he had switched to a different OpenAI account in Codex.
+
+**Rule:** If Codex sessions stop reporting to AgenticGlow with no config-file or helper-binary explanation, ask whether the OpenAI account signed into Codex changed recently, before assuming a local file/binary problem. The exact mechanism is not yet confirmed (Codex's Settings UI does not visibly reflect this), so this needs a real investigation next time it's convenient, ideally by deliberately switching accounts and watching what changes. Don't spend another long session re-deriving the same negative evidence (hooks.json fine, helper fine, Settings shows enabled) before checking this first.
+
 ## CI scripts must only use tools preinstalled on GitHub runners (2026-07-05)
 
 **What happened:** `Scripts/verify-privacy.sh` used `rg` (ripgrep). It worked locally because ripgrep is installed on John's Mac via Homebrew, but GitHub's macOS runners are clean machines without it. Every push failed the CI `test` job with `rg: command not found` (exit 127), generating a failure email per push.
