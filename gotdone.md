@@ -1,5 +1,15 @@
 # Got done
 
+## 2026-07-18 - Session start time and absolute allowance reset dates
+
+- John's idea: show when a session started, and show an actual date for allowance resets instead of just relative countdowns.
+- `turnStartedAt` already flowed from the hook event through `SessionResolver` into the row's live elapsed-seconds counter, but was never carried into `SessionSnapshot` as a raw date. Threaded it through and surfaced it as an absolute clock time ("Started 3:42 PM", or "Jul 17, 3:42 PM" on an earlier day) in the row's expand-to-detail panel, not the compact row, so it adds a fixed anchor instead of duplicating the live counter already visible.
+- Allowance captions: the weekly reset now includes the calendar date ("Week · resets Tue, Jul 21 at 12:59 PM" instead of just the weekday), and the current 5h window's countdown is paired with its absolute clock time ("5h · 1h 59m (2:59 PM)").
+- Tests first, matching project convention: 3 new `SessionDetailPresentationTests`, 1 new `SessionResolverTests`, 2 new `AllowancePresentationTests`. Full suite 321/321 (189 core, 132 app), zero failures.
+- Verified visually: same technique as the brain-icon feature, since this accessory app's popover isn't reachable by screen automation in this environment (confirmed again this session). Real `SessionRowView` and `AllowanceSectionView` rendered directly to a PNG via a temporary `ImageRenderer` hook in `AppDelegate.swift`, reverted immediately after capture, not part of the shipped diff.
+- Committed (`9fc2863`) to `main`. Not pushed, no version bump, no release.
+- Left two pre-existing, unrelated uncommitted files alone (`SessionRowMotion.swift`, `SessionRowMotionTests.swift`, present before this session started, part of the not-yet-finished session-card-redesign expand-to-detail motion work) rather than bundling them into this commit.
+
 ## 2026-07-17 - Released v0.5.3
 
 - Root-caused why v0.5.2's Codex window-raise feature never actually worked on real Codex desktop sessions: `sourceBundleID` was nil for every one of them (8/8 checked). OpenAI renamed the desktop app to ChatGPT, and the process resolver only accepted a bundle ID from a process named exactly "codex"/"Codex", so it silently missed the real "ChatGPT" process. Fixed by accepting a known alias name per provider; Claude was already correct and is unaffected. Caught a stale test fixture along the way that had assumed the old app name and masked this for months.
