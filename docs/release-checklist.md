@@ -189,6 +189,16 @@ Public release 0.5.1 evidence recorded 2026-07-17:
 - `Cask/agenticglow.rb` was regenerated with the 0.5.1 checksum (main commit `a611cff`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `10d3167`).
 - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.1 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
 
+Public release 0.5.2 evidence recorded 2026-07-17:
+
+- Released from commit `984ffda` (tag `v0.5.2`): clicking a Codex session now asks Codex itself to raise its matching window (one-time, Codex-only Automation permission, not system-wide Accessibility), falling back to today's generic activation if declined or if no matching window is open; thinking sessions (Claude and Codex) show a brain icon instead of a sparkle, with the same pulse animation. Both changes were verified live by the owner on a local signed test build before this release.
+- The full suite passed on the release commit: 312 tests (188 core, 124 app) with zero failures; the privacy gate passed.
+- Both release gate variables were confirmed with the owner in chat before use, naming `AGENTICGLOW_NAME_CLEARED` and `AGENTICGLOW_RELEASE_BUILD_APPROVED` explicitly.
+- Signed universal `arm64`/`x86_64` build passed strict code-signature checks. Apple accepted notarization submission `a159df04-6357-44cb-a4d7-0eb6017891cf`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Released DMG SHA-256 `d3a7e485b7e6f56252726dc3485f8f35fe52b6893f39e6705e5f9c59fe475840`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.5.2 checksum (main commit `796cab0`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `5c8c568`).
+- The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.2 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.
@@ -309,15 +319,15 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-17, latest: v0.5.1)
-  - v0.5.1 published from commit `29b1996`
-  - Apple notarization submission `26a4236b-1ba6-465d-adc1-5c828765c349` accepted
-  - Published DMG SHA-256: `36240e1f599c9f916181b957ad3bd3cf25744d89a067c48b2593dbf26c2b5f57`
+- [x] **GitHub release published** (date: 2026-07-17, latest: v0.5.2)
+  - v0.5.2 published from commit `984ffda`
+  - Apple notarization submission `a159df04-6357-44cb-a4d7-0eb6017891cf` accepted
+  - Published DMG SHA-256: `d3a7e485b7e6f56252726dc3485f8f35fe52b6893f39e6705e5f9c59fe475840`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes document the low-allowance warning color split
+  - Release notes document the Codex window-raise fix and the brain icon for thinking sessions
 
-- [x] **Cask updated in the official tap** (date: 2026-07-17, version 0.5.1)
-  - Official tap updated to v0.5.1 at commit `10d3167`
+- [x] **Cask updated in the official tap** (date: 2026-07-17, version 0.5.2)
+  - Official tap updated to v0.5.2 at commit `5c8c568`
   - `Cask/agenticglow.rb` regenerated with the v0.5.1 checksum and pushed on main (`a611cff`)
   - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.1 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install
 

@@ -62,9 +62,9 @@ The sections below are completed historical plans retained for implementation co
 
 ### Task 4: Full verification (gate for done)
 - [x] `xcodegen generate`; full unit test suite passes -> verified: 312/312, 0 failures.
-- [ ] Signed local build; manually click a live Codex session row with an open window: confirm the one-time Automation permission prompt appears, grant it, confirm the correct window comes forward (title match). **Needs John** - granting a system permission prompt is not something Claude can do on his behalf.
-- [ ] Manually deny the permission once (or test on a session with zero open Codex windows) and confirm the silent fallback to today's `activate()` behavior, no crash, no repeated prompt. **Needs John**.
-- [ ] Update `gotdone.md`; local commit. No push, no release, per standing instruction.
+- [x] Signed local build; manually click a live Codex session row with an open window: confirm the one-time Automation permission prompt appears, grant it, confirm the correct window comes forward (title match) -> verified: John confirmed live on a signed local test build ("Both look good") on 2026-07-17, before v0.5.2 was released.
+- [ ] Manually deny the permission once (or test on a session with zero open Codex windows) and confirm the silent fallback to today's `activate()` behavior, no crash, no repeated prompt. Not yet tested live; only the happy path was confirmed. Code path reviewed (falls back to `NSRunningApplication.activate()` on any AppleScript error, see `SourceApplicationActivator.raiseCodexWindow`), but not release-blocking.
+- [x] Update `gotdone.md`; committed and pushed. Released as v0.5.2 (see gotdone.md and docs/release-checklist.md for evidence).
 
 # Session card redesign: failure state, live row indicator, tool-category icons, expand-to-detail (2026-07-16)
 

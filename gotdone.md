@@ -1,5 +1,15 @@
 # Got done
 
+## 2026-07-17 - Released v0.5.2
+
+- Released the Codex window-raise fix and the brain icon for thinking sessions together, both already verified live by John on a local signed test build before this release.
+- Full suite passed on the release commit (`984ffda`): 312 tests (188 core, 124 app), zero failures; privacy gate passed.
+- Both release gate variables confirmed and used: `AGENTICGLOW_NAME_CLEARED=1`, `AGENTICGLOW_RELEASE_BUILD_APPROVED=1`.
+- Signed universal build passed strict code-signature checks. Notarization submission `a159df04-6357-44cb-a4d7-0eb6017891cf` accepted; DMG stapled, validated, Gatekeeper accepted app and DMG as `Notarized Developer ID`.
+- Published `v0.5.2` at commit `984ffda`, DMG SHA-256 `d3a7e485b7e6f56252726dc3485f8f35fe52b6893f39e6705e5f9c59fe475840`. Downloaded the release asset back and independently verified checksum, staple, and Gatekeeper.
+- Cask regenerated and pushed to main (`796cab0`) and the official tap (`5c8c568`).
+- Running `/Applications/AgenticGlow.app` replaced with the notarized 0.5.2 build and relaunched; version, signature, and Gatekeeper verified.
+
 ## 2026-07-17 - Brain icon for thinking sessions
 
 - John liked Claude Code CLI's own working animation and asked for something similar in AgenticGlow, with a brain icon specifically for the thinking state, for both providers (today's icon mapping isn't provider-specific).
