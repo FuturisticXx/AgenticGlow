@@ -83,12 +83,13 @@ struct AllowancePresentation {
         let seconds = max(0, Int(reset.timeIntervalSince(now)))
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60
-        if hours > 0 { return "\(hours)h \(minutes)m" }
-        return "\(minutes)m"
+        let countdown = hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
+        let clockTime = reset.formatted(date: .omitted, time: .shortened)
+        return "\(countdown) (\(clockTime))"
     }
 
     private static func weeklyReset(_ reset: Date) -> String {
-        reset.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+        reset.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
     }
 
     private static func spoken(

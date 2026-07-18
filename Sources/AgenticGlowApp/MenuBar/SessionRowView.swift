@@ -61,19 +61,21 @@ struct SessionRowView: View {
             header
             if isExpanded {
                 detailPanel
+                    .transition(detailTransition)
             }
         }
     }
 
     private var expandButton: some View {
         Button {
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+            withAnimation(.easeOut(duration: SessionRowMotion.detailToggleDuration(reduceMotion: reduceMotion))) {
                 isExpanded.toggle()
             }
         } label: {
-            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+            Image(systemName: "chevron.down")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(isExpanded ? .primary : .secondary)
+                .rotationEffect(.degrees(SessionRowMotion.chevronRotation(isExpanded: isExpanded)))
                 .frame(width: 20, height: 20)
                 .contentShape(Rectangle())
         }
@@ -82,9 +84,22 @@ struct SessionRowView: View {
         .accessibilityLabel(isExpanded ? "Hide details" : "Show details")
     }
 
+    private var detailTransition: AnyTransition {
+        if reduceMotion {
+            return .opacity
+        }
+        return .asymmetric(
+            insertion: .opacity.combined(with: .offset(y: CGFloat(SessionRowMotion.detailOffset))),
+            removal: .opacity
+        )
+    }
+
     private var detailPanel: some View {
         let fields = SessionDetailPresentation.detail(for: session, now: Date())
         return VStack(alignment: .leading, spacing: 3) {
+            if let started = fields.started {
+                detailRow("Started", started)
+            }
             detailRow("Current step", fields.currentStep)
             detailRow("Surface", fields.surface)
             detailRow("Last updated", fields.lastUpdated)

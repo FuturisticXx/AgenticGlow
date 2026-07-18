@@ -41,6 +41,31 @@ final class SessionDetailPresentationTests: XCTestCase {
         XCTAssertEqual(detail.lastUpdated, "2h ago")
     }
 
+    func testStartedIsNilWithoutAnActiveTurn() {
+        let session = session(phase: .idle)
+        let detail = SessionDetailPresentation.detail(for: session, now: Date(timeIntervalSince1970: 100))
+        XCTAssertNil(detail.started)
+    }
+
+    func testStartedShowsClockTimeOnlyForSameDay() {
+        let now = Date(timeIntervalSince1970: 100)
+        let session = session(phase: .thinking, turnStartedAt: Date(timeIntervalSince1970: 40))
+        let detail = SessionDetailPresentation.detail(for: session, now: now)
+
+        let expected = Date(timeIntervalSince1970: 40).formatted(date: .omitted, time: .shortened)
+        XCTAssertEqual(detail.started, expected)
+    }
+
+    func testStartedIncludesCalendarDateOnAnEarlierDay() {
+        let now = Date(timeIntervalSince1970: 100)
+        let earlierDay = now.addingTimeInterval(-2 * 24 * 60 * 60)
+        let session = session(phase: .thinking, turnStartedAt: earlierDay)
+        let detail = SessionDetailPresentation.detail(for: session, now: now)
+
+        let expected = earlierDay.formatted(.dateTime.month(.abbreviated).day().hour().minute())
+        XCTAssertEqual(detail.started, expected)
+    }
+
     func testFailedIncludesExplanatoryNote() {
         let session = session(phase: .failed, label: "Running swift build")
         let detail = SessionDetailPresentation.detail(for: session, now: Date(timeIntervalSince1970: 100))
@@ -60,7 +85,8 @@ final class SessionDetailPresentationTests: XCTestCase {
         phase: SessionPhase,
         label: String = "Working",
         surface: SourceSurface = .cli,
-        updatedAt: Date = Date(timeIntervalSince1970: 90)
+        updatedAt: Date = Date(timeIntervalSince1970: 90),
+        turnStartedAt: Date? = nil
     ) -> SessionSnapshot {
         SessionSnapshot(
             provider: .codex,
@@ -71,6 +97,7 @@ final class SessionDetailPresentationTests: XCTestCase {
             projectName: "AgenticGlow",
             sourceBundleID: "com.apple.Terminal",
             elapsedSeconds: nil,
+            turnStartedAt: turnStartedAt,
             updatedAt: updatedAt
         )
     }

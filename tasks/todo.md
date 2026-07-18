@@ -6,6 +6,38 @@
 
 The sections below are completed historical plans retained for implementation context.
 
+# Session start time + reset dates (2026-07-18)
+
+**Status:** Implemented and verified. Not committed yet (John's call).
+
+**Goal:**
+1. Show when a session's current turn started, in the row's expanded detail panel.
+2. Show an absolute date/time for both allowance reset windows (current 5h window and weekly window), not just relative countdowns.
+
+## Part A: Session start time
+
+- `turnStartedAt` already flows `NormalizedEvent` -> `SessionResolver` -> the row's elapsed-seconds counter, it is just never carried into `SessionSnapshot` as a raw date.
+- `Sources/AgenticGlowCore/State/SessionSnapshot.swift`: add `public let turnStartedAt: Date?` to `SessionSnapshot`, thread through the initializer.
+- `Sources/AgenticGlowCore/State/SessionResolver.swift`: pass `turnStartedAt: event.turnStartedAt` when constructing `SessionSnapshot` (same source already used for `elapsedSeconds`, ~line 89).
+- `Sources/AgenticGlowApp/MenuBar/SessionDetailPresentation.swift`: add a `started: String?` field. Format as absolute clock time: `"3:42 PM"` if today, `"Jul 17, 3:42 PM"` otherwise. `nil` when `turnStartedAt` is nil (no active turn), row omitted.
+- `Sources/AgenticGlowApp/MenuBar/SessionRowView.swift`: add a `detailRow("Started", ...)` in `detailPanel`, only when non-nil, above "Current step".
+- Shown in the detail panel (tap-to-expand), not the compact row, so it adds a fixed clock-time anchor instead of duplicating the live elapsed counter already visible up top.
+- [x] Update `Tests/AgenticGlowAppTests/SessionDetailPresentationTests.swift` and `Tests/AgenticGlowCoreTests/SessionResolverTests.swift` for the new field -> verified: 3 new SessionDetailPresentationTests, 1 new SessionResolverTests, all green.
+
+## Part B: Reset dates
+
+- `Sources/AgenticGlowApp/MenuBar/AllowancePresentation.swift`:
+  - `weeklyReset(_:)`: add the calendar date, `"Mon 3:42 PM"` -> `"Mon, Jul 20 · 3:42 PM"` (`.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()`).
+  - `relativeReset(_:now:)` (current 5h window): append the absolute clock time alongside the existing countdown, e.g. `"2h 15m (3:42 PM)"`.
+- Weekly reset can be many days out, weekday-only is ambiguous past a week. The 5h window resets same-day almost always, so a clock time (not a full date) is the useful anchor there, avoids cramming a redundant date into an already-tight caption line.
+- [x] Update `Tests/AgenticGlowAppTests/AllowancePresentationTests.swift` for both format changes -> verified: 2 new tests, both green.
+
+## Verification
+
+- [x] `xcodebuild test` (AgenticGlowCoreTests + AgenticGlowAppTests) -> verified: 189 Core + 132 App, 0 failures.
+- [x] Signed (ad-hoc) local build; real `SessionRowView` + `AllowanceSectionView` rendered directly to a PNG via a temporary `ImageRenderer` hook in `AppDelegate.swift` (same technique as the brain-icon feature), reverted immediately after, not part of the shipped diff -> verified: expanded row shows "Started 12:59 PM" above "Current step"; allowance captions show "5h · 1h 59m (2:59 PM)" and "Week · resets Tue, Jul 21 at 12:59 PM". Popover-window automation isn't reachable by computer-use in this environment for this accessory app (confirmed again this session, matching prior lessons), hence the render-hook approach.
+- [ ] Update `gotdone.md` (after commit).
+
 # Brain icon for thinking sessions (2026-07-17)
 
 **Status:** Complete, committed (`b1e9dbd`), and pushed.

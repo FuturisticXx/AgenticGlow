@@ -112,6 +112,43 @@ final class AllowancePresentationTests: XCTestCase {
         XCTAssertTrue(presentation.accessibilityWeekly!.contains("low"))
     }
 
+    func testCurrentResetShowsCountdownAndAbsoluteClockTime() {
+        let reset = Date(timeIntervalSince1970: 1_783_101_600)
+        let now = Date(timeIntervalSince1970: 1_783_099_000)
+        let allowance = ProviderAllowance(
+            provider: .codex,
+            currentWindowLabel: "5h",
+            currentPercentUsed: 26,
+            currentResetAt: reset,
+            weeklyPercentUsed: nil,
+            weeklyResetAt: nil,
+            fetchedAt: Date()
+        )
+        let presentation = AllowancePresentation(allowance: allowance, now: now)
+
+        let expectedCountdown = "43m"
+        let expectedClockTime = reset.formatted(date: .omitted, time: .shortened)
+        XCTAssertTrue(presentation.currentDetail.contains(expectedCountdown))
+        XCTAssertTrue(presentation.currentDetail.contains(expectedClockTime))
+    }
+
+    func testWeeklyResetShowsCalendarDateAlongsideWeekdayAndTime() {
+        let reset = Date(timeIntervalSince1970: 1_783_101_600)
+        let allowance = ProviderAllowance(
+            provider: .codex,
+            currentWindowLabel: "5h",
+            currentPercentUsed: nil,
+            currentResetAt: nil,
+            weeklyPercentUsed: 18,
+            weeklyResetAt: reset,
+            fetchedAt: Date()
+        )
+        let presentation = AllowancePresentation(allowance: allowance, now: Date())
+
+        let expected = reset.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
+        XCTAssertEqual(presentation.weeklyValue, "Week 82% · \(expected)")
+    }
+
     func testMissingPercentagesAreNotLow() {
         let allowance = ProviderAllowance(
             provider: .codex,

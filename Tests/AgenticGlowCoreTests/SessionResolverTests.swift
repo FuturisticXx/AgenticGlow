@@ -463,6 +463,13 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertNil(resolved.sessions.first?.toolCategory)
     }
 
+    func testSnapshotCarriesTurnStartedAt() {
+        let resolved = resolve(
+            event(provider: .codex, session: "thinking", phase: .thinking, updated: 999)
+        )
+        XCTAssertEqual(resolved.sessions.first?.turnStartedAt, Date(timeIntervalSince1970: 90))
+    }
+
     func testUnknownProcessExpiresAfterFourHours() {
         var event = event(provider: .codex, session: "old", phase: .thinking, updated: 100)
         event = NormalizedEvent(

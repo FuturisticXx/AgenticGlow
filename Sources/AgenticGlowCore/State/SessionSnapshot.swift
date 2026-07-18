@@ -10,6 +10,7 @@ public struct SessionSnapshot: Identifiable, Equatable, Sendable {
     public let projectName: String
     public let sourceBundleID: String?
     public let elapsedSeconds: Int?
+    public let turnStartedAt: Date?
     public let updatedAt: Date
     public let toolCategory: ToolCategory?
 
@@ -22,6 +23,7 @@ public struct SessionSnapshot: Identifiable, Equatable, Sendable {
         projectName: String,
         sourceBundleID: String?,
         elapsedSeconds: Int?,
+        turnStartedAt: Date? = nil,
         updatedAt: Date,
         toolCategory: ToolCategory? = nil
     ) {
@@ -33,6 +35,7 @@ public struct SessionSnapshot: Identifiable, Equatable, Sendable {
         self.projectName = projectName
         self.sourceBundleID = sourceBundleID
         self.elapsedSeconds = elapsedSeconds
+        self.turnStartedAt = turnStartedAt
         self.updatedAt = updatedAt
         self.toolCategory = toolCategory
     }
