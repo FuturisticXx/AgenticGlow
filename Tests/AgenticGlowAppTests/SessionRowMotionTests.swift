@@ -22,4 +22,18 @@ final class SessionRowMotionTests: XCTestCase {
             XCTAssertFalse(SessionRowMotion.shouldPulse(phase: phase, reduceMotion: false))
         }
     }
+
+    func testDetailMotionHasLegibleButFastTiming() {
+        XCTAssertEqual(SessionRowMotion.detailToggleDuration(reduceMotion: false), 0.2)
+        XCTAssertEqual(SessionRowMotion.detailOffset, -6)
+    }
+
+    func testReducedMotionKeepsShortOpacityFeedback() {
+        XCTAssertEqual(SessionRowMotion.detailToggleDuration(reduceMotion: true), 0.12)
+    }
+
+    func testChevronRotationMatchesExpansionState() {
+        XCTAssertEqual(SessionRowMotion.chevronRotation(isExpanded: false), 0)
+        XCTAssertEqual(SessionRowMotion.chevronRotation(isExpanded: true), 180)
+    }
 }

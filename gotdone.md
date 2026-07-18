@@ -1,5 +1,11 @@
 # Got done
 
+## 2026-07-18 - Restored missing session-row motion helpers
+
+- Root-caused the four v0.5.4 CI failures to `SessionRowView` referencing three motion helpers that were present locally but omitted from the release commits.
+- Added the matching `SessionRowMotion` timing, offset, and chevron helpers plus their existing regression tests.
+- Re-ran the exact non-UI CI test command locally: 132 app tests passed with zero failures.
+
 ## 2026-07-18 - Released v0.5.4
 
 - John asked to build and install the release; confirmed scope was the full public release (version bump, DMG, notarization, GitHub release, cask update), not just a local install.
