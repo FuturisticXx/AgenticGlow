@@ -8,7 +8,7 @@ final class SessionPhasePresentationTests: XCTestCase {
         XCTAssertEqual(SessionPhasePresentation.symbolName(for: .completed, in: .row), "checkmark.circle.fill")
         XCTAssertEqual(SessionPhasePresentation.symbolName(for: .disconnected, in: .row), "bolt.slash.circle")
         XCTAssertEqual(SessionPhasePresentation.symbolName(for: .idle, in: .row), "circle")
-        XCTAssertEqual(SessionPhasePresentation.symbolName(for: .thinking, in: .row), "sparkle")
+        XCTAssertEqual(SessionPhasePresentation.symbolName(for: .thinking, in: .row), "brain")
         XCTAssertEqual(SessionPhasePresentation.symbolName(for: .usingTool, in: .row), "sparkle")
     }
 
@@ -50,7 +50,7 @@ final class SessionPhasePresentationTests: XCTestCase {
     }
 
     func testRowIgnoresToolCategoryWhileThinking() {
-        XCTAssertEqual(SessionPhasePresentation.symbolName(for: .thinking, toolCategory: .edit, in: .row), "sparkle")
+        XCTAssertEqual(SessionPhasePresentation.symbolName(for: .thinking, toolCategory: .edit, in: .row), "brain")
     }
 
     func testMenuBarIgnoresToolCategory() {

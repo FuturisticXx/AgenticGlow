@@ -37,7 +37,9 @@ enum SessionPhasePresentation {
         case .failed: return "xmark.circle.fill"
         case .idle:
             return context == .row ? "circle" : "circle.hexagongrid"
-        case .thinking, .usingTool:
+        case .thinking:
+            return context == .row ? "brain" : "circle.hexagongrid"
+        case .usingTool:
             return context == .row ? "sparkle" : "circle.hexagongrid"
         }
     }
