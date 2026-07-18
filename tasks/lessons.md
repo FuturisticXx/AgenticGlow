@@ -115,3 +115,21 @@ Repeated xcodebuild runs prompted John's keychain for the signing key on every b
 John approved the redesigned session-card mockup (failure state, per-row live indicator, tool-category icons, tap/hover-to-expand detail) from `docs/session-redesign-research.md`, but was explicit: he does not want the glow effect or the usage bars changed as part of this work.
 
 **Rule:** When implementing the session card redesign, treat `Sources/AgenticGlowApp/MenuBar/LiquidGlassSurface.swift`, the `PopoverAura` view in `SessionListView.swift`, `AllowanceSectionView.swift`, and `AllowancePresentation.swift` as frozen. Any change to those files is out of scope for this work unless John says otherwise.
+
+## When matching a specific reference image for an icon, render the real candidate first (2026-07-17)
+
+**What happened:** John shared a reference image of a brain icon and said "the brain is sideways." My preview had used Tabler's `ti-brain` icon (a front/top symmetric view) as a stand-in for the real SF Symbol, assuming the two icon sets looked similar enough to compare shapes. They didn't: the actual SF Symbol named `brain` is already drawn in lateral/side profile, much closer to John's reference than the Tabler stand-in was. The mismatch was in my preview, not in the real icon I was planning to ship.
+
+**Rule:** When a design decision hinges on a specific glyph's exact shape (not just its animation or color), don't approximate it with a similarly-named icon from a different icon set for a comparison mockup. Render the actual candidate (e.g. a tiny AppKit script calling `NSImage(systemSymbolName:)` and writing a PNG) and inspect it directly before presenting it to John, or before building the real preview around it. This is fast (a few seconds via `swift script.swift`) and removes an entire round of back-and-forth caused by a preview that didn't represent the real thing.
+
+## Stop elaborating once John says "you're overcomplicating this" (2026-07-17)
+
+**What happened:** After John picked a brain icon idea, I kept proposing progressively more elaborate animation treatments (radiating rays, chasing dot waves) across several rounds of visual previews, each time only partially matching what he wanted. He eventually said "You are making this way too difficult. Just go with the original option A," referring back to the very first, simplest option shown several messages earlier.
+
+**Rule:** After presenting visual options, if John's next answer describes something more elaborate than what shipped-quality simplicity calls for, it's fine to show ONE more refined preview, but if that still doesn't land, default back to the simplest previously-shown option rather than inventing a third or fourth variant. Watch for explicit "too difficult" / "too complicated" language as a hard stop signal, not a cue to keep iterating.
+
+## `ImageRenderer` cannot render `List`/`ScrollView` content, even off-screen (2026-07-17)
+
+**What happened:** Needed a screenshot of a SwiftUI row to verify an icon change, but the real popover window would not reliably appear via menu-bar-click automation in this environment (same flakiness as the earlier Codex-activation problem, this time affecting our own app's window). Tried rendering the full `SessionListView` via `ImageRenderer` as a workaround — it produced an image with the header text but a blank body where the session rows should have been, because the view's row list is a `List`/`ScrollView`, and `ImageRenderer` does not lay out that content without a real attached window.
+
+**Rule:** When `ImageRenderer` output is missing List/ScrollView content, render the specific row/component view directly (e.g. `SessionRowView` in a plain `VStack`, not the whole scrollable container) instead of trying to force the full screen to render. This sidesteps window-visibility automation entirely and is more reliable than screenshotting a live window when menu-bar-click automation is flaky. Any such debug scaffolding added to `AppDelegate.swift` for this purpose must be reverted (`git checkout`) immediately after capturing, since it is not part of the shipped feature.

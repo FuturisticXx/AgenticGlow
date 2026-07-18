@@ -6,6 +6,21 @@
 
 The sections below are completed historical plans retained for implementation context.
 
+# Brain icon for thinking sessions (2026-07-17)
+
+**Status:** Complete, committed (`b1e9dbd`), and pushed.
+
+**Goal:** John liked Claude Code CLI's own working animation and asked for a brain icon on thinking sessions instead of the sparkle, for both providers (icon mapping isn't provider-specific today).
+
+**Design decision (simplified after two rounds of visual back-and-forth):** icon swap only, `SessionPhasePresentation`'s row icon for `.thinking` changes from `sparkle` to `brain`; the existing pulse animation timing is untouched. `.usingTool` is unaffected (keeps its per-category icons and sparkle fallback). See `tasks/lessons.md` for the two lessons from the design detour (matching a reference image's exact shape; stopping when told an interaction is overcomplicated).
+
+## Tasks
+
+- [x] Split `.thinking` out of the shared `.thinking, .usingTool` switch case in `SessionPhasePresentation.symbolName`, row context returns `brain` for thinking, `sparkle` for usingTool (unchanged fallback) -> verified: full suite 312/312, zero failures.
+- [x] Update `SessionPhasePresentationTests` expectations for the new thinking-row icon.
+- [x] Visual verification -> verified: real `SessionRowView` rendered directly to a PNG via a temporary `ImageRenderer` hook in `AppDelegate.swift` (reverted immediately after, not part of the shipped diff) since the popover window would not reliably show via menu-bar-click automation in this environment. Confirmed the Claude "horizon-app" row shows the new brain icon while the Codex "AgenticGlow" row keeps its pencil icon for editing.
+- [x] Update `gotdone.md`, `README.md` not applicable (no user-facing setup change), commit, push.
+
 # Codex window raise on session click (2026-07-17)
 
 **Status:** Planned, approved by John ("implement the codex fix"). No new system permission beyond a one-time, per-app Automation prompt.

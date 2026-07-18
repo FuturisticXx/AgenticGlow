@@ -1,5 +1,14 @@
 # Got done
 
+## 2026-07-17 - Brain icon for thinking sessions
+
+- John liked Claude Code CLI's own working animation and asked for something similar in AgenticGlow, with a brain icon specifically for the thinking state, for both providers (today's icon mapping isn't provider-specific).
+- Explored a few animated treatments (radiating rays, a chasing dot wave) via inline preview widgets, but the real SF Symbol shape shown in a rendered comparison didn't match an early Tabler-icon-based mockup, causing a round of back-and-forth. John then asked to keep it simple: swap the icon, keep the existing pulse animation unchanged.
+- Shipped: `SessionPhasePresentation`'s row icon for `.thinking` is now `brain` instead of `sparkle`; `.usingTool` keeps its existing per-category icons (pencil, magnifying glass, etc.) and sparkle fallback, unchanged.
+- Verified visually: since the popover window wouldn't reliably show via menu-bar-click automation in this environment, rendered the real `SessionRowView` directly to a PNG via `ImageRenderer` (temporary debug hook in `AppDelegate.swift`, reverted immediately after capture, not part of the shipped diff). Confirmed the Claude "horizon-app" row shows the new brain icon while the Codex "AgenticGlow" row keeps its pencil icon for editing.
+- Full suite passed: 312/312, zero failures.
+- Committed (`b1e9dbd`) and pushed to `main` alongside the Codex window-raise fix.
+
 ## 2026-07-17 - Codex window raise on session click
 
 - John reported clicking a session row does "nothing visibly" on his multi-display setup. Root cause confirmed against Apple's own developer forums: `NSRunningApplication.activate()` called from a background/`.accessory` app (exactly what AgenticGlow is) is documented as unreliable on macOS 14+, especially across displays/Spaces, not a bug in AgenticGlow's code.
