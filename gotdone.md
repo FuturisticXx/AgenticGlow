@@ -1,5 +1,18 @@
 # Got done
 
+## 2026-07-17 - Released v0.5.3
+
+- Root-caused why v0.5.2's Codex window-raise feature never actually worked on real Codex desktop sessions: `sourceBundleID` was nil for every one of them (8/8 checked). OpenAI renamed the desktop app to ChatGPT, and the process resolver only accepted a bundle ID from a process named exactly "codex"/"Codex", so it silently missed the real "ChatGPT" process. Fixed by accepting a known alias name per provider; Claude was already correct and is unaffected. Caught a stale test fixture along the way that had assumed the old app name and masked this for months.
+- Also swapped the sparkle fallback shown for uncategorized tool use to a tools icon (`wrench.and.screwdriver`), matching the same icon-swap-only pattern as the earlier brain icon change.
+- Discovered and worked around a separate, real gap: the standalone helper binary at `~/Library/Application Support/AgenticGlow/bin/agenticglow-event`, the one Codex's hooks actually invoke, is only refreshed through the Setup window's manual "Install" flow, never automatically on launch or upgrade. Every prior release that touched hook-processing logic had been silently shipping inert until Setup was manually re-run. Manually refreshed it for this release; logged as follow-up work in `docs/release-checklist.md` to fix properly (auto-refresh on launch when it differs from the embedded copy).
+- John separately confirmed the earlier "no new session file" mystery from this same investigation was caused by switching OpenAI accounts in Codex, not a code bug. Root mechanism still unconfirmed; logged in `tasks/lessons.md` as a follow-up.
+- Full suite passed on the release commit (`ffc56d2`): 312 tests (188 core, 124 app), zero failures; privacy gate passed.
+- Both release gate variables confirmed and used: `AGENTICGLOW_NAME_CLEARED=1`, `AGENTICGLOW_RELEASE_BUILD_APPROVED=1`.
+- Signed universal build passed strict code-signature checks. Notarization submission `5e2bb621-039d-4b26-a0aa-2fbd6b785284` accepted; DMG stapled, validated, Gatekeeper accepted app and DMG as `Notarized Developer ID`.
+- Published `v0.5.3` at commit `ffc56d2`, DMG SHA-256 `39bda93563eb13e66fbd4fc6a3349a9f45c1024f4cf0f91f1cf73186c087fa34`. Downloaded the release asset back and independently verified checksum, staple, and Gatekeeper.
+- Cask regenerated and pushed to main (`901fe10`) and the official tap (`fa39f4a`).
+- Running `/Applications/AgenticGlow.app` replaced with the notarized 0.5.3 build and relaunched; version, signature, and Gatekeeper verified. Standalone hook helper binary also manually refreshed so the fix actually takes effect for real Codex hook events, not just the app bundle.
+
 ## 2026-07-17 - Released v0.5.2
 
 - Released the Codex window-raise fix and the brain icon for thinking sessions together, both already verified live by John on a local signed test build before this release.

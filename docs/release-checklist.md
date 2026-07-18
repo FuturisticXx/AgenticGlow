@@ -199,6 +199,17 @@ Public release 0.5.2 evidence recorded 2026-07-17:
 - `Cask/agenticglow.rb` was regenerated with the 0.5.2 checksum (main commit `796cab0`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `5c8c568`).
 - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.2 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
 
+Public release 0.5.3 evidence recorded 2026-07-17:
+
+- Released from commit `ffc56d2` (tag `v0.5.3`): root-caused why Codex desktop sessions never had a `sourceBundleID` (OpenAI renamed the desktop app to ChatGPT; the resolver only matched an exact "codex"/"Codex" process name and missed the real "ChatGPT" process entirely), which had been silently short-circuiting the v0.5.2 window-raise feature for every real Codex desktop session. Also replaced the sparkle fallback shown for uncategorized tool use with a tools icon.
+- The full suite passed on the release commit: 312 tests (188 core, 124 app) with zero failures; the privacy gate passed.
+- Both release gate variables were confirmed with the owner in chat before use, naming `AGENTICGLOW_NAME_CLEARED` and `AGENTICGLOW_RELEASE_BUILD_APPROVED` explicitly.
+- Signed universal `arm64`/`x86_64` build passed strict code-signature checks. Apple accepted notarization submission `5e2bb621-039d-4b26-a0aa-2fbd6b785284`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Released DMG SHA-256 `39bda93563eb13e66fbd4fc6a3349a9f45c1024f4cf0f91f1cf73186c087fa34`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.5.3 checksum (main commit `901fe10`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `fa39f4a`).
+- The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.3 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
+- Discovered a real gap in the install/update flow: the standalone helper binary at `~/Library/Application Support/AgenticGlow/bin/agenticglow-event` (the one Codex's hooks actually invoke) is only refreshed through the Setup window's "Install" flow, never automatically on app launch or upgrade. Manually refreshed it for this install so the fix actually takes effect; see "Current Goal" below for the follow-up needed so this stops requiring a manual step on every release.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.
@@ -206,6 +217,8 @@ Maintain the public AgenticGlow release and graduate its Cask from the official 
 Next unblocked work:
 
 1. Monitor v0.4.7 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy.
+2. Auto-refresh the standalone hook helper binary (`~/Library/Application Support/AgenticGlow/bin/agenticglow-event`) on app launch when it differs from the embedded copy, instead of only through the Setup window's manual "Install" flow. Every release that touches hook-processing logic in `AgenticGlowCore` currently ships silently inert until the user re-runs Setup or the app manually refreshes it (discovered and worked around by hand during the v0.5.3 release).
+3. Investigate why Codex hooks stop firing after switching OpenAI accounts in Codex (see `tasks/lessons.md`, "Codex hooks may go silent after switching OpenAI accounts"). Root cause not yet confirmed.
 
 ## Legal and Branding
 
@@ -319,17 +332,17 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-17, latest: v0.5.2)
-  - v0.5.2 published from commit `984ffda`
-  - Apple notarization submission `a159df04-6357-44cb-a4d7-0eb6017891cf` accepted
-  - Published DMG SHA-256: `d3a7e485b7e6f56252726dc3485f8f35fe52b6893f39e6705e5f9c59fe475840`
+- [x] **GitHub release published** (date: 2026-07-17, latest: v0.5.3)
+  - v0.5.3 published from commit `ffc56d2`
+  - Apple notarization submission `5e2bb621-039d-4b26-a0aa-2fbd6b785284` accepted
+  - Published DMG SHA-256: `39bda93563eb13e66fbd4fc6a3349a9f45c1024f4cf0f91f1cf73186c087fa34`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes document the Codex window-raise fix and the brain icon for thinking sessions
+  - Release notes document the Codex desktop bundle ID root-cause fix and the tools icon for uncategorized tool use
 
-- [x] **Cask updated in the official tap** (date: 2026-07-17, version 0.5.2)
-  - Official tap updated to v0.5.2 at commit `5c8c568`
-  - `Cask/agenticglow.rb` regenerated with the v0.5.1 checksum and pushed on main (`a611cff`)
-  - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.1 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install
+- [x] **Cask updated in the official tap** (date: 2026-07-17, version 0.5.3)
+  - Official tap updated to v0.5.3 at commit `fa39f4a`
+  - `Cask/agenticglow.rb` regenerated with the v0.5.3 checksum and pushed on main (`901fe10`)
+  - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.3 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install
 
 - [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask
