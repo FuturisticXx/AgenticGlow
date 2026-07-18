@@ -17,6 +17,12 @@ struct SessionRowView: View {
                 Image(systemName: icon)
                     .foregroundStyle(color)
                     .opacity(isPulsing ? 0.45 : 1)
+                    .contentTransition(reduceMotion ? .identity : .symbolEffect(.replace.wholeSymbol))
+                    .symbolEffect(
+                        .bounce,
+                        value: SessionRowMotion.iconBounceTrigger(icon: icon, reduceMotion: reduceMotion)
+                    )
+                    .animation(reduceMotion ? nil : .default, value: icon)
                     .accessibilityHidden(true)
                     .onAppear(perform: updatePulse)
                     .onChange(of: SessionRowMotion.shouldPulse(phase: session.phase, reduceMotion: reduceMotion)) {

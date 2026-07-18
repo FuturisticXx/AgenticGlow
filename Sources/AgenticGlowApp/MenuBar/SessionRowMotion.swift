@@ -10,9 +10,18 @@ enum SessionRowMotion {
     static let reducedMotionDetailToggleDuration: Double = 0.12
     static let collapsedChevronRotation: Double = 0
     static let expandedChevronRotation: Double = 180
-
     static func shouldPulse(phase: SessionPhase, reduceMotion: Bool) -> Bool {
         !reduceMotion && phase.isActive
+    }
+
+    /// Trigger value for the bounce that punctuates a tool-category icon
+    /// swap (read -> edit -> command, etc.), layered on top of the plain
+    /// content-transition cross-fade for a discrete, one-shot accent instead
+    /// of relying on .replace alone, which falls back to a flat cross-dissolve
+    /// between unrelated glyph shapes. Reduce Motion pins this to a constant
+    /// so `.symbolEffect(.bounce, value:)` never has a value change to fire on.
+    static func iconBounceTrigger(icon: String, reduceMotion: Bool) -> String {
+        reduceMotion ? "" : icon
     }
 
     static func detailToggleDuration(reduceMotion: Bool) -> Double {
