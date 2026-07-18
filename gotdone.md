@@ -1,5 +1,17 @@
 # Got done
 
+## 2026-07-18 - Released v0.5.4
+
+- John asked to build and install the release; confirmed scope was the full public release (version bump, DMG, notarization, GitHub release, cask update), not just a local install.
+- Released the session-start-time and absolute-allowance-reset-date work from commit `79d8708` as v0.5.4.
+- Full non-UI suite passed on the release commit: 327 tests (189 core, 6 event, 132 app), zero failures; privacy gate passed.
+- Both release gate variables were confirmed with the owner in chat before use, naming `AGENTICGLOW_NAME_CLEARED` and `AGENTICGLOW_RELEASE_BUILD_APPROVED` explicitly.
+- Signed universal build passed strict code-signature checks. Apple accepted notarization submission `61a5164c-e253-4816-bdd9-f6b3ac519a0b`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Published `v0.5.4` at commit `79d8708`, DMG SHA-256 `303098ed1642ac1076b098c04e35425399f3d65e509af49295059bdf68768c67`. Downloaded the release asset back and independently verified checksum, staple, and Gatekeeper.
+- Cask regenerated and pushed to main (`ccb623e`) and the official tap (`863a1a8`).
+- Running `/Applications/AgenticGlow.app` replaced with the notarized 0.5.4 build and relaunched; version, signature, and Gatekeeper verified.
+- Left the pre-existing, unrelated uncommitted `SessionRowMotion.swift`/`SessionRowMotionTests.swift` changes (present before this whole session started, belong to the separate not-yet-finished session-card-redesign expand-to-detail motion work) out of this release entirely, same as the earlier commit.
+
 ## 2026-07-18 - Session start time and absolute allowance reset dates
 
 - John's idea: show when a session started, and show an actual date for allowance resets instead of just relative countdowns.

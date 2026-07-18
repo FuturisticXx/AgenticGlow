@@ -210,6 +210,16 @@ Public release 0.5.3 evidence recorded 2026-07-17:
 - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.3 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
 - Discovered a real gap in the install/update flow: the standalone helper binary at `~/Library/Application Support/AgenticGlow/bin/agenticglow-event` (the one Codex's hooks actually invoke) is only refreshed through the Setup window's "Install" flow, never automatically on app launch or upgrade. Manually refreshed it for this install so the fix actually takes effect; see "Current Goal" below for the follow-up needed so this stops requiring a manual step on every release.
 
+Public release 0.5.4 evidence recorded 2026-07-18:
+
+- Released from commit `79d8708` (tag `v0.5.4`): session rows show when the current turn started (absolute clock time in the expand-to-detail panel), and allowance reset captions show an absolute date/time instead of only a relative countdown (current 5h window pairs its countdown with a clock time; weekly window shows a full calendar date alongside the weekday and time).
+- The full non-UI suite passed on the release commit: 327 tests (189 core, 6 event, 132 app) with zero failures; the privacy gate passed.
+- Both release gate variables were confirmed with the owner in chat before use, naming `AGENTICGLOW_NAME_CLEARED` and `AGENTICGLOW_RELEASE_BUILD_APPROVED` explicitly.
+- Signed universal `arm64`/`x86_64` build passed strict code-signature checks. Apple accepted notarization submission `61a5164c-e253-4816-bdd9-f6b3ac519a0b`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Released DMG SHA-256 `303098ed1642ac1076b098c04e35425399f3d65e509af49295059bdf68768c67`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.5.4 checksum (main commit `ccb623e`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `863a1a8`).
+- The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.4 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.
@@ -332,17 +342,17 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-17, latest: v0.5.3)
-  - v0.5.3 published from commit `ffc56d2`
-  - Apple notarization submission `5e2bb621-039d-4b26-a0aa-2fbd6b785284` accepted
-  - Published DMG SHA-256: `39bda93563eb13e66fbd4fc6a3349a9f45c1024f4cf0f91f1cf73186c087fa34`
+- [x] **GitHub release published** (date: 2026-07-18, latest: v0.5.4)
+  - v0.5.4 published from commit `79d8708`
+  - Apple notarization submission `61a5164c-e253-4816-bdd9-f6b3ac519a0b` accepted
+  - Published DMG SHA-256: `303098ed1642ac1076b098c04e35425399f3d65e509af49295059bdf68768c67`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes document the Codex desktop bundle ID root-cause fix and the tools icon for uncategorized tool use
+  - Release notes document the session-start-time detail field and the absolute allowance reset dates
 
-- [x] **Cask updated in the official tap** (date: 2026-07-17, version 0.5.3)
-  - Official tap updated to v0.5.3 at commit `fa39f4a`
-  - `Cask/agenticglow.rb` regenerated with the v0.5.3 checksum and pushed on main (`901fe10`)
-  - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.3 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install
+- [x] **Cask updated in the official tap** (date: 2026-07-18, version 0.5.4)
+  - Official tap updated to v0.5.4 at commit `863a1a8`
+  - `Cask/agenticglow.rb` regenerated with the v0.5.4 checksum and pushed on main (`ccb623e`)
+  - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.4 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install
 
 - [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask
