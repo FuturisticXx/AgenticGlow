@@ -36,4 +36,14 @@ final class SessionRowMotionTests: XCTestCase {
         XCTAssertEqual(SessionRowMotion.chevronRotation(isExpanded: false), 0)
         XCTAssertEqual(SessionRowMotion.chevronRotation(isExpanded: true), 180)
     }
+
+    func testIconBounceTriggerTracksIconChanges() {
+        XCTAssertEqual(SessionRowMotion.iconBounceTrigger(icon: "terminal", reduceMotion: false), "terminal")
+        XCTAssertEqual(SessionRowMotion.iconBounceTrigger(icon: "pencil", reduceMotion: false), "pencil")
+    }
+
+    func testIconBounceTriggerIsConstantUnderReducedMotion() {
+        XCTAssertEqual(SessionRowMotion.iconBounceTrigger(icon: "terminal", reduceMotion: true), "")
+        XCTAssertEqual(SessionRowMotion.iconBounceTrigger(icon: "pencil", reduceMotion: true), "")
+    }
 }
