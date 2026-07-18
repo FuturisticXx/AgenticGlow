@@ -13,6 +13,11 @@ public struct ProcessIdentityResolver: Sendable {
         environment: [String: String]
     ) -> ProcessIdentity? {
         let expectedName = provider == .codex ? "codex" : "claude"
+        // The desktop app's own GUI process is not always named after the agent binary:
+        // OpenAI's Codex desktop app ships as "ChatGPT", while the embedded "codex" binary
+        // that actually runs the agent is a bare helper executable with no bundle identity
+        // of its own (confirmed against a live Codex desktop session, 2026-07-17).
+        let desktopAppNames: Set<String> = provider == .codex ? ["codex", "chatgpt"] : ["claude"]
         let isCLI = environment["TERM_PROGRAM"] != nil
         var agentProcess: InspectedProcess?
         var sourceBundle = isCLI ? environment["__CFBundleIdentifier"] : nil
@@ -27,7 +32,8 @@ public struct ProcessIdentityResolver: Sendable {
             if isCLI, sourceBundle == nil, let bundleID = row.bundleID {
                 sourceBundle = bundleID
             }
-            if !isCLI, isExactAgentName, let bundleID = row.bundleID {
+            if !isCLI, sourceBundle == nil, desktopAppNames.contains(row.name.lowercased()),
+               let bundleID = row.bundleID {
                 sourceBundle = bundleID
             }
             if let agentProcess, sourceBundle != nil {

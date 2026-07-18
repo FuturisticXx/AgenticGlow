@@ -72,13 +72,18 @@ final class ProcessIdentityResolverTests: XCTestCase {
     }
 
     func testResolvesCodexDesktopExecutableAndMainAppWhileIgnoringServiceAndHelperNames() {
+        // Real process tree (verified against a live Codex desktop session, 2026-07-17):
+        // OpenAI renamed the desktop app to ChatGPT, so the bundle-owning GUI process is
+        // literally named "ChatGPT", not "Codex" or "codex". Only the embedded CLI-like
+        // binary that does the actual agent work is still named "codex", and it has no
+        // NSRunningApplication entry of its own (bare helper executable, not a bundle).
         let inspector = FakeProcessInspector(
             parentPID: 60,
             rows: [
                 60: .init(pid: 60, parentPID: 50, name: "Codex (Service)", startedAt: nil, bundleID: "com.openai.codex.service"),
                 50: .init(pid: 50, parentPID: 40, name: "codex", startedAt: Date(timeIntervalSince1970: 50), bundleID: nil),
                 40: .init(pid: 40, parentPID: 30, name: "Codex Helper", startedAt: nil, bundleID: "com.openai.codex.helper"),
-                30: .init(pid: 30, parentPID: 1, name: "Codex", startedAt: Date(timeIntervalSince1970: 30), bundleID: "com.openai.codex")
+                30: .init(pid: 30, parentPID: 1, name: "ChatGPT", startedAt: Date(timeIntervalSince1970: 30), bundleID: "com.openai.codex")
             ]
         )
 
