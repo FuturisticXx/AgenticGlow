@@ -1,5 +1,17 @@
 # Got done
 
+## 2026-07-18 - Released v0.5.5 (fix: Codex weekly-only-window reset date)
+
+- John noticed the Codex weekly limit sometimes shows no date. Root-caused against a real cached allowance file on this machine (`~/Library/Application Support/AgenticGlow/Allowance/codex.json`): his Codex account is currently reporting only ONE rate-limit window from the API, and it's the weekly-scale one, not the usual 5h + weekly pair. AgenticGlow correctly labels it "Weekly" by duration, but it still lands in the "current window" slot internally, and that slot's reset caption (added in v0.5.4) only ever showed a bare clock time, assuming same-day resets. With a 7-day-out reset, that read as no date at all.
+- Fix: `AllowancePresentation.relativeReset` now includes the calendar date whenever the reset isn't today, reusing the exact date-aware pattern already used for the session row's "Started" field from earlier today. TDD: new test built from the real cached data failed before the fix, passed after; the existing same-day test stayed green.
+- Full suite passed on the release commit: 330 tests (189 core, 6 event, 135 app), zero failures; privacy gate passed.
+- Both release gate variables were confirmed with the owner in chat before use, naming `AGENTICGLOW_NAME_CLEARED` and `AGENTICGLOW_RELEASE_BUILD_APPROVED` explicitly.
+- Signed universal build passed strict code-signature checks. Apple accepted notarization submission `70281387-fa00-4c12-9579-8edb970faa29`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Published `v0.5.5` at commit `cc00851`, DMG SHA-256 `d37b61d1651a6a55097fb67545e6492fa3c0171243942888622058a1fdf8774d`. Downloaded the release asset back and independently verified checksum, staple, and Gatekeeper.
+- Cask regenerated and pushed to main (`f9815b7`) and the official tap (`e4e023e`).
+- Running `/Applications/AgenticGlow.app` replaced with the notarized 0.5.5 build and relaunched; version, signature, and Gatekeeper verified.
+- Not re-screenshotted: the fix only changes which branch of an already-visually-confirmed `.formatted()` call fires; treated the real-data-based unit test as sufficient rather than re-rendering the popover.
+
 ## 2026-07-18 - Restored missing session-row motion helpers
 
 - Root-caused the four v0.5.4 CI failures to `SessionRowView` referencing three motion helpers that were present locally but omitted from the release commits.

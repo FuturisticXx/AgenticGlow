@@ -220,6 +220,18 @@ Public release 0.5.4 evidence recorded 2026-07-18:
 - `Cask/agenticglow.rb` was regenerated with the 0.5.4 checksum (main commit `ccb623e`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `863a1a8`).
 - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.4 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
 
+Public release 0.5.5 evidence recorded 2026-07-18:
+
+- Released from commit `cc00851` (tag `v0.5.5`): fixes a v0.5.4 regression where Codex accounts reporting only a single, weekly-scale rate-limit window (no separate 5-hour window) showed a bare clock time with no calendar date for a reset that could be days out. Root-caused against a real cached Codex allowance response on this machine (`currentWindowLabel: "Weekly"`, reset 7 days out, no secondary window at all). `AllowancePresentation.relativeReset` now includes the calendar date whenever the reset isn't today, reusing the same date-aware pattern already used by the session row's "Started" field.
+- TDD: new `testCurrentResetIncludesCalendarDateWhenNotToday` failed before the fix (confirmed), passed after. The prior same-day test (`testCurrentResetShowsCountdownAndAbsoluteClockTime`) stayed green, confirming the common case is unaffected.
+- The full non-UI suite passed on the release commit: 330 tests (189 core, 6 event, 135 app) with zero failures; the privacy gate passed.
+- Both release gate variables were confirmed with the owner in chat before use, naming `AGENTICGLOW_NAME_CLEARED` and `AGENTICGLOW_RELEASE_BUILD_APPROVED` explicitly.
+- Signed universal `arm64`/`x86_64` build passed strict code-signature checks. Apple accepted notarization submission `70281387-fa00-4c12-9579-8edb970faa29`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Released DMG SHA-256 `d37b61d1651a6a55097fb67545e6492fa3c0171243942888622058a1fdf8774d`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.5.5 checksum (main commit `f9815b7`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `e4e023e`).
+- The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.5 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
+- Not independently screenshot-verified this time: this fix only changes which branch of an already-visually-confirmed formatting call fires (the same `.formatted()` pattern already proven live in the v0.5.4 popover screenshot), and is covered by a unit test built directly from this user's own real cached allowance data, so unit coverage was treated as sufficient rather than re-rendering the popover.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.
@@ -342,17 +354,17 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-18, latest: v0.5.4)
-  - v0.5.4 published from commit `79d8708`
-  - Apple notarization submission `61a5164c-e253-4816-bdd9-f6b3ac519a0b` accepted
-  - Published DMG SHA-256: `303098ed1642ac1076b098c04e35425399f3d65e509af49295059bdf68768c67`
+- [x] **GitHub release published** (date: 2026-07-18, latest: v0.5.5)
+  - v0.5.5 published from commit `cc00851`
+  - Apple notarization submission `70281387-fa00-4c12-9579-8edb970faa29` accepted
+  - Published DMG SHA-256: `d37b61d1651a6a55097fb67545e6492fa3c0171243942888622058a1fdf8774d`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes document the session-start-time detail field and the absolute allowance reset dates
+  - Release notes document the fix for Codex's weekly-only-window reset date bug
 
-- [x] **Cask updated in the official tap** (date: 2026-07-18, version 0.5.4)
-  - Official tap updated to v0.5.4 at commit `863a1a8`
-  - `Cask/agenticglow.rb` regenerated with the v0.5.4 checksum and pushed on main (`ccb623e`)
-  - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.4 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install
+- [x] **Cask updated in the official tap** (date: 2026-07-18, version 0.5.5)
+  - Official tap updated to v0.5.5 at commit `e4e023e`
+  - `Cask/agenticglow.rb` regenerated with the v0.5.5 checksum and pushed on main (`f9815b7`)
+  - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.5 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install
 
 - [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask
