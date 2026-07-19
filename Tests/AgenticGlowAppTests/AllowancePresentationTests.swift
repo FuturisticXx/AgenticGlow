@@ -132,6 +132,27 @@ final class AllowancePresentationTests: XCTestCase {
         XCTAssertTrue(presentation.currentDetail.contains(expectedClockTime))
     }
 
+    func testCurrentResetIncludesCalendarDateWhenNotToday() {
+        // Codex sometimes reports only a weekly-scale window with no
+        // separate secondary window (observed live); that window lands in
+        // "current", so its reset can be days out and must show a date.
+        let now = Date(timeIntervalSince1970: 1_783_099_000)
+        let reset = now.addingTimeInterval(7 * 24 * 60 * 60)
+        let allowance = ProviderAllowance(
+            provider: .codex,
+            currentWindowLabel: "Weekly",
+            currentPercentUsed: 97,
+            currentResetAt: reset,
+            weeklyPercentUsed: nil,
+            weeklyResetAt: nil,
+            fetchedAt: Date()
+        )
+        let presentation = AllowancePresentation(allowance: allowance, now: now)
+
+        let expectedDate = reset.formatted(.dateTime.month(.abbreviated).day().hour().minute())
+        XCTAssertTrue(presentation.currentDetail.contains(expectedDate))
+    }
+
     func testWeeklyResetShowsCalendarDateAlongsideWeekdayAndTime() {
         let reset = Date(timeIntervalSince1970: 1_783_101_600)
         let allowance = ProviderAllowance(

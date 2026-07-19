@@ -84,7 +84,13 @@ struct AllowancePresentation {
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60
         let countdown = hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
-        let clockTime = reset.formatted(date: .omitted, time: .shortened)
+        // Usually a same-day 5h window, but Codex can report only a
+        // weekly-scale window here with no separate secondary window, so
+        // the reset can be days out and needs a calendar date, not just a
+        // clock time.
+        let clockTime = Calendar.current.isDate(reset, inSameDayAs: now)
+            ? reset.formatted(date: .omitted, time: .shortened)
+            : reset.formatted(.dateTime.month(.abbreviated).day().hour().minute())
         return "\(countdown) (\(clockTime))"
     }
 
