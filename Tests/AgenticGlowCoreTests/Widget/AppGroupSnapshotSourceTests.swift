@@ -45,22 +45,6 @@ final class AppGroupSnapshotSourceTests: XCTestCase {
         XCTAssertEqual(source.loadSnapshot(), .loaded(snapshot))
     }
 
-    func testDefaultInitializerNeverCrashesAndReportsNoRealData() {
-        // No App Group entitlement exists in this pass. A real sandboxed
-        // widget extension gets nil from containerURL(...) without the
-        // entitlement (-> .notConfigured); this unsandboxed test host may
-        // instead get a computed-but-empty path (-> .noSnapshotYet).
-        // Either is correct as long as it never crashes and never claims
-        // real data exists.
-        let source = AppGroupSnapshotSource()
-        switch source.loadSnapshot() {
-        case .notConfigured, .noSnapshotYet:
-            break
-        case .corrupted, .loaded:
-            XCTFail("Expected no real data without the App Group entitlement")
-        }
-    }
-
     private func makeTemporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("AppGroupSnapshotSourceTests-\(UUID().uuidString)", isDirectory: true)

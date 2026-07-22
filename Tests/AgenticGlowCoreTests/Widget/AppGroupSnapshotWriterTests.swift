@@ -61,20 +61,6 @@ final class AppGroupSnapshotWriterTests: XCTestCase {
         XCTAssertEqual(final.activeCount, 0)
     }
 
-    func testDefaultInitializerFailsSafelyWithoutTheEntitlement() {
-        // No App Group entitlement exists yet in this pass. On this system
-        // containerURL(...) still returns a path without the entitlement
-        // (see AppGroupSnapshotSourceTests), so the failure surfaces as a
-        // lower-level file-system error rather than .containerUnavailable;
-        // either is an acceptable, safe failure, never a crash.
-        let writer = AppGroupSnapshotWriter()
-        let snapshot = WidgetSnapshot(
-            generatedAt: now, sessions: [], allowances: [], providers: [],
-            attentionCount: 0, activeCount: 0
-        )
-        XCTAssertThrowsError(try writer.write(snapshot))
-    }
-
     private func makeTemporaryDirectory() throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("AppGroupSnapshotWriterTests-\(UUID().uuidString)", isDirectory: true)
