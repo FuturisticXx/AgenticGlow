@@ -2,6 +2,35 @@
 
 This checklist must be completed and documented with dated evidence before any release.
 
+## Widget Release Requirements
+
+Complete these checks for every release that contains the AgenticGlow widget:
+
+- Confirm `AgenticGlowWidget.appex` is embedded in
+  `AgenticGlow.app/Contents/PlugIns`.
+- Sign the standalone helper first, the widget extension second with
+  `Config/AgenticGlowWidget.entitlements`, and the containing app last with
+  `Config/AgenticGlow.entitlements`.
+- Confirm the app and widget are universal (`arm64` and `x86_64`) and pass
+  strict signature validation.
+- Confirm both signed targets contain
+  `group.com.twodamax.agenticglow`; a valid outer app signature alone is not
+  sufficient evidence that the nested widget can open the shared container.
+- Install the candidate at `/Applications/AgenticGlow.app`, then use
+  `pluginkit -m -A -D -v -i com.twodamax.agenticglow.widget` to confirm exactly
+  one registration points to that installed app. Remove stale DerivedData or
+  temporary-build registrations before visual verification.
+- Launch the installed app and confirm it writes a fresh, decodable
+  `WidgetSnapshot.json` in the shared App Group container with both configured
+  providers represented.
+- Add each supported widget family from **Edit Widgets** and visually confirm
+  current session and allowance data. A shared snapshot, preview, or registered
+  extension does not prove the desktop render.
+
+`Scripts/build-release.sh` and `Scripts/verify-release.sh` automate the signing,
+architecture, signature, and App Group checks. Installation and live rendering
+remain manual release gates.
+
 ## Historical Release Evidence
 
 Recorded 2026-06-29 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:

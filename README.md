@@ -12,10 +12,18 @@ AgenticGlow is a local macOS menu bar app that shows the status of your AI codin
 - **Codex**: Codex app and CLI sessions
 - **Claude**: Claude Code sessions
 
+## Widget
+
+AgenticGlow includes an optional desktop widget (small, medium, and large)
+showing session and allowance status without opening the app. Launch
+AgenticGlow once, then right-click the desktop, choose **Edit Widgets**, search
+for **AgenticGlow**, and add the size you want. See
+[docs/widget.md](docs/widget.md) for architecture and current limitations.
+
 ## Installation
 
 The latest signed and notarized public release is
-[v0.5.3](https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.5.3).
+[v0.5.5](https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.5.5).
 
 ### DMG
 

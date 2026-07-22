@@ -17,11 +17,20 @@ final class AppModel {
     private let allowanceCoordinator: AllowanceRefreshCoordinator?
     private let notifier: (any AgentNotifying)?
     private let statusMonitor: ProviderStatusMonitor?
+    private let codexSessionDiscoverer: (any CodexSessionDiscovering)?
+    private let widgetSnapshotWriter: (any WidgetSnapshotWriting)?
+    private let widgetTimelineReloader: (any WidgetTimelineReloading)?
+    private let installedProviders: (() -> [AgentProvider: Bool])?
     private let now: () -> Date
     private var timer: Timer?
+    private var codexDiscoveryTask: Task<Void, Never>?
     private var resolutionMemory = ResolutionMemory()
+    private var discoveredCodexEvents: [NormalizedEvent] = []
     private var allowanceStates: [AgentProvider: AllowanceAvailability] = [:]
     private var serviceStatuses: [AgentProvider: ProviderServiceStatus] = [:]
+    private var lastWidgetSnapshot: WidgetSnapshot?
+    private var cachedInstalledProviders: [AgentProvider: Bool] = [:]
+    private var installedProvidersCheckedAt: Date?
 
     private(set) var resolved: ResolvedSessions
     private(set) var storeErrorDescription: String?
@@ -43,6 +52,10 @@ final class AppModel {
         allowanceCoordinator: AllowanceRefreshCoordinator? = nil,
         notifier: (any AgentNotifying)? = nil,
         statusMonitor: ProviderStatusMonitor? = nil,
+        codexSessionDiscoverer: (any CodexSessionDiscovering)? = nil,
+        widgetSnapshotWriter: (any WidgetSnapshotWriting)? = nil,
+        widgetTimelineReloader: (any WidgetTimelineReloading)? = nil,
+        installedProviders: (() -> [AgentProvider: Bool])? = nil,
         now: @escaping () -> Date = Date.init
     ) {
         self.store = store
@@ -51,6 +64,10 @@ final class AppModel {
         self.allowanceCoordinator = allowanceCoordinator
         self.notifier = notifier
         self.statusMonitor = statusMonitor
+        self.codexSessionDiscoverer = codexSessionDiscoverer
+        self.widgetSnapshotWriter = widgetSnapshotWriter
+        self.widgetTimelineReloader = widgetTimelineReloader
+        self.installedProviders = installedProviders
         self.now = now
         reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         showTimer = UserDefaults.standard.bool(forKey: "showTimer")
@@ -71,18 +88,28 @@ final class AppModel {
                 self?.refresh()
             }
         }
+        if codexSessionDiscoverer != nil {
+            codexDiscoveryTask = Task { [weak self] in
+                while !Task.isCancelled {
+                    await self?.refreshCodexDiscovery()
+                    try? await Task.sleep(for: CodexSessionDiscoveryAdapter.refreshInterval)
+                }
+            }
+        }
     }
 
     func stop() {
         timer?.invalidate()
         timer = nil
+        codexDiscoveryTask?.cancel()
+        codexDiscoveryTask = nil
     }
 
     func refresh() {
         let previousPhases = Dictionary(uniqueKeysWithValues: resolved.sessions.map { ($0.id, $0.phase) })
-        let events: [NormalizedEvent]
+        let storedEvents: [NormalizedEvent]
         do {
-            events = try store.loadAll()
+            storedEvents = try store.loadAll()
         } catch {
             storeErrorDescription = String(describing: error)
             resolutionMemory = ResolutionMemory()
@@ -92,12 +119,13 @@ final class AppModel {
                 memory: &resolutionMemory,
                 isProcessAlive: { _, _ in false }
             )
+            syncWidgetSnapshot()
             return
         }
 
         let currentTime = now()
         var removalError: Error?
-        for event in events where currentTime.timeIntervalSince(event.updatedAt) > SessionResolver.fileRetention {
+        for event in storedEvents where currentTime.timeIntervalSince(event.updatedAt) > SessionResolver.fileRetention {
             do {
                 try store.remove(SessionKey(event))
             } catch {
@@ -106,6 +134,10 @@ final class AppModel {
         }
 
         storeErrorDescription = removalError.map { String(describing: $0) }
+        let events = SessionEventMerger.merge(
+            stored: storedEvents,
+            discoveredCodex: discoveredCodexEvents
+        )
         resolved = SessionResolver.resolve(
             events: events,
             now: currentTime,
@@ -132,6 +164,18 @@ final class AppModel {
             Task { [weak self] in await self?.refreshUsage(.working) }
         } else if resolved.dominantPhase == .idle {
             Task { [weak self] in await self?.refreshUsage(.idle) }
+        }
+        syncWidgetSnapshot()
+    }
+
+    func refreshCodexDiscovery() async {
+        guard let codexSessionDiscoverer else { return }
+        do {
+            discoveredCodexEvents = try await codexSessionDiscoverer.discover()
+            refresh()
+        } catch {
+            // Preserve the last successful result. SessionResolver will age it
+            // out naturally if Codex remains unavailable.
         }
     }
 
@@ -235,5 +279,52 @@ final class AppModel {
                 weeklyResetCount += 1
             }
         }
+        syncWidgetSnapshot()
+    }
+
+    /// Builds the widget-safe snapshot from current state and writes it to
+    /// the shared App Group container, reloading the widget's timeline
+    /// only when something worth showing actually changed. No-ops entirely
+    /// when widget integration is not injected, such as in fixtures and
+    /// tests that do not exercise the widget path.
+    private func syncWidgetSnapshot() {
+        guard let widgetSnapshotWriter else { return }
+        var allowances: [AgentProvider: ProviderAllowance] = [:]
+        for provider in AgentProvider.allCases {
+            guard case let .available(allowance, _) = allowanceState(for: provider) else { continue }
+            allowances[provider] = allowance
+        }
+        let snapshot = WidgetSnapshotBuilder.build(
+            resolved: resolved,
+            allowances: allowances,
+            installedProviders: refreshedInstalledProviders(),
+            now: now()
+        )
+        if let last = lastWidgetSnapshot, !WidgetSnapshotBuilder.isMeaningfullyDifferent(snapshot, from: last) {
+            return
+        }
+        do {
+            try widgetSnapshotWriter.write(snapshot)
+        } catch {
+            return
+        }
+        lastWidgetSnapshot = snapshot
+        widgetTimelineReloader?.reloadAll()
+    }
+
+    /// installedProviders does file I/O (reads settings.json/hooks.json).
+    /// refresh() runs every 2s, so this is cached and only re-checked on
+    /// the same idle cadence as allowance refreshes; integration status
+    /// changes only when the user installs/repairs a provider by hand.
+    private func refreshedInstalledProviders() -> [AgentProvider: Bool] {
+        guard let installedProviders else { return [:] }
+        let currentTime = now()
+        if let checkedAt = installedProvidersCheckedAt,
+           currentTime.timeIntervalSince(checkedAt) < AllowanceRefreshPolicy.idleInterval {
+            return cachedInstalledProviders
+        }
+        installedProvidersCheckedAt = currentTime
+        cachedInstalledProviders = installedProviders()
+        return cachedInstalledProviders
     }
 }

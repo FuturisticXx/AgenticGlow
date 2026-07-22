@@ -6,6 +6,88 @@
 
 The sections below are completed historical plans retained for implementation context.
 
+# AgenticGlow widget: real-data wiring + polish pass (2026-07-21)
+
+**Status:** Implementation complete. The installed app, shared snapshot, and
+release packaging are verified; the final desktop render with current real data
+remains pending because no AgenticGlow widget instance is currently installed.
+
+**Goal:** John asked to keep building and checking the widget until it's fully functional, beautiful, useful, and not buggy. This work wired and runtime-verified the App Group entitlement and real `AppModel` -> snapshot -> shared-container -> `WidgetCenter` reload path, added a read-only Codex session-presence fallback, fixed a self-introduced performance bug (installed-provider lookup running every 2s), hardened release signing, and completed an accessibility + layout bug-hunt pass on the widget views.
+
+## Findings and fixes
+
+- **App Group entitlement is active and live-verified.** The interrupted Xcode setup left the app on `group.com.twodamax.agenticglow` but the widget on an unrelated AltStore group. Both targets now derive the correct group from `project.yml`; XcodeGen regeneration is deterministic, automatic Debug signing refreshed the widget profile, and both signed products pass deep signature validation with the same group.
+- **AppModel wiring is real, tested, and active:** `AppGroupSnapshotWriter` (Core, mirrors the reader), `WidgetSnapshotBuilder.isMeaningfullyDifferent` (ignores per-tick noise like elapsed seconds so a reload isn't triggered every 2s), `SystemWidgetTimelineReloader` (App target, calls `WidgetCenter.shared.reloadAllTimelines()`), `AppModel.syncWidgetSnapshot()` called from `refresh()` and `syncAllowanceStates()`.
+- **Caught and fixed my own bug before it shipped:** `installedProviders` (reads `.claude/settings.json` + `.codex/hooks.json`) was initially called on every 2s `refresh()` tick. Throttled to `AllowanceRefreshPolicy.idleInterval` (5 min) via `refreshedInstalledProviders()`, matching the app's existing refresh-cadence conventions. Covered by `testInstalledProvidersIsThrottledNotCalledEveryRefresh`.
+- **Snapshot writes now retry safely:** the first implementation updated `lastWidgetSnapshot` and reloaded WidgetKit even when the shared-container write threw, suppressing every retry until some unrelated state changed. `syncWidgetSnapshot()` now records success and reloads only after the write completes. A fail-once regression test proves the failed write does not reload and the next refresh retries successfully.
+- **Layout overflow risk found and mitigated (not live-confirmed):** medium (attention banner + 3 sessions + allowance strip) and large (header + 6 sessions + 2 allowance blocks + footer) were sized against `WidgetSnapshotBuilder.maximumSessions` (8) without checking against each family's actual fixed, non-scrolling canvas. Reduced medium to 2 sessions, large to 4, both with an honest "+ N more" line rather than silent truncation. This is an estimate, not confirmed via a live-measured render; `docs/widget.md` keeps the limitation explicit in case a busy real-data state still clips.
+- **Accessibility gap found and fixed:** `SmallWidgetView` and `EmptyStateView` had no `.accessibilityHidden` on decorative icons or `.accessibilityElement(children: .combine)`, unlike `SessionRow`/`AllowanceStrip` which already had it. Fixed both to match. `MediumWidgetView`/`LargeWidgetView` deliberately NOT combined at the root — their `SessionRow` children need to stay individually tappable/navigable for VoiceOver.
+- **Misleading UI found and fixed:** `AllowanceStrip`'s progress bar rendered as an empty (0%) bar when `currentPercentLeft` was `nil` ("unavailable"), visually indistinguishable from "0% left" (quota exhausted). Now hidden entirely when the value is unavailable; the "Unavailable" text label still shows.
+
+## Verification
+
+- [x] Full unit test suite: 250 Core + 6 Event + 141 App, 0 failures (up from 239/6/135; +11 Core widget tests, +6 AppModel widget-sync tests).
+- [x] `Scripts/verify-privacy.sh`: exit 0.
+- [x] `xcodebuild build` succeeds unsigned for compile checks and with the Apple Development identity for App Group runtime verification.
+- [x] Widget re-registers with `pluginkit` after each signed rebuild. `CODE_SIGNING_ALLOWED=NO` builds produce an `.appex` that `pluginkit` cannot register, and ad-hoc signing cannot carry the App Group entitlement.
+- [x] Real data end to end -> verified: launching the signed Debug app created `WidgetSnapshot.json` in `group.com.twodamax.agenticglow` with five live sessions, both provider installation states, and both allowance records; both signed products carry the same App Group entitlement.
+- [x] Installed local Release build -> verified: `/Applications/AgenticGlow.app` 0.5.6 passes deep signature validation, contains a universal signed widget with the matching App Group, and is the sole `pluginkit` registration.
+- [x] Current shared data -> verified: the fresh snapshot contained seven Codex sessions, one Claude session, and allowance records for both providers.
+- [x] Release regression checks -> verified: focused packaging tests prove the widget is signed before the containing app and that release verification requires the widget, both architecture slices, its signature, and the shared App Group.
+- [ ] Live screenshot confirmation with current real data -> not done. The system widget database reported zero installed AgenticGlow instances after stale builds were removed, so no desktop render claim is made.
+
+# AgenticGlow macOS widget, MVP pass (2026-07-20)
+
+**Status:** Historical MVP pass completed. Its waiting-state gallery render was
+verified; current real-data rendering remains tracked in the wiring pass above.
+
+**Goal:** A native WidgetKit extension companion to AgenticGlow, showing session and allowance status at a glance without opening the app. Full spec is large (shared snapshot architecture, small/medium/large families, App Intent configuration, interactive actions, full docs/tests). This pass ships the MVP John approved: real, tested shared snapshot model + builder in Core, and a WidgetKit extension with all three families built and previewed against mock data. App Intent configuration and interactive actions are explicitly deferred to a follow-up.
+
+**Historical sequencing:** scaffold the widget target and UI first against mock/preview data, then wire real session and allowance data after the App Group was registered. The real-data wiring pass above supersedes the initial no-App-Group state.
+
+**Full plan:** see `/Users/jwright0180/.claude/plans/replicated-greeting-taco.md` for the complete architecture findings, design decisions, file list, and verification steps.
+
+## Global constraints
+
+- macOS 14.0 deployment target; CI builds Xcode 16.4. Guard anything newer than macOS 14 with `#available`; compiler-guard anything newer than the CI SDK.
+- No em dashes in any user-facing string.
+- Scripts use only tools preinstalled on GitHub runners.
+- Surgical changes only; match existing style.
+- `Sources/AgenticGlowApp/MenuBar/LiquidGlassSurface.swift`, `PopoverAura` in `SessionListView.swift`, `AllowanceSectionView.swift`, `AllowancePresentation.swift` stay frozen (per lessons.md), untouched by this work.
+- No push, no release, no version bump. Commits stay local for John's review.
+
+## Tasks
+
+### Task 1: Shared snapshot model, builder, formatting (Core)
+- `Sources/AgenticGlowCore/Widget/`: `WidgetSnapshot.swift` (Codable schema), `WidgetSnapshotBuilder.swift` (pure build from `ResolvedSessions` + allowances + provider-installed flags), `WidgetSnapshotFormatting.swift` (percent/duration/reset strings), `WidgetDataFreshness.swift` (fresh/stale threshold), `AppGroupSnapshotSource.swift` (real App Group container read, safely returns nil until the entitlement exists), `WidgetDeepLink.swift` (pure enum + URL build/parse).
+- [x] Implemented, tests pass -> verified: `Tests/AgenticGlowCoreTests/Widget/` (6 files, ~52 tests): snapshot codable/schema-tolerance, builder sorting/capping/attention-priority-over-full-set, freshness threshold, formatting (elapsed s/m/h, relative/absolute reset, percent, last-updated), deep link build/parse round-trip, snapshot-load safety (notConfigured/noSnapshotYet/corrupted/loaded).
+
+### Task 2: WidgetKit extension target
+- `Sources/AgenticGlowWidget/`: `AgenticGlowWidgetBundle.swift`, `SessionAllowanceWidget.swift` (Widget + TimelineProvider, StaticConfiguration), `WidgetColorPalette.swift`, `Views/SmallWidgetView.swift`, `Views/MediumWidgetView.swift`, `Views/LargeWidgetView.swift`, shared row/allowance/empty-state views.
+- Previews for every family x every defined state (fresh, attention-required, low allowance, allowance unavailable, provider disconnected, no sessions, no data yet, stale, error), light and dark.
+- [x] Implemented, builds clean -> verified: `xcodebuild build` succeeds for the `AgenticGlowWidget` target. `#Preview` blocks cover all 3 families x major states (busy/attention/failed/low-allowance/provider-not-set-up/stale/no-data/not-configured/error); not screenshotted live (see Task 6).
+
+### Task 3: Project wiring
+- `Config/AgenticGlowWidget-Info.plist`, `Config/AgenticGlowWidget.entitlements` (the initial MVP used app sandbox only; the wiring pass added the shared App Group).
+- `project.yml`: new `AgenticGlowWidget` app-extension target, embedded in `AgenticGlow`, added to the scheme.
+- [x] `xcodegen generate` succeeds, widget target builds -> verified: had to add explicit `info.properties`/`entitlements.properties` in project.yml (xcodegen writes these files from project.yml properties, it does not merge with a hand-authored file at `path`) -> confirmed generated plist/entitlements contain `NSExtensionPointIdentifier: com.apple.widgetkit-extension` and `com.apple.security.app-sandbox: true`.
+
+### Task 4: Deep links
+- `agenticglow://` URL scheme in `Config/AgenticGlow-Info.plist`; `AppDelegate.swift` registers a `kAEGetURL` handler, routes through existing `AppModel` methods (no new activation logic).
+- [x] Tests pass -> verified: 9/9 `WidgetDeepLinkTests`. `import Carbon` (not `Carbon.AE`, which doesn't resolve as a submodule here) needed for `kAEGetURL`/`kInternetEventClass`/`keyDirectObject`.
+
+### Task 5: Docs
+- `docs/widget.md` (architecture, schema, refresh policy and limits, deep links, privacy, families, local testing, and live-verification status). Short mention in `README.md`.
+- [x] Written
+
+### Task 6: Full verification (gate for done)
+- [x] `xcodegen generate`; full unit test suite passes including new Core widget tests -> verified: 239 Core + 6 Event + 135 App, 0 failures (up from 189/6/132 before this pass).
+- [x] Widget extension target builds cleanly (`CODE_SIGNING_ALLOWED=NO`) -> verified.
+- [x] `Scripts/verify-privacy.sh` passes -> verified, exit 0, no changes needed.
+- [x] Signed local build; widget extension registers with the system -> verified: quit the running production app (with John's go-ahead), built ad-hoc signed Debug (`CODE_SIGN_IDENTITY="-"`), launched it, `pluginkit -m -v -i com.twodamax.agenticglow.widget` confirms macOS registered `AgenticGlowWidget.appex`; `codesign -dv` confirms both app and widget signed, widget entitlements/Info.plist correct. Then quit the test build and relaunched the production app.
+- [x] Real widget gallery verification -> verified by John directly (the gallery panel is owned by the `NotificationCenter` process, which computer-use cannot grant access to or screenshot, confirmed via `osascript` process enumeration and repeated `request_access` rejections). John added the medium widget and confirmed it renders correctly: hourglass icon, "Waiting for AgenticGlow", "Status will appear here once AgenticGlow has run at least once." -> this is the live `.noSnapshotYet` state, not `.notConfigured` as originally assumed; corrected in `docs/widget.md` (on this Mac, `containerURL(forSecurityApplicationGroupIdentifier:)` returns a non-nil path for an unregistered group identifier rather than `nil`). Widget process required an explicit `pluginkit -a` re-register after an earlier `pluginkit -r` cleanup; `open`-launching the app alone did not re-register it.
+- [x] Update `gotdone.md` with the implemented scope and the remaining live-render gap.
+
 # Session start time + reset dates (2026-07-18)
 
 **Status:** Implemented and verified. Not committed yet (John's call).

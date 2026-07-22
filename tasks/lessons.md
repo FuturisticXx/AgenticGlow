@@ -2,6 +2,36 @@
 
 Rules learned from real mistakes in this project. Read in full at session start. Add a new entry after any correction from John.
 
+## Verify the installed widget host, not just its snapshot (2026-07-21)
+
+**What happened:** The shared `WidgetSnapshot.json` contained current Codex and
+Claude data, but the desktop widget still showed its waiting state. macOS was
+running an older extension from Xcode DerivedData that had no App Group
+entitlement, while the correctly signed widget lived in a temporary build. A
+remove-and-add attempt did not terminate that stale extension. Later, after the
+old widget was removed, the system contained no AgenticGlow desktop instance at
+all even though the app, extension registration, and snapshot were valid.
+
+**Rule:** Diagnose WidgetKit as four separate gates: installed host bundle,
+extension registration, shared snapshot, and installed desktop instance. Use
+`pluginkit -m -A -D -v -i <widget-bundle-id>` to verify exactly one registration
+inside `/Applications`, inspect both signed targets for the same App Group, and
+query or visually confirm that a desktop instance actually exists. Never use a
+valid snapshot or a registered extension as proof that the widget rendered it.
+
+## Sign nested extensions before their containing app (2026-07-21)
+
+**What happened:** The existing release script built unsigned products, then
+signed the helper and outer app only. Once the WidgetKit extension was embedded,
+that sequence no longer established a valid signed nested extension with its own
+App Group entitlement.
+
+**Rule:** Sign from the inside out: standalone helper, widget extension with the
+widget entitlements, then the containing app. Release verification must require
+the embedded extension, verify its architecture and signature directly, and
+confirm the shared App Group on both widget and app. A passing deep check of the
+outer app alone is insufficient release evidence.
+
 ## Codex hooks may go silent after switching OpenAI accounts (2026-07-17)
 
 **What happened:** While testing the Codex window-raise fix, no new Codex hook events reached AgenticGlow at all (not even the old, pre-fix behavior) even after John sent new messages in Codex. `~/.codex/hooks.json` was confirmed correct and unchanged, the standalone helper binary at `~/Library/Application Support/AgenticGlow/bin/agenticglow-event` was confirmed working via a direct manual invocation, and Codex's own Settings > Hooks page showed all 18 hooks (across AgenticGlow, Klarity, and Sessionlet) toggled on with no visible untrusted state. John later confirmed the actual cause: he had switched to a different OpenAI account in Codex.

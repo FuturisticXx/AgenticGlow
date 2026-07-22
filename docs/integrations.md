@@ -61,8 +61,21 @@ Running remove deletes only entries marked with `--agenticglow-hook`. All other 
 ### Workspace Changes
 Codex launches hooks from the task's working directory. If a project directory is
 renamed, moved, or deleted, reopen the task from the current project path so the
-hook can launch and AgenticGlow can receive a live session event. Do not recreate
-an obsolete path or edit Codex private application state as a workaround.
+hook can launch and AgenticGlow can receive detailed live phase events. AgenticGlow
+also uses Codex's read-only `thread/list` app-server method as a presence fallback,
+so a recent session remains visible even while its hook working directory is
+invalid. Do not recreate an obsolete path or edit Codex private application state
+as a workaround.
+
+### Read-only Session Presence Fallback
+AgenticGlow asks the installed local Codex app-server for recent thread metadata
+every 15 seconds. It requests state-database metadata only and reads the thread ID,
+working directory, update time, status, and source type. It does not request or
+decode thread names, prompt previews, messages, or transcript content. Discovered
+sessions are retained for up to four hours and merged with hook events by the same
+hashed session identifier. A current hook event remains authoritative because it
+contains the detailed tool, permission, and completion phases that the fallback
+cannot provide.
 
 ### Config Is Cached at Process Startup
 Codex's `app-server` process reads `~/.codex/hooks.json` once, at its own launch,

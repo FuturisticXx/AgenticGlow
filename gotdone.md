@@ -1,5 +1,30 @@
 # Got done
 
+## 2026-07-21 - Widget live-data pipeline and Codex presence fallback
+
+- Added a native WidgetKit extension with small, medium, and large families,
+  deep links, explicit empty/stale/error states, VoiceOver treatment, and
+  tested session and allowance formatting.
+- Added a versioned `WidgetSnapshot` pipeline. `AppModel` writes one atomic
+  snapshot to `group.com.twodamax.agenticglow` and asks WidgetKit to reload
+  only after meaningful changes, avoiding a reload every two-second timer tick.
+- Added read-only Codex session discovery through the installed local
+  `thread/list` app-server method. It requests state-database metadata only,
+  retains recent presence for four hours, and lets fresh hook events remain
+  authoritative for detailed phases.
+- Fixed release packaging so the nested widget is signed with its own App Group
+  entitlements before the containing app. Release verification now requires the
+  widget, both architecture slices, its signature, and the shared App Group on
+  both targets.
+- Replaced the local `/Applications/AgenticGlow.app` with a signed 0.5.6 Release
+  build and removed stale temporary widget registrations. `pluginkit` reported
+  exactly one extension at the installed app, and the shared snapshot contained
+  seven Codex sessions, one Claude session, and allowance records for both.
+- Remaining verification gap: macOS reported zero installed AgenticGlow desktop
+  widget instances after cleanup, so the current-data desktop render is not yet
+  verified. Add the widget through **Edit Widgets** before treating the visual
+  result as complete.
+
 ## 2026-07-18 - Released v0.5.5 (fix: Codex weekly-only-window reset date)
 
 - John noticed the Codex weekly limit sometimes shows no date. Root-caused against a real cached allowance file on this machine (`~/Library/Application Support/AgenticGlow/Allowance/codex.json`): his Codex account is currently reporting only ONE rate-limit window from the API, and it's the weekly-scale one, not the usual 5h + weekly pair. AgenticGlow correctly labels it "Weekly" by duration, but it still lands in the "current window" slot internally, and that slot's reset caption (added in v0.5.4) only ever showed a bare clock time, assuming same-day resets. With a 7-day-out reset, that read as no date at all.
