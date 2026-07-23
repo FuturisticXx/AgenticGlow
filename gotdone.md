@@ -1,5 +1,15 @@
 # Got done
 
+## 2026-07-22 - Published v0.5.6
+
+- Merged PR #2 (squash) into `main` at `c51dcbf`, then tagged and released `v0.5.6` from that commit: the widget allowance-window parity, status bar, and typography work below, plus the live-desktop rendering-mode fixes.
+- Full non-UI suite passed on the release commit: 263 core, 6 event, 143 app, zero failures. Privacy gate passed.
+- Signed universal build passed strict code-signature checks; Apple accepted notarization submission `48056c07-febf-481d-af2b-2d65f28e25cd`; DMG stapled, validated, and Gatekeeper-accepted as `Notarized Developer ID`.
+- Released DMG SHA-256 `61876d0ee548efad6fd97d9c576d4ca489aeb90fb9852ea5144e97199eadedb7`; the GitHub release asset downloaded back matched checksum, staple, and Gatekeeper.
+- `Cask/agenticglow.rb` regenerated and pushed to main (`dd8aba7`) and the official tap `FuturisticXx/homebrew-agenticglow` (`212df2a`).
+- `brew upgrade --cask agenticglow` replaced `/Applications/AgenticGlow.app` with the notarized 0.5.6 build and relaunched it; version, signature, single widget registration, and Gatekeeper all verified post-install.
+- GitHub release: https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.5.6
+
 ## 2026-07-22 - Widget allowance-window parity, status bars, typography, and live desktop fixes
 
 - Added `WidgetAllowanceWindow`/`WidgetAllowanceSummary.windows` (computed,
