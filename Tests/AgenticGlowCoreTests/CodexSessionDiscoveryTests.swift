@@ -7,7 +7,7 @@ final class CodexSessionDiscoveryTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 1_784_693_300)
         let response = Data(
             """
-            {"id":8,"result":{"data":[{"id":"thread-1","name":"SECRET title","preview":"SECRET prompt","cwd":"/Volumes/Liquid/2DaMax Development/Klarity","updatedAt":1784693299,"status":{"type":"notLoaded"},"source":"vscode"}],"nextCursor":null}}
+            {"id":8,"result":{"data":[{"id":"thread-1","name":"SECRET title","preview":"SECRET prompt","cwd":"/Volumes/Liquid/2DaMax Development/DeletedProject","updatedAt":1784693299,"status":{"type":"notLoaded"},"source":"vscode"}],"nextCursor":null}}
             """.utf8
         )
         let adapter = CodexSessionDiscoveryAdapter(
@@ -25,7 +25,7 @@ final class CodexSessionDiscoveryTests: XCTestCase {
         XCTAssertEqual(event.sessionID, HookNormalizer.sessionIdentifier("thread-1"))
         XCTAssertEqual(event.phase, .thinking)
         XCTAssertEqual(event.projectName, "Codex")
-        XCTAssertEqual(event.workingDirectory, "/Volumes/Liquid/2DaMax Development/Klarity")
+        XCTAssertEqual(event.workingDirectory, "/Volumes/Liquid/2DaMax Development/DeletedProject")
         XCTAssertFalse(String(describing: event).contains("SECRET"))
     }
 

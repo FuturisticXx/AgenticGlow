@@ -5,7 +5,7 @@
 
 ## Goal
 
-Make usage notifications timely and useful without repeating the same warning, and restore live Codex session reporting after the Klarity to AgenticGlow rename.
+Make usage notifications timely and useful without repeating the same warning, and restore live Codex session reporting after the workspace was renamed to AgenticGlow.
 
 ## Confirmed Problems
 
@@ -20,11 +20,7 @@ This conflicts with Apple's guidance to avoid multiple notifications for the sam
 
 ### Current Codex session is missing
 
-The active Codex task is still associated with the deleted path:
-
-`/Volumes/Liquid/2DaMax Development/Klarity`
-
-The renamed checkout exists at:
+The active Codex task is still associated with the deleted pre-AgenticGlow path. The renamed checkout exists at:
 
 `/Volumes/Liquid/2DaMax Development/AgenticGlow`
 
@@ -89,11 +85,11 @@ Equivalent copy applies to Codex and weekly windows. Titles stay short, direct, 
 
 ## Codex Workspace Repair
 
-Repair the local Codex project association so new AgenticGlow tasks use the existing AgenticGlow directory rather than the deleted Klarity directory.
+Repair the local Codex project association so new AgenticGlow tasks use the existing AgenticGlow directory rather than the retired workspace.
 
 The repair must use Codex's supported project or workspace controls. It must not:
 
-- Recreate `Klarity` as a symlink.
+- Recreate the retired workspace as a symlink.
 - Patch Codex application binaries.
 - Make AgenticGlow depend on Codex's private SQLite or Electron state formats.
 - Claim the already-running task is repaired until a real hook event proves it.

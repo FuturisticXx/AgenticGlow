@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the deleted Klarity workspace association with the real AgenticGlow directory and prove that a real Codex hook event appears as a live AgenticGlow session.
+**Goal:** Replace the deleted pre-AgenticGlow workspace association with the real AgenticGlow directory and prove that a real Codex hook event appears as a live AgenticGlow session.
 
 **Architecture:** Use the supported `codex app PATH` entry point instead of editing Codex private state. Verify the existing hook, helper, state file, current process identity, and AgenticGlow presentation as one end-to-end pipeline.
 
@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Use `/Volumes/Liquid/2DaMax Development/AgenticGlow` as the canonical checkout.
-- Do not recreate `/Volumes/Liquid/2DaMax Development/Klarity` as a symlink or directory.
+- Do not recreate the retired workspace as a symlink or directory.
 - Do not edit Codex private SQLite databases, Electron state JSON, application binaries, or hook trust hashes.
 - Do not use synthetic state as final evidence.
 - Keep AgenticGlow diagnostics off after verification.
@@ -36,14 +36,13 @@
 - [x] **Step 1: Capture pre-repair evidence**
 
 ```bash
-test ! -d '/Volumes/Liquid/2DaMax Development/Klarity'
 test -d '/Volumes/Liquid/2DaMax Development/AgenticGlow'
 ps aux | grep -E '[C]odex.*app-server|[A]genticGlow.app'
 find "$HOME/Library/Application Support/AgenticGlow/Sessions" \
   -maxdepth 1 -type f -print
 ```
 
-Expected: Klarity is absent, AgenticGlow exists, both applications run, and no state file represents the current Codex app-server process.
+Expected: the retired workspace is absent, AgenticGlow exists, both applications run, and no state file represents the current Codex app-server process.
 
 - [x] **Step 2: Open the canonical workspace through the supported Codex command**
 
@@ -56,7 +55,7 @@ Expected: Codex Desktop opens or focuses AgenticGlow without a compatibility pat
 
 - [x] **Step 3: Start or reopen a task under the canonical workspace**
 
-In Codex Desktop, create or reopen a task whose displayed workspace is AgenticGlow, then send one ordinary prompt. Do not use the stale task if its environment still reports the Klarity path.
+In Codex Desktop, create or reopen a task whose displayed workspace is AgenticGlow, then send one ordinary prompt. Do not use a stale task whose environment still reports the retired path.
 
 Expected: Codex runs `SessionStart` or `UserPromptSubmit` from the real AgenticGlow directory.
 

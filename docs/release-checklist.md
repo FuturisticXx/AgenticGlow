@@ -75,7 +75,7 @@ Recorded 2026-07-03 for version 0.1.0 on macOS 27.0 beta with Xcode 26.6:
 - Codex allowance uses the supported local `account/rateLimits/read` RPC through the installed Codex app-server without copying credentials.
 - Claude allowance remains unavailable because Anthropic documents interactive `/usage`, but no supported third-party allowance endpoint or macOS Keychain reuse contract.
 - Accessibility tree and Light appearance were inspected.
-- Private branch push completed to `https://github.com/FuturisticXx/AgenticGlow` on `codex/klarity-release-baseline`.
+- Private release-baseline branch push completed to `https://github.com/FuturisticXx/AgenticGlow`.
 - No signing, notarization, DMG publication, GitHub release, Homebrew submission, or public release was completed.
 - Publication gates remain blocked beginning with `AGENTICGLOW_NAME_CLEARED`.
 - `docs/tasks/repository-consolidation.md` remains untracked and excluded from the release evidence commit by design.
@@ -171,7 +171,7 @@ Public release 0.4.6 evidence recorded 2026-07-11:
 Public release 0.4.7 evidence recorded 2026-07-12:
 
 - Released from commit `236c642` (tag `v0.4.7`) with state-based quota alert deduplication, one immediate exhausted alert at 0 percent, reset-time guidance, stable notification replacement identifiers, and recovery-based re-arming.
-- A real Codex event from the canonical AgenticGlow workspace recorded `thinking` with source process `48031`, matching the live Codex app-server process. The deleted Klarity path was not recreated and Codex private state was not edited.
+- A real Codex event from the canonical AgenticGlow workspace recorded `thinking` with source process `48031`, matching the live Codex app-server process. The retired pre-AgenticGlow path was not recreated and Codex private state was not edited.
 - The complete non-UI suite passed 234 tests with zero failures. Release CI run `29181689044` passed on the release commit, and final documentation CI run `29181811779` passed.
 - Apple accepted notarization submission `1e60e111-ed51-437f-9271-7f72640e4205`. The signed universal app and DMG passed strict signature, stapler, and Gatekeeper verification.
 - Released DMG SHA-256 `62792a04c0f526497037bd9925e68e81bc4b7f6f96783d6f2baa840c2ea625ea`; the downloaded GitHub asset matched the checksum and passed staple and Gatekeeper verification.
