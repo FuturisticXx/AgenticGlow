@@ -249,6 +249,18 @@ Public release 0.5.4 evidence recorded 2026-07-18:
 - `Cask/agenticglow.rb` was regenerated with the 0.5.4 checksum (main commit `ccb623e`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `863a1a8`).
 - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.4 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
 
+Public release 0.5.8 evidence recorded 2026-07-23:
+
+- Released from commit `bbb6e35` (tag `v0.5.8`): the standalone hook helper binary Codex/Claude hooks actually invoke (`~/Library/Application Support/AgenticGlow/bin/agenticglow-event`) now auto-refreshes on every app launch whenever it differs from the embedded copy (`HelperInstaller.refreshIfNeeded()`, called from `AppDelegate.applicationDidFinishLaunching`), instead of only through the Setup window's manual "Install"/"Repair" flow. Closes a gap worked around by hand during the v0.5.3 release.
+- TDD: two new `HelperInstallerTests` cases exercising `refreshIfNeeded()`.
+- The full non-UI suite passed on the release commit with zero failures; the privacy gate passed.
+- Release gate variables were set and `Scripts/verify-release-gates.sh` passed.
+- Signed universal `arm64`/`x86_64` build passed strict code-signature checks. Apple accepted notarization submission `fea0ce79-b737-4b46-b048-f6765473bc29`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Released DMG SHA-256 `68fc677e96329b553685737ae397cf0f6a9b842653661859326e438fb23b41ba`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.5.8 checksum (main commit `f8a39f4`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `f7a2ac3`).
+- `brew upgrade --cask agenticglow` upgraded the installed app from 0.5.7 to 0.5.8, quit the running app, replaced `/Applications/AgenticGlow.app`, and relaunched it; version, strict signature, single `pluginkit` registration under `/Applications`, and Gatekeeper all verified post-install.
+- The fix itself was manually verified live before this release: corrupted the installed helper, relaunched a locally signed Debug build, confirmed it was silently replaced with a byte-identical copy of the embedded binary.
+
 Public release 0.5.7 evidence recorded 2026-07-22:
 
 - Released from commit `d4d5dd9` (tag `v0.5.7`), on top of `main` at v0.5.6 plus two follow-up fixes found live-testing the just-released widget: (1) `WidgetSnapshot.providersWithoutData` now only flags a provider as "not set up" when it has genuinely no session, allowance, or hook-installed signal at all, instead of contradicting live Codex sessions/allowance data already visible on the same widget (Codex surfaces both through hook-independent fallbacks even without its hook integration installed). (2) Widget allowance reset captions now show the absolute reset date/time matching the menu bar, instead of only a relative countdown.
@@ -416,17 +428,17 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-22, latest: v0.5.7)
-  - v0.5.7 published from commit `d4d5dd9`
-  - Apple notarization submission `18c63ca7-8001-4067-b42f-f50aaa69e1a7` accepted
-  - Published DMG SHA-256: `4e7c874c8ddac81e4f704aaab4c1ad624f5098e0c9d6d6a75d2994dde355d53d`
+- [x] **GitHub release published** (date: 2026-07-23, latest: v0.5.8)
+  - v0.5.8 published from commit `bbb6e35`
+  - Apple notarization submission `fea0ce79-b737-4b46-b048-f6765473bc29` accepted
+  - Published DMG SHA-256: `68fc677e96329b553685737ae397cf0f6a9b842653661859326e438fb23b41ba`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes document the widget "not set up" contradiction fix and the allowance reset-date display fix
+  - Release notes document the standalone hook helper auto-refresh fix
 
-- [x] **Cask updated in the official tap** (date: 2026-07-22, version 0.5.7)
-  - Official tap updated to v0.5.7 at commit `cc5898c`
-  - `Cask/agenticglow.rb` regenerated with the v0.5.7 checksum and pushed on main (`59de831`)
-  - `brew upgrade --cask agenticglow` quit the running app, replaced `/Applications/AgenticGlow.app` with the notarized 0.5.7 build, and relaunched it; version, strict signature, and Gatekeeper all verified post-install
+- [x] **Cask updated in the official tap** (date: 2026-07-23, version 0.5.8)
+  - Official tap updated to v0.5.8 at commit `f7a2ac3`
+  - `Cask/agenticglow.rb` regenerated with the v0.5.8 checksum and pushed on main (`f8a39f4`)
+  - `brew upgrade --cask agenticglow` quit the running app, replaced `/Applications/AgenticGlow.app` with the notarized 0.5.8 build, and relaunched it; version, strict signature, and Gatekeeper all verified post-install
 
 - [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask

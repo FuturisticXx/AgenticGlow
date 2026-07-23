@@ -1,5 +1,15 @@
 # Got done
 
+## 2026-07-23 - Published v0.5.8
+
+- Released the standalone hook helper auto-refresh fix from commit `bbb6e35`, tagged `v0.5.8`.
+- Full non-UI suite passed on the release commit, 0 failures. Privacy gate passed.
+- Signed universal build passed strict code-signature checks; Apple accepted notarization submission `fea0ce79-b737-4b46-b048-f6765473bc29`; DMG stapled, validated, Gatekeeper-accepted as `Notarized Developer ID`.
+- Released DMG SHA-256 `68fc677e96329b553685737ae397cf0f6a9b842653661859326e438fb23b41ba`; GitHub release asset downloaded back matched checksum, staple, and Gatekeeper.
+- `Cask/agenticglow.rb` regenerated and pushed to main (`f8a39f4`) and the official tap `FuturisticXx/homebrew-agenticglow` (`f7a2ac3`).
+- `brew upgrade --cask agenticglow` replaced `/Applications/AgenticGlow.app` with the notarized 0.5.8 build and relaunched it; version, signature, single widget registration, and Gatekeeper all verified post-install.
+- GitHub release: https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.5.8
+
 ## 2026-07-22 - Standalone hook helper now auto-refreshes on launch
 
 - Fixed a known gap from the v0.5.3 release: the standalone helper binary
