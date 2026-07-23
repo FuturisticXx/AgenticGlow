@@ -41,6 +41,20 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         attentionCount: 0,
         activeCount: 0
     )
+
+    /// Providers with genuinely no signal: no sessions, no allowance data,
+    /// and no hook integration installed. `providers[].installed` alone
+    /// isn't enough to call a provider "not set up" — Codex sessions and
+    /// allowance can both surface through hook-independent fallbacks (the
+    /// read-only session-discovery RPC and the rate-limits RPC), so a
+    /// provider whose hooks aren't installed but who still has visible
+    /// data isn't missing from the user's point of view.
+    public var providersWithoutData: [AgentProvider] {
+        let providersWithData = Set(sessions.map(\.provider)).union(allowances.map(\.provider))
+        return providers
+            .filter { !$0.installed && !providersWithData.contains($0.provider) }
+            .map(\.provider)
+    }
 }
 
 public struct WidgetSessionSummary: Codable, Equatable, Sendable, Identifiable {

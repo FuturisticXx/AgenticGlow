@@ -42,7 +42,7 @@ struct LargeWidgetView: View {
                     AllowanceStrip(allowance: allowance, now: now)
                 }
             }
-            ForEach(notSetUpProviders, id: \.self) { provider in
+            ForEach(snapshot.providersWithoutData, id: \.self) { provider in
                 Text("\(provider.displayName) not set up in AgenticGlow")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
@@ -64,9 +64,6 @@ struct LargeWidgetView: View {
         }
     }
 
-    private var notSetUpProviders: [AgentProvider] {
-        snapshot.providers.filter { !$0.installed }.map(\.provider)
-    }
 }
 
 #Preview("Busy", as: .systemLarge) {
