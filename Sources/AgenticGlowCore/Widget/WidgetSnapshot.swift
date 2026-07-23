@@ -101,6 +101,76 @@ public struct WidgetAllowanceSummary: Codable, Equatable, Sendable {
         self.weeklyResetAt = weeklyResetAt
         self.fetchedAt = fetchedAt
     }
+
+    /// Individual allowance windows to display, derived from the stored
+    /// current/weekly fields. Always includes the current window; the
+    /// weekly window only appears when the provider actually reports one
+    /// (Codex, for example, currently reports only a single window labeled
+    /// "Weekly" with no separate secondary value). Not stored on disk: a
+    /// display-layer projection over already-serialized fields, so it
+    /// doesn't need Codable or a schema version bump.
+    public var windows: [WidgetAllowanceWindow] {
+        var result = [
+            WidgetAllowanceWindow(
+                provider: provider,
+                kind: .current,
+                label: currentWindowLabel,
+                percentLeft: currentPercentLeft,
+                resetAt: currentResetAt
+            )
+        ]
+        if let weeklyPercentLeft {
+            result.append(
+                WidgetAllowanceWindow(
+                    provider: provider,
+                    kind: .weekly,
+                    label: "Weekly",
+                    percentLeft: weeklyPercentLeft,
+                    resetAt: weeklyResetAt
+                )
+            )
+        }
+        return result
+    }
+}
+
+/// A single allowance window ready for display: one bar, one percentage,
+/// one label. Not Codable: it's a computed presentation over
+/// `WidgetAllowanceSummary`'s stored fields, not part of the shared
+/// snapshot's serialized schema.
+public struct WidgetAllowanceWindow: Equatable, Sendable, Identifiable {
+    public enum Kind: String, Sendable {
+        case current
+        case weekly
+    }
+
+    public let provider: AgentProvider
+    public let kind: Kind
+    public let label: String
+    public let percentLeft: Double?
+    public let resetAt: Date?
+
+    public init(
+        provider: AgentProvider,
+        kind: Kind,
+        label: String,
+        percentLeft: Double?,
+        resetAt: Date?
+    ) {
+        self.provider = provider
+        self.kind = kind
+        self.label = label
+        self.percentLeft = percentLeft
+        self.resetAt = resetAt
+    }
+
+    public var id: String {
+        "\(provider.rawValue):\(kind.rawValue)"
+    }
+
+    public var normalizedProgress: Double? {
+        percentLeft.map { min(max($0 / 100, 0), 1) }
+    }
 }
 
 public struct WidgetProviderSummary: Codable, Equatable, Sendable {
