@@ -65,8 +65,7 @@ struct AllowanceWindowRow: View {
 
     @ViewBuilder
     private func caption(percentLeft: Double) -> some View {
-        let resetText = WidgetSnapshotFormatting.relativeResetLabel(window.resetAt, now: now)
-        let text = resetText.map { "\(captionLabel) resets in \($0)" } ?? captionLabel
+        let text = resetDetail.map { "\(captionLabel) resets \($0)" } ?? captionLabel
         if isLow {
             HStack(spacing: 4) {
                 Image(systemName: "exclamationmark.triangle.fill")
@@ -88,12 +87,30 @@ struct AllowanceWindowRow: View {
         return percentLeft < AllowanceWarning.thresholdPercentLeft
     }
 
+    /// Matches the menu bar's own reset copy (`AllowancePresentation`,
+    /// frozen, reference only): a current window pairs a relative
+    /// countdown with the absolute clock time (plus date if it isn't
+    /// today) in parentheses, while a weekly window shows only the
+    /// absolute date and time, since a "142h 43m" weekly countdown is
+    /// less useful than a calendar reference.
+    private var resetDetail: String? {
+        guard let resetAt = window.resetAt else { return nil }
+        let absolute = WidgetSnapshotFormatting.absoluteResetLabel(resetAt, now: now)
+        switch window.kind {
+        case .current:
+            guard let relative = WidgetSnapshotFormatting.relativeResetLabel(resetAt, now: now) else { return nil }
+            return absolute.map { "in \(relative) (\($0))" } ?? "in \(relative)"
+        case .weekly:
+            return absolute
+        }
+    }
+
     private var accessibilityLabel: String {
         var parts = [window.provider.displayName, window.label]
         if let percentLeft = window.percentLeft {
             parts.append("\(Int(percentLeft.rounded())) percent left")
-            if let reset = WidgetSnapshotFormatting.relativeResetLabel(window.resetAt, now: now) {
-                parts.append("resets in \(reset)")
+            if let resetDetail {
+                parts.append("resets \(resetDetail)")
             }
             if isLow {
                 parts.append("low")
