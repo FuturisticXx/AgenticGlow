@@ -1,5 +1,22 @@
 # Got done
 
+## 2026-07-22 - Standalone hook helper now auto-refreshes on launch
+
+- Fixed a known gap from the v0.5.3 release: the standalone helper binary
+  Codex/Claude hooks actually invoke only ever got refreshed through the
+  Setup window's manual "Install"/"Repair" button, so a release that
+  changed hook-processing logic shipped silently inert for existing
+  users until they happened to reopen Setup.
+- `HelperInstaller.refreshIfNeeded()` (new) reuses the existing but
+  previously-unused `isCurrent()` byte-compare; called unconditionally
+  from `AppDelegate.applicationDidFinishLaunching` since the standalone
+  path is stable across versions and never touches hooks.json/settings.json.
+- TDD: two new `HelperInstallerTests` cases. Manually verified live:
+  corrupted the installed helper, relaunched the app, confirmed it was
+  silently replaced with a byte-identical copy of the embedded binary.
+- Full non-UI suite: 269 Core + 6 Event + 143 App, 0 failures. Privacy
+  gate passed. Not yet released; will ship with the next version bump.
+
 ## 2026-07-22 - Published v0.5.7
 
 - Patch release found and fixed two bugs live-testing v0.5.6's real desktop widget: (1) a provider with live sessions/allowance data could still show a contradictory "Codex not set up in AgenticGlow" notice, since that check only looked at hook-integration status, not at whether hook-independent fallbacks were already showing real data for it; (2) allowance reset captions only showed a relative countdown, not the absolute date/time the menu bar shows.
