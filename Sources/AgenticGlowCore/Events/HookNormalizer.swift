@@ -79,7 +79,7 @@ public enum HookNormalizer {
             schemaVersion: ProductMetadata.schemaVersion,
             provider: provider,
             surface: surface,
-            sessionID: safeIdentifier(prefix: "sid", raw: sessionID),
+            sessionID: sessionIdentifier(sessionID),
             turnID: (payload["turn_id"] as? String).map { safeIdentifier(prefix: "tid", raw: $0) },
             phase: phase,
             label: label,
@@ -107,6 +107,10 @@ public enum HookNormalizer {
             return provider.displayName
         }
         return name
+    }
+
+    public static func sessionIdentifier(_ raw: String) -> String {
+        safeIdentifier(prefix: "sid", raw: raw)
     }
 
     private static func safeIdentifier(prefix: String, raw: String) -> String {

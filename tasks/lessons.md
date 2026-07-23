@@ -2,9 +2,86 @@
 
 Rules learned from real mistakes in this project. Read in full at session start. Add a new entry after any correction from John.
 
+## Xcode widget previews can't catch Tinted/Monochrome rendering bugs (2026-07-22)
+
+**What happened:** Built a custom allowance status bar (colored gradient
+fill + white text on a colored pill) for the widget, verified it via Xcode
+`#Preview` canvases, and called it done. On John's real desktop the
+percentages and provider colors were completely washed out, twice, across
+two attempted fixes, before the actual root cause became clear: macOS
+desktop widgets can render in a system "Tinted" or "Monochrome" style
+(`@Environment(\.widgetRenderingMode)` = `.accented`/`.vibrant`, chosen
+per-widget from the current wallpaper), which silently replaces any custom
+color not marked `.widgetAccentable()` with a fixed default tone, and even
+accented content can lose contrast if the wallpaper's derived tint happens
+to be pale. Xcode's `#Preview` canvas always renders `.fullColor` — it
+cannot show this failure mode at all, no matter how many preview states
+are added.
+
+**Rule:** For any WidgetKit view using custom colors (not just semantic
+`.primary`/`.secondary`), branch on `widgetRenderingMode` and provide a
+`.fullColor` path plus a distinct fallback for everything else, using
+semantic foreground styles for the fallback rather than guessing which
+custom colors will survive. Do not trust preview-only verification for
+anything color-related in a widget; it must be checked on a real installed
+desktop widget, and per "Verify the installed widget host" below, that
+check requires killing and letting WidgetKit respawn the extension process
+after every rebuild (see next entry).
+
+## WidgetKit extension processes don't restart on app relaunch (2026-07-22)
+
+**What happened:** After rebuilding and reinstalling `/Applications/AgenticGlow.app`
+with widget code changes and relaunching the app, John reported seeing no
+changes at all on the real desktop widget. The `AgenticGlowWidget.appex`
+process is a separate, long-lived background process that WidgetKit
+manages independently of the containing app; replacing the `.appex` bundle
+on disk and relaunching the app does not restart it, so it kept serving
+the previously-loaded (stale) compiled code indefinitely.
+
+**Rule:** After any local rebuild+reinstall of a widget-bearing app, before
+asking for visual re-verification, explicitly find and kill the running
+extension process (`ps aux | grep <WidgetName>.appex`, then `kill <pid>` or
+`pkill -f <WidgetName>.appex`). macOS respawns it automatically within a
+few seconds once something (the desktop, WidgetKit's own reload machinery)
+next needs it. Also expect a second, transient `pluginkit` registration
+pointing at the DerivedData build path after each local install (Xcode's
+own `RegisterWithLaunchServices` build phase runs on every build); remove
+it with `pluginkit -r <path>` so only the `/Applications` registration
+remains, per the existing installed-widget-host verification rule below.
+
+## Verify the installed widget host, not just its snapshot (2026-07-21)
+
+**What happened:** The shared `WidgetSnapshot.json` contained current Codex and
+Claude data, but the desktop widget still showed its waiting state. macOS was
+running an older extension from Xcode DerivedData that had no App Group
+entitlement, while the correctly signed widget lived in a temporary build. A
+remove-and-add attempt did not terminate that stale extension. Later, after the
+old widget was removed, the system contained no AgenticGlow desktop instance at
+all even though the app, extension registration, and snapshot were valid.
+
+**Rule:** Diagnose WidgetKit as four separate gates: installed host bundle,
+extension registration, shared snapshot, and installed desktop instance. Use
+`pluginkit -m -A -D -v -i <widget-bundle-id>` to verify exactly one registration
+inside `/Applications`, inspect both signed targets for the same App Group, and
+query or visually confirm that a desktop instance actually exists. Never use a
+valid snapshot or a registered extension as proof that the widget rendered it.
+
+## Sign nested extensions before their containing app (2026-07-21)
+
+**What happened:** The existing release script built unsigned products, then
+signed the helper and outer app only. Once the WidgetKit extension was embedded,
+that sequence no longer established a valid signed nested extension with its own
+App Group entitlement.
+
+**Rule:** Sign from the inside out: standalone helper, widget extension with the
+widget entitlements, then the containing app. Release verification must require
+the embedded extension, verify its architecture and signature directly, and
+confirm the shared App Group on both widget and app. A passing deep check of the
+outer app alone is insufficient release evidence.
+
 ## Codex hooks may go silent after switching OpenAI accounts (2026-07-17)
 
-**What happened:** While testing the Codex window-raise fix, no new Codex hook events reached AgenticGlow at all (not even the old, pre-fix behavior) even after John sent new messages in Codex. `~/.codex/hooks.json` was confirmed correct and unchanged, the standalone helper binary at `~/Library/Application Support/AgenticGlow/bin/agenticglow-event` was confirmed working via a direct manual invocation, and Codex's own Settings > Hooks page showed all 18 hooks (across AgenticGlow, Klarity, and Sessionlet) toggled on with no visible untrusted state. John later confirmed the actual cause: he had switched to a different OpenAI account in Codex.
+**What happened:** While testing the Codex window-raise fix, no new Codex hook events reached AgenticGlow at all (not even the old, pre-fix behavior) even after John sent new messages in Codex. `~/.codex/hooks.json` was confirmed correct and unchanged, the standalone helper binary at `~/Library/Application Support/AgenticGlow/bin/agenticglow-event` was confirmed working via a direct manual invocation, and Codex's own Settings > Hooks page showed all 18 hooks (across AgenticGlow and two retired integrations) toggled on with no visible untrusted state. John later confirmed the actual cause: he had switched to a different OpenAI account in Codex.
 
 **Rule:** If Codex sessions stop reporting to AgenticGlow with no config-file or helper-binary explanation, ask whether the OpenAI account signed into Codex changed recently, before assuming a local file/binary problem. The exact mechanism is not yet confirmed (Codex's Settings UI does not visibly reflect this), so this needs a real investigation next time it's convenient, ideally by deliberately switching accounts and watching what changes. Don't spend another long session re-deriving the same negative evidence (hooks.json fine, helper fine, Settings shows enabled) before checking this first.
 
@@ -82,14 +159,14 @@ Repeated xcodebuild runs prompted John's keychain for the signing key on every b
 
 ## Codex sessions stop reporting to AgenticGlow after a hooks.json repair (2026-07-12)
 
-**What happened:** John has multiple hook-based menu bar apps installed (AgenticGlow, plus two others called Klarity and Sessionlet) that all write entries into the same `~/.codex/hooks.json` and `~/.claude/settings.json`. At some point AgenticGlow's managed entries were missing from `~/.codex/hooks.json` entirely (helper binary at `~/Library/Application Support/AgenticGlow/bin/` was also gone), so no Codex `SessionStart`/`UserPromptSubmit`/etc. events ever reached AgenticGlow and the app showed "No Active Sessions" for Codex even with sessions running. Repairing the integration through AgenticGlow's Setup window correctly rewrote `hooks.json` with AgenticGlow's entries restored alongside the other apps' — but sessions still didn't show up afterward.
+**What happened:** John had multiple hook-based menu bar apps installed, including AgenticGlow and two retired hook consumers, that all wrote entries into the same `~/.codex/hooks.json` and `~/.claude/settings.json`. At some point AgenticGlow's managed entries were missing from `~/.codex/hooks.json` entirely (helper binary at `~/Library/Application Support/AgenticGlow/bin/` was also gone), so no Codex `SessionStart`/`UserPromptSubmit`/etc. events ever reached AgenticGlow and the app showed "No Active Sessions" for Codex even with sessions running. Repairing the integration through AgenticGlow's Setup window correctly rewrote `hooks.json` with AgenticGlow's entries restored alongside the other apps' - but sessions still didn't show up afterward.
 
 **Root cause of the second half:** Codex's `app-server` background process reads `~/.codex/hooks.json` once, at its own process startup, and keeps it in memory for the life of the process. It does not hot-reload on file change and does not re-read per session or per turn. Every currently-running Codex process (`app-server`, `Codex (Renderer)`, etc.) had started *before* the hooks.json repair, so none of them ever saw the fixed config. A `hooks.json` write is invisible to Codex until every Codex/ChatGPT process is fully quit and relaunched.
 
 **Rules:**
 - When a hook-based integration (Claude Code or Codex) stops reporting events, check three things in order: (1) does the target config file (`~/.codex/hooks.json` or `~/.claude/settings.json`) actually contain this app's managed entries — grep for the marker string (`--agenticglow-hook`); (2) does `~/Library/Application Support/AgenticGlow/bin/agenticglow-event` exist; (3) is there evidence of the events actually arriving — check `~/Library/Application Support/AgenticGlow/Sessions/*.json` for a file newer than the fix, cross-referenced against `sourceProcessID`/`sourceProcessStartedAt` in the JSON against `ps` to confirm the reporting process started *after* the config was last written.
 - After any repair that rewrites `~/.codex/hooks.json`, Codex (the ChatGPT app) must be fully quit (`Cmd+Q`, confirm no `codex`/`Codex Framework`/`ChatGPT` processes remain in `ps aux`) and relaunched before new hook events will fire. Simply closing session windows or restarting AgenticGlow is not enough — Codex is the one caching the config.
-- Multiple hook-consuming apps (AgenticGlow, Klarity, Sessionlet) share the same `hooks.json`/`settings.json` — when diagnosing, don't assume an empty-looking managed-entries block means all integrations are broken; check specifically for this app's marker, since another app's entries can be present and healthy while this one's are missing.
+- Multiple hook-consuming apps can share the same `hooks.json`/`settings.json` - when diagnosing, don't assume an empty-looking managed-entries block means all integrations are broken; check specifically for this app's marker, since another app's entries can be present and healthy while this one's are missing.
 
 ## A stale duplicate install can masquerade as a live rendering bug (2026-07-14)
 

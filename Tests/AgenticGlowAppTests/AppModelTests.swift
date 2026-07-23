@@ -31,6 +31,58 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.resolved.dominantPhase, .permission)
     }
 
+    func testCodexDiscoveryAddsSessionWithoutChangingStoredClaude() async {
+        let claude = NormalizedEvent.testEvent(
+            provider: .claude,
+            phase: .permission,
+            turnStartedAt: Date(timeIntervalSince1970: 90)
+        )
+        let codex = NormalizedEvent.testEvent(
+            provider: .codex,
+            phase: .thinking,
+            turnStartedAt: Date(timeIntervalSince1970: 95)
+        )
+        let model = AppModel(
+            store: InMemorySessionStore(events: [claude]),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            codexSessionDiscoverer: StubCodexSessionDiscoverer(results: [.success([codex])]),
+            now: { Date(timeIntervalSince1970: 100) }
+        )
+
+        await model.refreshCodexDiscovery()
+
+        XCTAssertEqual(model.resolved.sessions.count, 2)
+        XCTAssertEqual(model.resolved.sessions.first { $0.provider == .claude }?.phase, .permission)
+        XCTAssertEqual(model.resolved.sessions.first { $0.provider == .codex }?.phase, .thinking)
+    }
+
+    func testCodexDiscoveryFailurePreservesLastSuccessfulResult() async {
+        let codex = NormalizedEvent.testEvent(
+            provider: .codex,
+            phase: .thinking,
+            turnStartedAt: Date(timeIntervalSince1970: 95)
+        )
+        let discoverer = StubCodexSessionDiscoverer(results: [
+            .success([codex]),
+            .failure(CodexSessionDiscoveryError.unavailable)
+        ])
+        let model = AppModel(
+            store: InMemorySessionStore(events: []),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            codexSessionDiscoverer: discoverer,
+            now: { Date(timeIntervalSince1970: 100) }
+        )
+
+        await model.refreshCodexDiscovery()
+        await model.refreshCodexDiscovery()
+
+        XCTAssertEqual(model.resolved.sessions.count, 1)
+        XCTAssertEqual(model.resolved.sessions.first?.provider, .codex)
+        XCTAssertEqual(model.resolved.sessions.first?.phase, .thinking)
+    }
+
     func testRefreshRemovesEventsPastFileRetention() throws {
         let now = Date(timeIntervalSince1970: 200_000)
         let event = NormalizedEvent(
@@ -409,6 +461,148 @@ final class AppModelTests: XCTestCase {
         )
     }
 
+    func testWidgetSnapshotWrittenAndReloadedOnFirstRefresh() {
+        let store = InMemorySessionStore(events: [
+            .testEvent(provider: .claude, phase: .thinking, turnStartedAt: Date(timeIntervalSince1970: 90))
+        ])
+        let writer = RecordingSnapshotWriter()
+        let reloader = RecordingTimelineReloader()
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            widgetSnapshotWriter: writer,
+            widgetTimelineReloader: reloader,
+            installedProviders: { [.claude: true, .codex: false] },
+            now: { Date(timeIntervalSince1970: 200) }
+        )
+
+        model.refresh()
+
+        XCTAssertEqual(writer.writtenSnapshots.count, 1)
+        XCTAssertEqual(reloader.reloadCount, 1)
+        XCTAssertEqual(writer.writtenSnapshots.first?.sessions.count, 1)
+    }
+
+    func testWidgetSnapshotNotRewrittenWhenNothingMeaningfullyChanges() {
+        let store = InMemorySessionStore(events: [
+            .testEvent(provider: .claude, phase: .thinking, turnStartedAt: Date(timeIntervalSince1970: 90))
+        ])
+        let writer = RecordingSnapshotWriter()
+        let reloader = RecordingTimelineReloader()
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            widgetSnapshotWriter: writer,
+            widgetTimelineReloader: reloader,
+            installedProviders: { [.claude: true, .codex: false] },
+            now: { Date(timeIntervalSince1970: 200) }
+        )
+
+        model.refresh()
+        model.refresh()
+        model.refresh()
+
+        XCTAssertEqual(writer.writtenSnapshots.count, 1)
+        XCTAssertEqual(reloader.reloadCount, 1)
+    }
+
+    func testWidgetSnapshotRewrittenWhenPhaseChanges() {
+        let store = InMemorySessionStore(events: [
+            .testEvent(provider: .claude, phase: .thinking, turnStartedAt: Date(timeIntervalSince1970: 90))
+        ])
+        let writer = RecordingSnapshotWriter()
+        let reloader = RecordingTimelineReloader()
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            widgetSnapshotWriter: writer,
+            widgetTimelineReloader: reloader,
+            installedProviders: { [.claude: true, .codex: false] },
+            now: { Date(timeIntervalSince1970: 200) }
+        )
+        model.refresh()
+
+        store.write(.testEvent(provider: .claude, phase: .permission, turnStartedAt: Date(timeIntervalSince1970: 90)))
+        model.refresh()
+
+        XCTAssertEqual(writer.writtenSnapshots.count, 2)
+        XCTAssertEqual(reloader.reloadCount, 2)
+    }
+
+    func testWidgetSnapshotRetriesAfterWriteFailureWithoutReloading() {
+        let store = InMemorySessionStore(events: [
+            .testEvent(provider: .claude, phase: .thinking, turnStartedAt: Date(timeIntervalSince1970: 90))
+        ])
+        let writer = FailOnceSnapshotWriter()
+        let reloader = RecordingTimelineReloader()
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            widgetSnapshotWriter: writer,
+            widgetTimelineReloader: reloader,
+            installedProviders: { [.claude: true, .codex: false] },
+            now: { Date(timeIntervalSince1970: 200) }
+        )
+
+        model.refresh()
+        XCTAssertEqual(writer.attemptCount, 1)
+        XCTAssertEqual(writer.writtenSnapshots.count, 0)
+        XCTAssertEqual(reloader.reloadCount, 0)
+
+        model.refresh()
+        XCTAssertEqual(writer.attemptCount, 2)
+        XCTAssertEqual(writer.writtenSnapshots.count, 1)
+        XCTAssertEqual(reloader.reloadCount, 1)
+    }
+
+    func testWidgetSnapshotSkippedWithoutAWriter() {
+        let store = InMemorySessionStore(events: [
+            .testEvent(provider: .claude, phase: .thinking, turnStartedAt: Date(timeIntervalSince1970: 90))
+        ])
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            now: { Date(timeIntervalSince1970: 200) }
+        )
+
+        // No writer/reloader/installedProviders injected; must not crash.
+        model.refresh()
+        XCTAssertEqual(model.resolved.sessions.count, 1)
+    }
+
+    func testInstalledProvidersIsThrottledNotCalledEveryRefresh() {
+        let store = InMemorySessionStore(events: [])
+        let writer = RecordingSnapshotWriter()
+        let reloader = RecordingTimelineReloader()
+        let counter = CountingInstalledProvidersProvider()
+        let clock = MutableClock(Date(timeIntervalSince1970: 1000))
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            widgetSnapshotWriter: writer,
+            widgetTimelineReloader: reloader,
+            installedProviders: counter.call,
+            now: { clock.current }
+        )
+
+        model.refresh()
+        XCTAssertEqual(counter.callCount, 1)
+
+        clock.current = clock.current.addingTimeInterval(10)
+        model.refresh()
+        XCTAssertEqual(counter.callCount, 1, "should still be cached within the throttle window")
+
+        clock.current = clock.current.addingTimeInterval(AllowanceRefreshPolicy.idleInterval + 1)
+        model.refresh()
+        XCTAssertEqual(counter.callCount, 2, "should re-check after the throttle window elapses")
+    }
+
     private func statusPresentation(for model: AppModel) -> StatusPresentation {
         StatusPresentation(
             resolved: model.resolved,
@@ -555,5 +749,61 @@ private final class RecordingActivator: ApplicationActivating, @unchecked Sendab
         bundleIdentifiers.append(bundleIdentifier)
         projectNames.append(projectName)
         return true
+    }
+}
+
+private final class RecordingSnapshotWriter: WidgetSnapshotWriting, @unchecked Sendable {
+    private(set) var writtenSnapshots: [WidgetSnapshot] = []
+
+    func write(_ snapshot: WidgetSnapshot) throws {
+        writtenSnapshots.append(snapshot)
+    }
+}
+
+private final class RecordingTimelineReloader: WidgetTimelineReloading, @unchecked Sendable {
+    private(set) var reloadCount = 0
+
+    func reloadAll() {
+        reloadCount += 1
+    }
+}
+
+private final class FailOnceSnapshotWriter: WidgetSnapshotWriting, @unchecked Sendable {
+    private(set) var attemptCount = 0
+    private(set) var writtenSnapshots: [WidgetSnapshot] = []
+
+    func write(_ snapshot: WidgetSnapshot) throws {
+        attemptCount += 1
+        if attemptCount == 1 {
+            throw WidgetSnapshotWriteError.containerUnavailable
+        }
+        writtenSnapshots.append(snapshot)
+    }
+}
+
+private final class CountingInstalledProvidersProvider: @unchecked Sendable {
+    private(set) var callCount = 0
+
+    func call() -> [AgentProvider: Bool] {
+        callCount += 1
+        return [.claude: true, .codex: false]
+    }
+}
+
+private final class MutableClock: @unchecked Sendable {
+    var current: Date
+    init(_ date: Date) { current = date }
+}
+
+private actor StubCodexSessionDiscoverer: CodexSessionDiscovering {
+    private var results: [Result<[NormalizedEvent], Error>]
+
+    init(results: [Result<[NormalizedEvent], Error>]) {
+        self.results = results
+    }
+
+    func discover() async throws -> [NormalizedEvent] {
+        guard !results.isEmpty else { return [] }
+        return try results.removeFirst().get()
     }
 }

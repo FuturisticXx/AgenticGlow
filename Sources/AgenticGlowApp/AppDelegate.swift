@@ -1,4 +1,5 @@
 import AppKit
+import Carbon
 import Network
 import SwiftUI
 import AgenticGlowCore
@@ -27,6 +28,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         NSApp.setActivationPolicy(.accessory)
+        NSAppleEventManager.shared().setEventHandler(
+            self,
+            andSelector: #selector(handleGetURL(_:withReplyEvent:)),
+            forEventClass: AEEventClass(kInternetEventClass),
+            andEventID: AEEventID(kAEGetURL)
+        )
         let visualQA = VisualQALaunchConfiguration(arguments: CommandLine.arguments)
         if let visualQA {
             NSApp.appearance = NSAppearance(
@@ -65,13 +72,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case "signals": ProviderStatusMonitor(requester: UITestStatusRequester())
         default: nil
         }
+        let widgetIntegrationManagers: [any ProviderIntegrationManaging] = fixtureName == nil
+            ? [
+                ClaudeIntegrationManager(
+                    settingsURL: FileManager.default.homeDirectoryForCurrentUser
+                        .appendingPathComponent(".claude/settings.json"),
+                    helperURL: HelperInstaller.defaultDestination
+                ),
+                CodexIntegrationManager(
+                    hooksURL: FileManager.default.homeDirectoryForCurrentUser
+                        .appendingPathComponent(".codex/hooks.json"),
+                    helperURL: HelperInstaller.defaultDestination
+                )
+            ]
+            : []
         model = AppModel(
             store: store,
             processMonitor: DarwinProcessMonitor(),
             activator: activator,
             allowanceCoordinator: makeAllowanceCoordinator(fixtureName: fixtureName),
             notifier: notificationService,
-            statusMonitor: statusMonitor
+            statusMonitor: statusMonitor,
+            codexSessionDiscoverer: fixtureName == nil
+                ? makeCodexSessionDiscoverer()
+                : nil,
+            widgetSnapshotWriter: fixtureName == nil ? AppGroupSnapshotWriter() : nil,
+            widgetTimelineReloader: fixtureName == nil ? SystemWidgetTimelineReloader() : nil,
+            installedProviders: fixtureName == nil ? {
+                Dictionary(uniqueKeysWithValues: widgetIntegrationManagers.map {
+                    ($0.provider, (try? $0.status().installed) ?? false)
+                })
+            } : nil
         )
 
         if fixtureName != nil {
@@ -155,6 +186,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItemController.stop()
         reduceMotionObserver.stop()
         usageAvailabilityObserver.stop()
+    }
+
+    /// Handles agenticglow:// links, currently only sent by the widget.
+    /// Parsing lives in the pure, tested WidgetDeepLink; this is just the
+    /// thin system-call glue that receives the Apple Event and routes
+    /// through AppModel's existing methods.
+    @objc private func handleGetURL(_ event: NSAppleEventDescriptor, withReplyEvent replyEvent: NSAppleEventDescriptor) {
+        guard
+            let urlString = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue,
+            let url = URL(string: urlString),
+            let link = WidgetDeepLink.parse(url)
+        else { return }
+        route(link)
+    }
+
+    private func route(_ link: WidgetDeepLink) {
+        guard let model, let statusItemController else { return }
+        switch link {
+        case .openApp:
+            statusItemController.showPopoverForVisualQA()
+        case let .openSession(provider, sessionID):
+            if let session = model.resolved.sessions.first(where: {
+                $0.provider == provider && $0.sessionID == sessionID
+            }) {
+                model.activate(session)
+            }
+            statusItemController.showPopoverForVisualQA()
+        }
     }
 
     func makeSettingsView() -> some View {
@@ -364,6 +423,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return AllowanceRefreshCoordinator(
             adapters: [codexAdapter, claudeAdapter],
             cache: FileAllowanceCache(directory: directory)
+        )
+    }
+
+    private func makeCodexSessionDiscoverer() -> (any CodexSessionDiscovering)? {
+        guard let executable = ExecutableLocator.locate("codex") else { return nil }
+        return CodexSessionDiscoveryAdapter(
+            requester: CodexThreadListClient(executableURL: executable)
         )
     }
 }

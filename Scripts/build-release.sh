@@ -20,15 +20,20 @@ xcodebuild build \
   CODE_SIGNING_ALLOWED=NO
 
 source_app="build/DerivedData/Build/Products/Release/AgenticGlow.app"
-ditto "$source_app" build/AgenticGlow.app
+app="build/AgenticGlow.app"
+widget="$app/Contents/PlugIns/AgenticGlowWidget.appex"
+helper="$app/Contents/Resources/bin/agenticglow-event"
+ditto "$source_app" "$app"
 
-helper="build/AgenticGlow.app/Contents/Resources/bin/agenticglow-event"
 codesign --force --options runtime --timestamp \
   --sign "$DEVELOPER_ID_APPLICATION" "$helper"
 codesign --force --options runtime --timestamp \
+  --entitlements Config/AgenticGlowWidget.entitlements \
+  --sign "$DEVELOPER_ID_APPLICATION" "$widget"
+codesign --force --options runtime --timestamp \
   --entitlements Config/AgenticGlow.entitlements \
-  --sign "$DEVELOPER_ID_APPLICATION" build/AgenticGlow.app
+  --sign "$DEVELOPER_ID_APPLICATION" "$app"
 
-codesign --verify --deep --strict --verbose=2 build/AgenticGlow.app
-lipo -archs build/AgenticGlow.app/Contents/MacOS/AgenticGlow
+codesign --verify --deep --strict --verbose=2 "$app"
+lipo -archs "$app/Contents/MacOS/AgenticGlow"
 lipo -archs "$helper"

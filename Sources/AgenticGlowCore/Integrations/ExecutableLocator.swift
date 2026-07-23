@@ -29,7 +29,10 @@ public enum ExecutableLocator {
 
     static func candidatePaths(for name: String, homeDirectory: String) -> [String] {
         let appBinary = name == "codex"
-            ? ["/Applications/Codex.app/Contents/Resources/codex"]
+            ? [
+                "/Applications/ChatGPT.app/Contents/Resources/codex",
+                "/Applications/Codex.app/Contents/Resources/codex"
+            ]
             : []
         return appBinary + [
             "/opt/homebrew/bin/\(name)",
