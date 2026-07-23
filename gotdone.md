@@ -1,5 +1,42 @@
 # Got done
 
+## 2026-07-22 - Widget allowance-window parity, status bars, typography, and live desktop fixes
+
+- Added `WidgetAllowanceWindow`/`WidgetAllowanceSummary.windows` (computed,
+  not serialized) so the widget shows every allowance window a provider
+  reports instead of only its current window. TDD: 7 tests written and
+  confirmed red before implementation, green after
+  (`WidgetAllowanceWindowTests.swift`).
+- Ported the menu bar's slim capsule status bar into the widget target
+  (`WidgetAllowanceBar.swift`, `AllowanceStrip.swift`/`AllowanceWindowRow`),
+  replacing the generic `ProgressView`. Medium and small now pick the
+  lowest individual window across all providers (was: lowest provider's
+  current window only, which could miss a lower weekly percentage).
+- Raised primary widget typography off `.caption`-family/`.fontWidth(.condensed)`
+  to explicit point sizes matching Apple's weather/stocks widgets. Large's
+  displayed-session cap now scales down as allowance-window count grows
+  (4/3/2 sessions at 0-2/3/4+ windows).
+- Live desktop iteration (real widget, not previews) surfaced two bugs
+  invisible in Xcode's `.fullColor`-only preview canvas: macOS's
+  Tinted/Monochrome desktop widget style washed out the percentage
+  numbers and provider colors entirely against a pale wallpaper, and the
+  percentage label needed to sit offset past the fill edge rather than
+  centered on it once it lost its full-color pill background. Fixed by
+  branching on `@Environment(\.widgetRenderingMode)` with a `.primary`-based
+  fallback outside `.fullColor`. Also removed the large widget's
+  "AgenticGlow" title and last-updated footer, which clipped off the
+  bottom of the real fixed-height canvas. Full account in `docs/widget.md`.
+- Learned mid-session: the WidgetKit extension is a long-lived process
+  that does not restart just because the app is relaunched or its
+  `.appex` is replaced on disk; each local rebuild needed the running
+  `AgenticGlowWidget` process killed explicitly before a change was
+  visible. Each local install also left a second, transient `pluginkit`
+  registration pointing at `build/DerivedData/...`, cleaned up after each
+  install.
+- Full non-UI suite: 263 Core (+7 for the new window tests) + 6 Event +
+  143 App, 0 failures. `Scripts/verify-privacy.sh` exit 0. Real desktop
+  widget confirmed working by John after several live-iteration rounds.
+
 ## 2026-07-21 - Widget live-data pipeline and Codex presence fallback
 
 - Added a native WidgetKit extension with small, medium, and large families,
@@ -176,7 +213,7 @@
 
 ## 2026-07-11 - Codex workspace session reporting repaired
 
-- Registered and opened the canonical `/Volumes/Liquid/2DaMax Development/AgenticGlow` project without recreating the deleted Klarity path or editing Codex private state.
+- Registered and opened the canonical `/Volumes/Liquid/2DaMax Development/AgenticGlow` project without recreating the retired pre-AgenticGlow path or editing Codex private state.
 - Verified a real current-task `Thinking` event at 10:23:49 PM with the canonical AgenticGlow working directory. Its `sourceProcessID` 48031 exactly matched the running ChatGPT/Codex app-server process.
 - Confirmed AgenticGlow diagnostics remained off, the earlier synthetic diagnostic session was absent, and the temporary installer download caused by the bundled-app CLI mismatch was removed.
 
@@ -211,7 +248,7 @@
 ## 2026-07-11 - Usage alert and Codex session repair design
 
 - Traced repeated Claude 0 percent notifications to reset-timestamp-based quota deduplication and approved a state-transition design with one low warning, one exhausted alert, recovery-based re-arming, reset-time copy, and notification replacement.
-- Traced the missing live Codex session to this task's deleted Klarity working directory. Verified that the installed AgenticGlow helper writes a valid current-process session event when launched from the real AgenticGlow directory.
+- Traced the missing live Codex session to this task's deleted pre-AgenticGlow working directory. Verified that the installed AgenticGlow helper writes a valid current-process session event when launched from the real AgenticGlow directory.
 - Added `docs/superpowers/specs/2026-07-11-usage-alerts-and-codex-session-repair-design.md` as the implementation contract. No runtime code changed in this design step.
 
 ## 2026-07-11 - Published v0.4.6
@@ -469,7 +506,7 @@
 
 ## 2026-07-12: Diagnosed and fixed Codex sessions not appearing in AgenticGlow
 
-- Root-caused "No Active Sessions" for Codex to two stacked issues: `~/.codex/hooks.json` had lost AgenticGlow's managed entries entirely (only Klarity's and Sessionlet's remained, two other hook-based apps John has installed), and the `agenticglow-event` helper binary was missing from `~/Library/Application Support/AgenticGlow/bin/`.
+- Root-caused "No Active Sessions" for Codex to two stacked issues: `~/.codex/hooks.json` had lost AgenticGlow's managed entries entirely (only two retired hook integrations remained), and the `agenticglow-event` helper binary was missing from `~/Library/Application Support/AgenticGlow/bin/`.
 - Repaired both integrations through the app's Setup window; confirmed via file inspection that `~/.codex/hooks.json` and `~/.claude/settings.json` both regained their `--agenticglow-hook`-marked entries and the helper binary was reinstalled.
 - Found sessions still weren't reporting after the repair. Diagnosed that Codex's `app-server` process caches `hooks.json` in memory at its own startup and never re-reads it, so every already-running Codex process was still operating on the pre-repair config.
 - Quit and relaunched AgenticGlow, then (with explicit confirmation) fully quit and relaunched the ChatGPT/Codex app. Verified via a fresh `codex-*.json` session file in `~/Library/Application Support/AgenticGlow/Sessions/` whose `sourceProcessID` matched the new `app-server` process and whose phase reached `completed`, confirming the pipeline works end to end.

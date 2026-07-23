@@ -1,5 +1,13 @@
 # Current Work
 
+- Widget allowance-window parity + typography pass (`agent/widget-live-data`
+  branch): complete and confirmed on a real installed desktop widget after
+  several live-iteration rounds (typography, Tinted/Monochrome rendering
+  legibility, label position, header/footer removal). Full non-UI suite
+  green (263 Core + 6 Event + 143 App). See `docs/widget.md` for the full
+  account and `tasks/lessons.md` for the two platform lessons learned
+  (widget rendering modes, extension process restart behavior). Not yet
+  committed/pushed; awaiting explicit go-ahead.
 - Monitor public v0.4.7 behavior and incoming reports.
 - Submit the maintained Cask to `homebrew/homebrew-cask` when AgenticGlow meets Homebrew's published notability threshold.
 - Directly confirm the repaired Codex session row in the AgenticGlow popover during a live Codex turn; resolver-level evidence already passes.
