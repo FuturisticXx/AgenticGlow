@@ -4,6 +4,7 @@ public protocol HelperInstalling {
     var destinationURL: URL { get }
     func install() throws
     func isCurrent() -> Bool
+    func refreshIfNeeded() throws
 }
 
 public final class HelperInstaller: HelperInstalling {
@@ -46,5 +47,14 @@ public final class HelperInstaller: HelperInstalling {
         guard let source = try? Data(contentsOf: sourceURL),
               let installed = try? Data(contentsOf: destinationURL) else { return false }
         return source == installed
+    }
+
+    /// Copies the embedded source over the standalone install only when it
+    /// differs, so a release that changes hook-processing logic doesn't
+    /// ship silently inert until the user happens to reopen Setup and
+    /// click Repair.
+    public func refreshIfNeeded() throws {
+        guard !isCurrent() else { return }
+        try install()
     }
 }

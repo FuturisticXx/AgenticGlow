@@ -49,6 +49,7 @@ private final class SetupRecorder:
     }
 
     func isCurrent() -> Bool { true }
+    func refreshIfNeeded() throws {}
     func repair() throws { calls.append("repair-hooks") }
     func remove() throws { calls.append("remove-hooks") }
     func status() throws -> IntegrationStatus {

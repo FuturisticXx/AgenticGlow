@@ -72,6 +72,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case "signals": ProviderStatusMonitor(requester: UITestStatusRequester())
         default: nil
         }
+        if fixtureName == nil {
+            // A release that changes hook-processing logic must not ship
+            // silently inert for existing users until they happen to
+            // reopen Setup and click Repair (hit by hand during v0.5.3).
+            try? HelperInstaller(
+                sourceURL: Self.embeddedHelperSourceURL(),
+                destinationURL: HelperInstaller.defaultDestination
+            ).refreshIfNeeded()
+        }
         let widgetIntegrationManagers: [any ProviderIntegrationManaging] = fixtureName == nil
             ? [
                 ClaudeIntegrationManager(
@@ -299,14 +308,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         }
 
-        let helperSource = Bundle.main.url(
-            forResource: "agenticglow-event",
-            withExtension: nil,
-            subdirectory: "bin"
-        ) ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/agenticglow-event")
-
         let helperInstaller = HelperInstaller(
-            sourceURL: helperSource,
+            sourceURL: Self.embeddedHelperSourceURL(),
             destinationURL: HelperInstaller.defaultDestination
         )
 
@@ -359,6 +362,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             codex: codexModel,
             onComplete: onComplete
         )
+    }
+
+    private static func embeddedHelperSourceURL() -> URL {
+        Bundle.main.url(
+            forResource: "agenticglow-event",
+            withExtension: nil,
+            subdirectory: "bin"
+        ) ?? Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/agenticglow-event")
     }
 
     private func performCleanRemoval() {

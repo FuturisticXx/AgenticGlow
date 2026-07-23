@@ -257,6 +257,7 @@ private final class UITestSetupRecorder:
 
     func install() throws {}
     func isCurrent() -> Bool { true }
+    func refreshIfNeeded() throws {}
     func repair() throws {}
     func remove() throws {}
     func run(provider: AgentProvider, helperURL: URL) throws -> Bool { true }
