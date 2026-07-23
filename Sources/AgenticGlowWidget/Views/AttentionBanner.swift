@@ -8,8 +8,7 @@ struct AttentionBanner: View {
             count == 1 ? "1 session needs you" : "\(count) sessions need you",
             systemImage: "exclamationmark.circle.fill"
         )
-        .font(.caption.weight(.bold))
-        .fontWidth(.condensed)
+        .font(.system(size: 13, weight: .bold))
         .foregroundStyle(.yellow)
     }
 }

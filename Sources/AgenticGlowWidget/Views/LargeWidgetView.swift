@@ -3,37 +3,36 @@ import WidgetKit
 import AgenticGlowCore
 
 /// Large's job: a richer dashboard. Up to 4 sessions, attention elevated
-/// above the rest, a per-provider allowance block, provider setup notices,
-/// and a last-updated/staleness footer.
+/// above the rest, a per-provider allowance block, and provider setup
+/// notices. No app title or last-updated footer: on a real desktop widget
+/// canvas that content routinely clipped off the bottom, and the title was
+/// redundant (the widget gallery/desktop context already identifies it).
 struct LargeWidgetView: View {
-    /// Kept below WidgetSnapshotBuilder.maximumSessions: with a header,
-    /// per-provider allowance blocks, and a footer all sharing the same
-    /// fixed canvas, showing every capped session risks clipping content
-    /// off the bottom instead of it just being unreachable via scrolling
-    /// (widgets don't scroll).
+    /// Upper bound when there are 0-2 allowance windows to show alongside
+    /// sessions. `displayedSessionLimit` scales this down as the window
+    /// count grows, since sessions and per-provider allowance blocks share
+    /// one fixed, non-scrolling canvas.
     private static let maximumDisplayedSessions = 4
 
     let snapshot: WidgetSnapshot
     let now: Date
 
-    private var freshness: WidgetDataFreshness {
-        WidgetDataFreshness.evaluate(generatedAt: snapshot.generatedAt, now: now)
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            header
+            if snapshot.attentionCount > 0 {
+                AttentionBanner(count: snapshot.attentionCount)
+            }
             if snapshot.sessions.isEmpty {
                 Text("No active or recent sessions")
-                    .font(.caption.weight(.medium))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(snapshot.sessions.prefix(Self.maximumDisplayedSessions)) { session in
+                ForEach(snapshot.sessions.prefix(displayedSessionLimit)) { session in
                     SessionRow(session: session, now: now, style: .detailed)
                 }
-                if snapshot.sessions.count > Self.maximumDisplayedSessions {
-                    Text("+ \(snapshot.sessions.count - Self.maximumDisplayedSessions) more")
-                        .font(.caption2.weight(.medium))
+                if snapshot.sessions.count > displayedSessionLimit {
+                    Text("+ \(snapshot.sessions.count - displayedSessionLimit) more")
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -45,41 +44,28 @@ struct LargeWidgetView: View {
             }
             ForEach(notSetUpProviders, id: \.self) { provider in
                 Text("\(provider.displayName) not set up in AgenticGlow")
-                    .font(.caption2.weight(.medium))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
-            footer
         }
         .padding()
     }
 
-    private var header: some View {
-        HStack {
-            Text("AgenticGlow")
-                .font(.headline.weight(.bold))
-                .fontWidth(.condensed)
-            Spacer()
-            if snapshot.attentionCount > 0 {
-                AttentionBanner(count: snapshot.attentionCount)
-            }
+    /// Sessions and allowance windows share one fixed, non-scrolling
+    /// canvas: more windows (each a heading + one bar per window) leaves
+    /// less room for session rows before content clips off the bottom.
+    private var displayedSessionLimit: Int {
+        let windowCount = snapshot.allowances.flatMap(\.windows).count
+        switch windowCount {
+        case 0...2: return Self.maximumDisplayedSessions
+        case 3: return 3
+        default: return 2
         }
     }
 
     private var notSetUpProviders: [AgentProvider] {
         snapshot.providers.filter { !$0.installed }.map(\.provider)
-    }
-
-    private var footer: some View {
-        Group {
-            if freshness == .stale {
-                Text("Stale, last updated \(WidgetSnapshotFormatting.lastUpdatedLabel(snapshot.generatedAt, now: now))")
-            } else {
-                Text("Updated \(WidgetSnapshotFormatting.lastUpdatedLabel(snapshot.generatedAt, now: now))")
-            }
-        }
-        .font(.caption2.weight(.medium))
-        .foregroundStyle(.secondary)
     }
 }
 
@@ -87,6 +73,18 @@ struct LargeWidgetView: View {
     SessionAllowanceWidget()
 } timeline: {
     AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.loaded(SampleData.busySnapshot)))
+}
+
+#Preview("Allowance parity (3 windows)", as: .systemLarge) {
+    SessionAllowanceWidget()
+} timeline: {
+    AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.loaded(SampleData.allowanceParitySnapshot)))
+}
+
+#Preview("Low allowance", as: .systemLarge) {
+    SessionAllowanceWidget()
+} timeline: {
+    AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.loaded(SampleData.lowAllowanceSnapshot)))
 }
 
 #Preview("Failed session", as: .systemLarge) {

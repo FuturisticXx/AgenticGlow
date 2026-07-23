@@ -20,19 +20,17 @@ struct SessionRow: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(session.projectName)
-                        .font(.caption.weight(.bold))
-                        .fontWidth(.condensed)
+                        .font(.system(size: 14, weight: .semibold))
                         .lineLimit(1)
                     Text(detailText)
-                        .font(.caption2.weight(.medium))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 if session.phase.isActive, let elapsed = WidgetSnapshotFormatting.elapsedLabel(seconds: session.elapsedSeconds) {
                     Text(elapsed)
-                        .font(.caption2.weight(.bold))
-                        .fontWidth(.condensed)
+                        .font(.system(size: 12, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }

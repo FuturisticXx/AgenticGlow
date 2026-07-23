@@ -21,7 +21,7 @@ struct MediumWidgetView: View {
             }
             if snapshot.sessions.isEmpty {
                 Text("No active or recent sessions")
-                    .font(.caption.weight(.medium))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(snapshot.sessions.prefix(Self.maximumDisplayedSessions)) { session in
@@ -29,20 +29,33 @@ struct MediumWidgetView: View {
                 }
                 if snapshot.sessions.count > Self.maximumDisplayedSessions {
                     Text("+ \(snapshot.sessions.count - Self.maximumDisplayedSessions) more")
-                        .font(.caption2.weight(.medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
             }
             Spacer(minLength: 0)
-            if let lowest = lowestAllowance {
-                AllowanceStrip(allowance: lowest, now: now)
+            if let lowest = lowestWindow {
+                AllowanceWindowRow(
+                    window: lowest,
+                    captionLabel: "\(lowest.provider.displayName) · \(lowest.label)",
+                    now: now
+                )
             }
         }
         .padding()
     }
 
-    private var lowestAllowance: WidgetAllowanceSummary? {
-        snapshot.allowances.min { ($0.currentPercentLeft ?? 100) < ($1.currentPercentLeft ?? 100) }
+    /// Lowest individual window across every provider and window kind, not
+    /// just each provider's current window: a provider can report a lower
+    /// weekly percentage than its own (or another provider's) current one.
+    private var lowestWindow: WidgetAllowanceWindow? {
+        snapshot.allowances
+            .flatMap(\.windows)
+            .compactMap { window in
+                window.percentLeft.map { (window, $0) }
+            }
+            .min { $0.1 < $1.1 }?
+            .0
     }
 }
 
@@ -50,6 +63,12 @@ struct MediumWidgetView: View {
     SessionAllowanceWidget()
 } timeline: {
     AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.loaded(SampleData.busySnapshot)))
+}
+
+#Preview("Allowance parity (picks Codex Weekly, 19%)", as: .systemMedium) {
+    SessionAllowanceWidget()
+} timeline: {
+    AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.loaded(SampleData.allowanceParitySnapshot)))
 }
 
 #Preview("Attention only", as: .systemMedium) {

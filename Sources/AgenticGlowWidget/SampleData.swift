@@ -42,6 +42,22 @@ enum SampleData {
         weeklyPercentLeft: 12, weeklyResetAt: now.addingTimeInterval(2 * 86_400), fetchedAt: now
     )
 
+    /// Matches the real allowance-window parity case: Codex currently
+    /// reports only a single window (labeled "Weekly", no separate current
+    /// value), while Claude reports both a 5h and a weekly window. Combined
+    /// across both providers this produces exactly three display windows.
+    static let codexAllowanceWeeklyOnly = WidgetAllowanceSummary(
+        provider: .codex, currentWindowLabel: "Weekly", currentPercentLeft: 19,
+        currentResetAt: now.addingTimeInterval(3 * 86_400),
+        weeklyPercentLeft: nil, weeklyResetAt: nil, fetchedAt: now
+    )
+
+    static let claudeAllowanceParity = WidgetAllowanceSummary(
+        provider: .claude, currentWindowLabel: "5h", currentPercentLeft: 64,
+        currentResetAt: now.addingTimeInterval(2 * 3600 + 15 * 60),
+        weeklyPercentLeft: 53, weeklyResetAt: now.addingTimeInterval(4 * 86_400), fetchedAt: now
+    )
+
     static let bothProvidersInstalled = [
         WidgetProviderSummary(provider: .claude, installed: true),
         WidgetProviderSummary(provider: .codex, installed: true)
@@ -104,6 +120,17 @@ enum SampleData {
         sessions: [workingSession],
         allowances: [claudeAllowance],
         providers: onlyClaudeInstalled,
+        attentionCount: 0,
+        activeCount: 1
+    )
+
+    /// The three-window parity case this widget pass targets: Codex Weekly,
+    /// Claude 5h, and Claude Weekly, each with a visibly different fill.
+    static let allowanceParitySnapshot = WidgetSnapshot(
+        generatedAt: now,
+        sessions: [editingSession, workingSession],
+        allowances: [codexAllowanceWeeklyOnly, claudeAllowanceParity],
+        providers: bothProvidersInstalled,
         attentionCount: 0,
         activeCount: 1
     )

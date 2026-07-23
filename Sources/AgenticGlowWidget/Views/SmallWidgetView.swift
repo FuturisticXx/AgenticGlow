@@ -13,7 +13,7 @@ struct SmallWidgetView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             headline
             Spacer(minLength: 0)
             footer
@@ -27,33 +27,33 @@ struct SmallWidgetView: View {
         if snapshot.attentionCount > 0 {
             glyph("exclamationmark.circle.fill", color: .yellow)
             Text(snapshot.attentionCount == 1 ? "1 session" : "\(snapshot.attentionCount) sessions")
-                .font(.caption.weight(.bold))
-                .fontWidth(.condensed)
+                .font(.system(size: 28, weight: .medium))
+                .monospacedDigit()
             Text("needs you")
-                .font(.caption2.weight(.medium))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
         } else if snapshot.activeCount > 0 {
             glyph("sparkle", color: .accentColor)
             Text(snapshot.activeCount == 1 ? "1 session" : "\(snapshot.activeCount) sessions")
-                .font(.caption.weight(.bold))
-                .fontWidth(.condensed)
+                .font(.system(size: 28, weight: .medium))
+                .monospacedDigit()
             Text("active")
-                .font(.caption2.weight(.medium))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
-        } else if let lowest = lowestAllowance {
+        } else if let lowest = lowestWindow {
             glyph("gauge.with.dots.needle.33percent", color: WidgetColorPalette.color(for: lowest.provider))
-            Text(WidgetSnapshotFormatting.percentLeftLabel(lowest.currentPercentLeft))
-                .font(.caption.weight(.bold))
-                .fontWidth(.condensed)
+            Text(WidgetSnapshotFormatting.percentLeftLabel(lowest.percentLeft))
+                .font(.system(size: 28, weight: .medium))
                 .monospacedDigit()
             Text(lowest.provider.displayName)
-                .font(.caption2.weight(.medium))
+                .font(.system(size: 14, weight: .semibold))
+            Text(lowest.label)
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
         } else {
             glyph("checkmark.circle", color: .secondary)
             Text("All quiet")
-                .font(.caption.weight(.bold))
-                .fontWidth(.condensed)
+                .font(.system(size: 28, weight: .medium))
         }
     }
 
@@ -64,8 +64,17 @@ struct SmallWidgetView: View {
             .accessibilityHidden(true)
     }
 
-    private var lowestAllowance: WidgetAllowanceSummary? {
-        snapshot.allowances.min { ($0.currentPercentLeft ?? 100) < ($1.currentPercentLeft ?? 100) }
+    /// Lowest individual window across every provider and window kind, not
+    /// just each provider's current window: a provider can report a lower
+    /// weekly percentage than its own (or another provider's) current one.
+    private var lowestWindow: WidgetAllowanceWindow? {
+        snapshot.allowances
+            .flatMap(\.windows)
+            .compactMap { window in
+                window.percentLeft.map { (window, $0) }
+            }
+            .min { $0.1 < $1.1 }?
+            .0
     }
 
     private var footer: some View {
@@ -76,7 +85,7 @@ struct SmallWidgetView: View {
                 Text(WidgetSnapshotFormatting.lastUpdatedLabel(snapshot.generatedAt, now: now))
             }
         }
-        .font(.caption2.weight(.medium))
+        .font(.system(size: 11, weight: .medium))
         .foregroundStyle(.secondary)
     }
 }
@@ -97,6 +106,12 @@ struct SmallWidgetView: View {
     SessionAllowanceWidget()
 } timeline: {
     AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.loaded(SampleData.lowAllowanceSnapshot)))
+}
+
+#Preview("Allowance parity (identifies Codex Weekly, 19%)", as: .systemSmall) {
+    SessionAllowanceWidget()
+} timeline: {
+    AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.loaded(SampleData.allowanceParitySnapshot)))
 }
 
 #Preview("All quiet", as: .systemSmall) {
