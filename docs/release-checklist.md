@@ -291,7 +291,7 @@ Maintain the public AgenticGlow release and graduate its Cask from the official 
 
 Next unblocked work:
 
-1. Monitor v0.4.7 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy.
+1. Monitor v0.5.7 and submit the existing Cask to `homebrew/homebrew-cask` once AgenticGlow qualifies under Homebrew's published notability policy. Checked 2026-07-22: 1 star, 0 forks, 0 watchers, not close; deferred.
 2. Auto-refresh the standalone hook helper binary (`~/Library/Application Support/AgenticGlow/bin/agenticglow-event`) on app launch when it differs from the embedded copy, instead of only through the Setup window's manual "Install" flow. Every release that touches hook-processing logic in `AgenticGlowCore` currently ships silently inert until the user re-runs Setup or the app manually refreshes it (discovered and worked around by hand during the v0.5.3 release).
 3. Investigate why Codex hooks stop firing after switching OpenAI accounts in Codex (see `tasks/lessons.md`, "Codex hooks may go silent after switching OpenAI accounts"). Root cause not yet confirmed.
 
