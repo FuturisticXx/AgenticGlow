@@ -1,5 +1,16 @@
 # Got done
 
+## 2026-07-22 - Published v0.5.7
+
+- Patch release found and fixed two bugs live-testing v0.5.6's real desktop widget: (1) a provider with live sessions/allowance data could still show a contradictory "Codex not set up in AgenticGlow" notice, since that check only looked at hook-integration status, not at whether hook-independent fallbacks were already showing real data for it; (2) allowance reset captions only showed a relative countdown, not the absolute date/time the menu bar shows.
+- TDD: `WidgetSnapshotProvidersWithoutDataTests` (4 cases) for the first fix.
+- Full non-UI suite passed on the release commit: 267 core, 6 event, 143 app, zero failures. Privacy gate passed.
+- Signed universal build passed strict code-signature checks; Apple accepted notarization submission `18c63ca7-8001-4067-b42f-f50aaa69e1a7`; DMG stapled, validated, Gatekeeper-accepted as `Notarized Developer ID`.
+- Released DMG SHA-256 `4e7c874c8ddac81e4f704aaab4c1ad624f5098e0c9d6d6a75d2994dde355d53d`; GitHub release asset downloaded back matched checksum, staple, and Gatekeeper.
+- `Cask/agenticglow.rb` regenerated and pushed to main (`59de831`) and the official tap `FuturisticXx/homebrew-agenticglow` (`cc5898c`).
+- `brew upgrade --cask agenticglow` replaced `/Applications/AgenticGlow.app` with the notarized 0.5.7 build and relaunched it; version, signature, single widget registration, and Gatekeeper all verified post-install.
+- GitHub release: https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.5.7
+
 ## 2026-07-22 - Published v0.5.6
 
 - Merged PR #2 (squash) into `main` at `c51dcbf`, then tagged and released `v0.5.6` from that commit: the widget allowance-window parity, status bar, and typography work below, plus the live-desktop rendering-mode fixes.

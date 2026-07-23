@@ -249,6 +249,18 @@ Public release 0.5.4 evidence recorded 2026-07-18:
 - `Cask/agenticglow.rb` was regenerated with the 0.5.4 checksum (main commit `ccb623e`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `863a1a8`).
 - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.4 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
 
+Public release 0.5.7 evidence recorded 2026-07-22:
+
+- Released from commit `d4d5dd9` (tag `v0.5.7`), on top of `main` at v0.5.6 plus two follow-up fixes found live-testing the just-released widget: (1) `WidgetSnapshot.providersWithoutData` now only flags a provider as "not set up" when it has genuinely no session, allowance, or hook-installed signal at all, instead of contradicting live Codex sessions/allowance data already visible on the same widget (Codex surfaces both through hook-independent fallbacks even without its hook integration installed). (2) Widget allowance reset captions now show the absolute reset date/time matching the menu bar, instead of only a relative countdown.
+- TDD: `WidgetSnapshotProvidersWithoutDataTests` (4 cases) written and confirmed passing against the fix; no regression in the existing allowance-window suite.
+- The full non-UI suite passed on the release commit: 267 core, 6 event, 143 app tests, zero failures; the privacy gate passed.
+- Release gate variables were set and `Scripts/verify-release-gates.sh` passed.
+- Signed universal `arm64`/`x86_64` build passed strict code-signature checks. Apple accepted notarization submission `18c63ca7-8001-4067-b42f-f50aaa69e1a7`; the DMG was stapled and validated, and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Released DMG SHA-256 `4e7c874c8ddac81e4f704aaab4c1ad624f5098e0c9d6d6a75d2994dde355d53d`; the asset downloaded back from the GitHub release matched the checksum, staple validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.5.7 checksum (main commit `59de831`) and pushed to the official tap `FuturisticXx/homebrew-agenticglow` (tap commit `cc5898c`).
+- `brew upgrade --cask agenticglow` upgraded the installed app from 0.5.6 to 0.5.7, quit the running app, replaced `/Applications/AgenticGlow.app`, and relaunched it; version, strict signature, single `pluginkit` registration under `/Applications`, and Gatekeeper all verified post-install.
+- Both fixes were confirmed live on the maintainer's own installed desktop widget (real Codex/Claude data) before this release, via a local signed Debug build.
+
 Public release 0.5.6 evidence recorded 2026-07-22:
 
 - Released from commit `c51dcbf` (tag `v0.5.6`, PR #2): the large desktop widget shows every available allowance window per provider (current, and weekly when reported) using a menu-bar-style status bar, instead of only the current window (currently: Codex Weekly, Claude 5h, Claude Weekly, data-driven not hardcoded). Medium/small select the lowest individual window across all providers. Typography raised to match Apple's own weather/stocks widgets. Fixed a real macOS Tinted/Monochrome desktop widget rendering-mode bug that washed out custom colors and percentages, found and fixed through live iteration against an installed desktop widget, not previews alone; see `docs/widget.md` and `tasks/lessons.md` for the full account.
@@ -395,17 +407,17 @@ Scripts/verify-release-gates.sh
 
 ## Post-Release
 
-- [x] **GitHub release published** (date: 2026-07-22, latest: v0.5.6)
-  - v0.5.6 published from commit `c51dcbf`
-  - Apple notarization submission `48056c07-febf-481d-af2b-2d65f28e25cd` accepted
-  - Published DMG SHA-256: `61876d0ee548efad6fd97d9c576d4ca489aeb90fb9852ea5144e97199eadedb7`
+- [x] **GitHub release published** (date: 2026-07-22, latest: v0.5.7)
+  - v0.5.7 published from commit `d4d5dd9`
+  - Apple notarization submission `18c63ca7-8001-4067-b42f-f50aaa69e1a7` accepted
+  - Published DMG SHA-256: `4e7c874c8ddac81e4f704aaab4c1ad624f5098e0c9d6d6a75d2994dde355d53d`
   - Downloaded release asset passed checksum comparison, staple validation, and Gatekeeper assessment
-  - Release notes document the widget allowance-window parity, status bar, typography, and Tinted/Monochrome rendering-mode fixes
+  - Release notes document the widget "not set up" contradiction fix and the allowance reset-date display fix
 
-- [x] **Cask updated in the official tap** (date: 2026-07-22, version 0.5.6)
-  - Official tap updated to v0.5.6 at commit `212df2a`
-  - `Cask/agenticglow.rb` regenerated with the v0.5.6 checksum and pushed on main (`dd8aba7`)
-  - `brew upgrade --cask agenticglow` quit the running app, replaced `/Applications/AgenticGlow.app` with the notarized 0.5.6 build, and relaunched it; version, strict signature, and Gatekeeper all verified post-install
+- [x] **Cask updated in the official tap** (date: 2026-07-22, version 0.5.7)
+  - Official tap updated to v0.5.7 at commit `cc5898c`
+  - `Cask/agenticglow.rb` regenerated with the v0.5.7 checksum and pushed on main (`59de831`)
+  - `brew upgrade --cask agenticglow` quit the running app, replaced `/Applications/AgenticGlow.app` with the notarized 0.5.7 build, and relaunched it; version, strict signature, and Gatekeeper all verified post-install
 
 - [ ] **Homebrew cask submitted upstream** (date: ________)
   - PR submitted to homebrew/homebrew-cask
