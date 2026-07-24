@@ -167,6 +167,60 @@ final class SetupViewModelTests: XCTestCase {
 
         XCTAssertEqual(model.phase, .ready)
     }
+
+    func testRepairRequestsRestartAfterSuccess() async {
+        let recorder = SetupRecorder()
+        var restartRequested = false
+        let model = SetupViewModel(
+            provider: .codex,
+            executableURL: URL(fileURLWithPath: "/tmp/codex"),
+            helperInstaller: recorder,
+            integration: recorder,
+            syntheticEventService: recorder,
+            requestRestart: { restartRequested = true },
+            restartDelay: .zero
+        )
+
+        await model.repair()
+
+        XCTAssertTrue(restartRequested)
+    }
+
+    func testInstallDoesNotRequestRestart() async {
+        let recorder = SetupRecorder()
+        var restartRequested = false
+        let model = SetupViewModel(
+            provider: .codex,
+            executableURL: URL(fileURLWithPath: "/tmp/codex"),
+            helperInstaller: recorder,
+            integration: recorder,
+            syntheticEventService: recorder,
+            requestRestart: { restartRequested = true },
+            restartDelay: .zero
+        )
+
+        await model.install()
+
+        XCTAssertFalse(restartRequested)
+    }
+
+    func testRemoveDoesNotRequestRestart() {
+        let recorder = SetupRecorder()
+        var restartRequested = false
+        let model = SetupViewModel(
+            provider: .codex,
+            executableURL: URL(fileURLWithPath: "/tmp/codex"),
+            helperInstaller: recorder,
+            integration: recorder,
+            syntheticEventService: recorder,
+            requestRestart: { restartRequested = true },
+            restartDelay: .zero
+        )
+
+        model.remove()
+
+        XCTAssertFalse(restartRequested)
+    }
 }
 
 private final class SetupRecorder:

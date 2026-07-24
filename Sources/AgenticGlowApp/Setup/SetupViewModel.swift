@@ -23,6 +23,8 @@ final class SetupViewModel {
     private let syntheticEventService: SyntheticEventTesting
     private let lastEvent: () -> Date?
     private let setIntegrationEnabled: (Bool) -> Void
+    private let requestRestart: () -> Void
+    private let restartDelay: Duration
     var phase: SetupPhase
     var integrationStatus: IntegrationStatus?
     var lastEventAt: Date?
@@ -34,7 +36,9 @@ final class SetupViewModel {
         integration: ProviderIntegrationManaging,
         syntheticEventService: SyntheticEventTesting,
         lastEvent: @escaping () -> Date? = { nil },
-        setIntegrationEnabled: @escaping (Bool) -> Void = { _ in }
+        setIntegrationEnabled: @escaping (Bool) -> Void = { _ in },
+        requestRestart: @escaping () -> Void = { },
+        restartDelay: Duration = .seconds(1.5)
     ) {
         self.provider = provider
         self.executableURL = executableURL
@@ -44,6 +48,8 @@ final class SetupViewModel {
         self.syntheticEventService = syntheticEventService
         self.lastEvent = lastEvent
         self.setIntegrationEnabled = setIntegrationEnabled
+        self.requestRestart = requestRestart
+        self.restartDelay = restartDelay
         self.phase = executableURL == nil ? .unavailable : .ready
     }
 
@@ -82,6 +88,9 @@ final class SetupViewModel {
             phase = provider == .codex ? .needsTrust : .installed
             setIntegrationEnabled(true)
             refreshDiagnostics()
+            phase = .restarting
+            try? await Task.sleep(for: restartDelay)
+            requestRestart()
         } catch {
             phase = .failed(error.localizedDescription)
         }
