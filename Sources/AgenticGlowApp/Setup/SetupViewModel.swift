@@ -101,4 +101,9 @@ final class SetupViewModel {
         integrationStatus = try? integration.status()
         lastEventAt = lastEvent()
     }
+
+    func syncPhaseFromCurrentStatus() {
+        guard let status = try? integration.status(), status.installed else { return }
+        phase = status.requiresTrustReview ? .needsTrust : .installed
+    }
 }

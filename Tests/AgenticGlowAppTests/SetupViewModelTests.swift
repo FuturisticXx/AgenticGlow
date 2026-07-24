@@ -101,6 +101,72 @@ final class SetupViewModelTests: XCTestCase {
 
         XCTAssertTrue(recordedStates.isEmpty)
     }
+
+    func testSyncPhaseFromCurrentStatusShowsInstalledWhenAlreadyConfigured() {
+        let recorder = SetupRecorder()
+        recorder.statusOverride = IntegrationStatus(
+            provider: .codex,
+            installed: true,
+            requiresTrustReview: false,
+            installedEvents: [],
+            issue: nil
+        )
+        let model = SetupViewModel(
+            provider: .codex,
+            executableURL: URL(fileURLWithPath: "/tmp/codex"),
+            helperInstaller: recorder,
+            integration: recorder,
+            syntheticEventService: recorder
+        )
+
+        model.syncPhaseFromCurrentStatus()
+
+        XCTAssertEqual(model.phase, .installed)
+    }
+
+    func testSyncPhaseFromCurrentStatusShowsNeedsTrustWhenTrustReviewOutstanding() {
+        let recorder = SetupRecorder()
+        recorder.statusOverride = IntegrationStatus(
+            provider: .codex,
+            installed: true,
+            requiresTrustReview: true,
+            installedEvents: [],
+            issue: nil
+        )
+        let model = SetupViewModel(
+            provider: .codex,
+            executableURL: URL(fileURLWithPath: "/tmp/codex"),
+            helperInstaller: recorder,
+            integration: recorder,
+            syntheticEventService: recorder
+        )
+
+        model.syncPhaseFromCurrentStatus()
+
+        XCTAssertEqual(model.phase, .needsTrust)
+    }
+
+    func testSyncPhaseFromCurrentStatusLeavesPhaseUnchangedWhenNotInstalled() {
+        let recorder = SetupRecorder()
+        recorder.statusOverride = IntegrationStatus(
+            provider: .codex,
+            installed: false,
+            requiresTrustReview: false,
+            installedEvents: [],
+            issue: nil
+        )
+        let model = SetupViewModel(
+            provider: .codex,
+            executableURL: URL(fileURLWithPath: "/tmp/codex"),
+            helperInstaller: recorder,
+            integration: recorder,
+            syntheticEventService: recorder
+        )
+
+        model.syncPhaseFromCurrentStatus()
+
+        XCTAssertEqual(model.phase, .ready)
+    }
 }
 
 private final class SetupRecorder:
@@ -116,6 +182,13 @@ private final class SetupRecorder:
     let provider: AgentProvider = .codex
     var calls: [String] = []
     var installError: Error?
+    var statusOverride = IntegrationStatus(
+        provider: .codex,
+        installed: true,
+        requiresTrustReview: true,
+        installedEvents: [],
+        issue: nil
+    )
 
     func install() throws {
         if let installError {
@@ -130,15 +203,7 @@ private final class SetupRecorder:
     func refreshIfNeeded() throws {}
     func repair() throws { calls.append("repair-hooks") }
     func remove() throws { calls.append("remove-hooks") }
-    func status() throws -> IntegrationStatus {
-        .init(
-            provider: .codex,
-            installed: true,
-            requiresTrustReview: true,
-            installedEvents: [],
-            issue: nil
-        )
-    }
+    func status() throws -> IntegrationStatus { statusOverride }
 
     func run(provider: AgentProvider, helperURL: URL) throws -> Bool {
         calls.append("synthetic-test")
