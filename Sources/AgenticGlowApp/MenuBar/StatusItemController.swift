@@ -119,7 +119,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         popover.behavior = isPresented ? .applicationDefined : .transient
     }
 
-    @objc private func togglePopover() {
+    @objc func togglePopover() {
         guard let button = item.button else { return }
         if popover.isShown {
             popover.performClose(nil)
