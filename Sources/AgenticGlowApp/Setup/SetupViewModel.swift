@@ -38,7 +38,7 @@ final class SetupViewModel {
         lastEvent: @escaping () -> Date? = { nil },
         setIntegrationEnabled: @escaping (Bool) -> Void = { _ in },
         requestRestart: @escaping () -> Void = { },
-        restartDelay: Duration = .seconds(1.5)
+        restartDelay: Duration = .seconds(3)
     ) {
         self.provider = provider
         self.executableURL = executableURL

@@ -37,7 +37,7 @@ struct SetupView: View {
     private func integrationCard(_ title: String, model: SetupViewModel) -> some View {
         GroupBox(title) {
             HStack {
-                Text(model.detectedVersion.map { "\(statusText(model.phase)) · \($0)" } ?? statusText(model.phase))
+                statusView(for: model)
                 if let lastEventAt = model.lastEventAt {
                     Text("Last event \(lastEventAt.formatted(date: .omitted, time: .shortened))")
                         .font(.caption)
@@ -45,11 +45,30 @@ struct SetupView: View {
                 }
                 Spacer()
                 Button("Install \(title)") { Task { await model.install() } }
-                    .disabled(model.phase == .unavailable || model.phase == .installing)
+                    .disabled(model.phase == .unavailable || model.phase == .installing || model.phase == .restarting)
                 Button("Repair \(title)") { Task { await model.repair() } }
+                    .disabled(model.phase == .restarting)
                 Button("Remove \(title)") { model.remove() }
+                    .disabled(model.phase == .restarting)
             }
             .padding(8)
+        }
+    }
+
+    /// The `.restarting` phase gets a distinct, hard-to-miss treatment
+    /// (icon + color + weight) rather than sharing the same plain text as
+    /// every other phase — live testing showed the plain text change alone
+    /// was too easy to miss in the ~1.5s window it used to have, reading
+    /// as a crash rather than a deliberate restart.
+    @ViewBuilder
+    private func statusView(for model: SetupViewModel) -> some View {
+        let text = model.detectedVersion.map { "\(statusText(model.phase)) · \($0)" } ?? statusText(model.phase)
+        if model.phase == .restarting {
+            Label(text, systemImage: "arrow.triangle.2.circlepath")
+                .font(.headline)
+                .foregroundStyle(.orange)
+        } else {
+            Text(text)
         }
     }
 
