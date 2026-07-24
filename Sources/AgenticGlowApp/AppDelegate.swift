@@ -191,10 +191,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        let shouldReopenSetupAfterRestart = fixtureName == nil
+            && UserDefaults.standard.bool(forKey: "reopenSetupAfterRestart")
+        if shouldReopenSetupAfterRestart {
+            UserDefaults.standard.removeObject(forKey: "reopenSetupAfterRestart")
+        }
         if fixtureName == "setup-repair" {
             showSetupWindow()
         } else if fixtureName == nil,
-                  !UserDefaults.standard.bool(forKey: "completedSetup") {
+                  !UserDefaults.standard.bool(forKey: "completedSetup") || shouldReopenSetupAfterRestart {
             showSetupWindow()
         }
         if fixtureName != nil,
