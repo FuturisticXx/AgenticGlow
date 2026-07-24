@@ -58,6 +58,7 @@ struct SetupView: View {
         case .installing: "Installing"
         case .needsTrust: "Installed, trust required"
         case .installed: "Installed"
+        case .restarting: "Repair successful — restarting AgenticGlow…"
         case .failed(let message): message
         }
     }

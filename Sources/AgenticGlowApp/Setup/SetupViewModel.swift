@@ -8,6 +8,7 @@ enum SetupPhase: Equatable {
     case installing
     case needsTrust
     case installed
+    case restarting
     case failed(String)
 }
 
