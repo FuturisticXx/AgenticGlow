@@ -108,8 +108,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             widgetSnapshotWriter: fixtureName == nil ? AppGroupSnapshotWriter() : nil,
             widgetTimelineReloader: fixtureName == nil ? SystemWidgetTimelineReloader() : nil,
             installedProviders: fixtureName == nil ? {
-                Dictionary(uniqueKeysWithValues: widgetIntegrationManagers.map {
-                    ($0.provider, (try? $0.status().installed) ?? false)
+                Dictionary(uniqueKeysWithValues: widgetIntegrationManagers.map { manager in
+                    var installed = (try? manager.status().installed) ?? false
+                    // Self-heal: a provider's hook entries can vanish out
+                    // from under us if something external rewrites the
+                    // shared config file (e.g. the host app's own settings
+                    // persistence), the same class of problem the v0.5.8
+                    // helper-binary refresh addressed for the binary
+                    // itself. Only repair when the user previously wanted
+                    // this installed (true) — never for a provider they
+                    // never configured (nil) or explicitly removed
+                    // (false); see integrationEnabledKey(for:).
+                    let key = Self.integrationEnabledKey(for: manager.provider)
+                    let userEnabled = UserDefaults.standard.object(forKey: key) as? Bool
+                    if userEnabled == nil, installed {
+                        // Migration for users who already had this working
+                        // before this key existed: seed intent from
+                        // observed state so future wipes get self-healed
+                        // without requiring a manual Setup visit. Only
+                        // seeds when currently installed — never infers
+                        // intent from an absent config, which is
+                        // indistinguishable from "never configured".
+                        UserDefaults.standard.set(true, forKey: key)
+                    } else if !installed, userEnabled == true {
+                        try? manager.repair()
+                        installed = (try? manager.status().installed) ?? false
+                    }
+                    return (manager.provider, installed)
                 })
             } : nil
         )
@@ -342,6 +367,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             lastEvent: { [weak model] in
                 model?.resolved.sessions
                     .first { $0.provider == .claude }?.updatedAt
+            },
+            setIntegrationEnabled: {
+                UserDefaults.standard.set($0, forKey: Self.integrationEnabledKey(for: .claude))
             }
         )
 
@@ -354,6 +382,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             lastEvent: { [weak model] in
                 model?.resolved.sessions
                     .first { $0.provider == .codex }?.updatedAt
+            },
+            setIntegrationEnabled: {
+                UserDefaults.standard.set($0, forKey: Self.integrationEnabledKey(for: .codex))
             }
         )
 
@@ -362,6 +393,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             codex: codexModel,
             onComplete: onComplete
         )
+    }
+
+    /// Tracks whether the user explicitly wants a provider's hooks
+    /// installed, independent of whether they currently are: nil (never
+    /// set) means never configured through Setup, so self-heal must never
+    /// auto-install it; false means the user explicitly removed it and
+    /// self-heal must not fight that; true means it should exist, so a
+    /// missing config (e.g. wiped by an external settings rewrite) is
+    /// safe to silently repair. `status().installed` alone can't tell
+    /// these three states apart since it only reads current file content.
+    private static func integrationEnabledKey(for provider: AgentProvider) -> String {
+        "\(provider.rawValue)IntegrationEnabled"
     }
 
     private static func embeddedHelperSourceURL() -> URL {

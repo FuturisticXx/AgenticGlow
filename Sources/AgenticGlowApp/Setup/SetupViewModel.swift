@@ -21,6 +21,7 @@ final class SetupViewModel {
     private let integration: ProviderIntegrationManaging
     private let syntheticEventService: SyntheticEventTesting
     private let lastEvent: () -> Date?
+    private let setIntegrationEnabled: (Bool) -> Void
     var phase: SetupPhase
     var integrationStatus: IntegrationStatus?
     var lastEventAt: Date?
@@ -31,7 +32,8 @@ final class SetupViewModel {
         helperInstaller: HelperInstalling,
         integration: ProviderIntegrationManaging,
         syntheticEventService: SyntheticEventTesting,
-        lastEvent: @escaping () -> Date? = { nil }
+        lastEvent: @escaping () -> Date? = { nil },
+        setIntegrationEnabled: @escaping (Bool) -> Void = { _ in }
     ) {
         self.provider = provider
         self.executableURL = executableURL
@@ -40,6 +42,7 @@ final class SetupViewModel {
         self.integration = integration
         self.syntheticEventService = syntheticEventService
         self.lastEvent = lastEvent
+        self.setIntegrationEnabled = setIntegrationEnabled
         self.phase = executableURL == nil ? .unavailable : .ready
     }
 
@@ -63,6 +66,7 @@ final class SetupViewModel {
                 return
             }
             phase = provider == .codex ? .needsTrust : .installed
+            setIntegrationEnabled(true)
             refreshDiagnostics()
         } catch {
             phase = .failed(error.localizedDescription)
@@ -75,6 +79,7 @@ final class SetupViewModel {
             try helperInstaller.install()
             try integration.repair()
             phase = provider == .codex ? .needsTrust : .installed
+            setIntegrationEnabled(true)
             refreshDiagnostics()
         } catch {
             phase = .failed(error.localizedDescription)
@@ -85,6 +90,7 @@ final class SetupViewModel {
         do {
             try integration.remove()
             phase = executableURL == nil ? .unavailable : .ready
+            setIntegrationEnabled(false)
         } catch {
             phase = .failed(error.localizedDescription)
         }
