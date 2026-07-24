@@ -41,7 +41,10 @@ Two separate requests:
   matching "same as clicking the menu bar icon," not an open-only action.
 - The restart shows a brief "Repair successful — restarting AgenticGlow…"
   message (~1.5s) before relaunching, rather than an instant, unexplained
-  disappearance.
+  disappearance. (Revised after live testing: 1.5s was too short to notice
+  and the plain-text-in-a-crowded-row layout truncated to unreadable text —
+  shipped as a 3s delay with `.restarting` replacing the entire row with a
+  styled orange `Label` and hiding the buttons.)
 - After relaunch, Setup **automatically reopens** showing the real
   (already-successful) install state, rather than leaving the user to infer
   success from the menu bar alone.
@@ -86,9 +89,14 @@ succeeds:
 
 1. Set a new `SetupPhase.restarting` case. `SetupView` shows "Repair
    successful — restarting AgenticGlow…" for this phase.
-2. `try? await Task.sleep(for: .seconds(1.5))`.
+2. `try? await Task.sleep(for: .seconds(1.5))`. (Revised after live testing:
+   shipped as `.seconds(3)` — 1.5s was too short for the message to actually
+   be noticed before the app relaunched.)
 3. Call a new injected `requestRestart: () -> Void = { }` closure (same
-   optional-closure pattern already used for `setIntegrationEnabled`).
+   optional-closure pattern already used for `setIntegrationEnabled`). (Note:
+   later changed to `() async -> Bool` so `repair()` can recover `phase`
+   when the relaunch fails instead of leaving the UI stuck on `.restarting`
+   forever.)
 
 `install()` and `remove()` are untouched — only `repair()` calls
 `requestRestart`.

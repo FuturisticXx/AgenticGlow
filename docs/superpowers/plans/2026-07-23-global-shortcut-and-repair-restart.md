@@ -13,7 +13,7 @@
 - Shortcut is Command+Shift+A (not Control+A — collides with system-wide beginning-of-line text editing). Verbatim from the spec.
 - The shortcut toggles the popover (open if closed, close if open) — matches "same as clicking the menu bar icon."
 - Only `SetupViewModel.repair()` triggers a restart. `install()` and `remove()` must not.
-- Restart shows "Repair successful — restarting AgenticGlow…" for ~1.5s (production default) before relaunching.
+- Restart shows "Repair successful — restarting AgenticGlow…" for ~1.5s (production default) before relaunching. (Revised after live testing: 1.5s was too short to notice and the plain-text-in-a-crowded-row layout truncated to unreadable text — shipped as a 3s delay with `.restarting` replacing the entire row with a styled orange `Label` and hiding the buttons.)
 - After relaunch, Setup automatically reopens showing the real (already-correct) install state — not a faked "just repaired" state reconstructed across the process boundary.
 - Hotkey registration failure and restart-launch failure are both soft failures: log and continue running, never leave the user with no working app.
 - No new entitlements or Info.plist keys — the app is already unsandboxed (`Config/AgenticGlow.entitlements` has no `com.apple.security.app-sandbox` key) and Carbon hotkey registration needs none.
@@ -317,7 +317,7 @@ git commit -m "feat: sync Setup phase from real status when Setup appears"
 - Modify: `Tests/AgenticGlowAppTests/SetupViewModelTests.swift` (3 new tests)
 
 **Interfaces:**
-- Produces: `SetupViewModel.init(..., requestRestart: @escaping () -> Void = { }, restartDelay: Duration = .seconds(1.5))`. After `repair()` succeeds, `phase` becomes `.restarting`, then after `restartDelay` the `requestRestart` closure is called. `install()` and `remove()` never call it. Task 6 wires the production closure; tests pass `restartDelay: .zero` so the suite stays fast.
+- Produces: `SetupViewModel.init(..., requestRestart: @escaping () -> Void = { }, restartDelay: Duration = .seconds(1.5))`. After `repair()` succeeds, `phase` becomes `.restarting`, then after `restartDelay` the `requestRestart` closure is called. `install()` and `remove()` never call it. Task 6 wires the production closure; tests pass `restartDelay: .zero` so the suite stays fast. (Note: shipped default is `.seconds(3)`, and `requestRestart` was later changed to `() async -> Bool` so `repair()` can recover the phase when the relaunch fails — see the post-review fix.)
 
 - [ ] **Step 1: Write the three failing tests**
 
@@ -437,7 +437,7 @@ to:
         lastEvent: @escaping () -> Date? = { nil },
         setIntegrationEnabled: @escaping (Bool) -> Void = { _ in },
         requestRestart: @escaping () -> Void = { },
-        restartDelay: Duration = .seconds(1.5)
+        restartDelay: Duration = .seconds(1.5)  // shipped default: .seconds(3), see note above
     ) {
         self.provider = provider
         self.executableURL = executableURL
@@ -925,7 +925,7 @@ Expected: whatever Command+Shift+A normally does in that app happens (or nothing
 
 Open Setup (click the menu bar icon, then Settings/Integrations, however Setup is normally reached in the running build). Click "Repair" for Codex (or Claude — whichever is currently configured on this machine).
 
-Expected: the row's status text changes to "Repair successful — restarting AgenticGlow…", then after roughly 1.5 seconds the menu bar icon disappears and reappears (the app relaunching), and the Setup window reopens automatically showing "Installed" or "Installed, trust required" for the repaired provider — not "Ready to install".
+Expected: the row's status text changes to "Repair successful — restarting AgenticGlow…", then after roughly 1.5 seconds the menu bar icon disappears and reappears (the app relaunching), and the Setup window reopens automatically showing "Installed" or "Installed, trust required" for the repaired provider — not "Ready to install". (Revised after live testing: shipped behavior uses a 3s delay and replaces the whole row with a styled orange `Label`, not shared-row plain text.)
 
 - [ ] **Step 5: Confirm no crash report was generated**
 
