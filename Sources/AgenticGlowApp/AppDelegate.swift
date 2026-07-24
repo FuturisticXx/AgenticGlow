@@ -77,6 +77,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             exit(EXIT_SUCCESS)
         }
 
+        // AgenticGlow's Setup and Settings windows are transient utility
+        // panels, not documents — they must never be restored by macOS's
+        // "reopen windows" feature. This only became observable once the
+        // repair-restart flow existed: relaunching the app for the first
+        // time surfaced the Settings window reappearing unbidden alongside
+        // the intentionally-reopened Setup window.
+        UserDefaults.standard.register(defaults: ["NSQuitAlwaysKeepsWindows": false])
+
         NSApp.setActivationPolicy(.accessory)
         NSAppleEventManager.shared().setEventHandler(
             self,
