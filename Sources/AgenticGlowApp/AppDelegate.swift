@@ -19,6 +19,56 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ClaudeSessionCredentialStore()
     private var notificationService: AgentNotificationService?
     private let notificationClient = UserNotificationCenterClient()
+    private var hotKeyRef: EventHotKeyRef?
+    private var hotKeyEventHandlerRef: EventHandlerRef?
+    private static let hotKeyID = EventHotKeyID(signature: OSType(0x41474C57), id: 1) // "AGLW"
+
+    private func registerGlobalHotKey() {
+        var eventType = EventTypeSpec(
+            eventClass: OSType(kEventClassKeyboard),
+            eventKind: UInt32(kEventHotKeyPressed)
+        )
+        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+        InstallEventHandler(
+            GetApplicationEventTarget(),
+            { _, _, userData in
+                guard let userData else { return noErr }
+                let delegate = Unmanaged<AppDelegate>.fromOpaque(userData).takeUnretainedValue()
+                delegate.handleGlobalHotKeyPressed()
+                return noErr
+            },
+            1,
+            &eventType,
+            selfPtr,
+            &hotKeyEventHandlerRef
+        )
+        let status = RegisterEventHotKey(
+            UInt32(kVK_ANSI_A),
+            UInt32(cmdKey | shiftKey),
+            Self.hotKeyID,
+            GetApplicationEventTarget(),
+            0,
+            &hotKeyRef
+        )
+        if status != noErr {
+            NSLog("AgenticGlow: failed to register the global Command+Shift+A hotkey (status \(status))")
+        }
+    }
+
+    private func unregisterGlobalHotKey() {
+        if let hotKeyRef {
+            UnregisterEventHotKey(hotKeyRef)
+            self.hotKeyRef = nil
+        }
+        if let hotKeyEventHandlerRef {
+            RemoveEventHandler(hotKeyEventHandlerRef)
+            self.hotKeyEventHandlerRef = nil
+        }
+    }
+
+    private func handleGlobalHotKeyPressed() {
+        statusItemController.togglePopover()
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Support noninteractive clean-removal mode
@@ -174,6 +224,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         reduceMotionObserver.start()
         usageAvailabilityObserver = UsageAvailabilityObserver(model: model)
         usageAvailabilityObserver.start()
+        if fixtureName == nil {
+            registerGlobalHotKey()
+        }
         model.start()
         notificationService?.start()
         Task {
@@ -225,6 +278,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItemController.stop()
         reduceMotionObserver.stop()
         usageAvailabilityObserver.stop()
+        unregisterGlobalHotKey()
     }
 
     /// Handles agenticglow:// links, currently only sent by the widget.
