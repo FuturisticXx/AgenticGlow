@@ -177,13 +177,50 @@ final class SetupViewModelTests: XCTestCase {
             helperInstaller: recorder,
             integration: recorder,
             syntheticEventService: recorder,
-            requestRestart: { restartRequested = true },
+            requestRestart: {
+                restartRequested = true
+                return true
+            },
             restartDelay: .zero
         )
 
         await model.repair()
 
         XCTAssertTrue(restartRequested)
+    }
+
+    func testRepairTransitionsToRestartingPhase() async {
+        let recorder = SetupRecorder()
+        let model = SetupViewModel(
+            provider: .codex,
+            executableURL: URL(fileURLWithPath: "/tmp/codex"),
+            helperInstaller: recorder,
+            integration: recorder,
+            syntheticEventService: recorder,
+            requestRestart: { true },
+            restartDelay: .zero
+        )
+
+        await model.repair()
+
+        XCTAssertEqual(model.phase, .restarting)
+    }
+
+    func testRepairRecoversPhaseWhenRestartFails() async {
+        let recorder = SetupRecorder()
+        let model = SetupViewModel(
+            provider: .codex,
+            executableURL: URL(fileURLWithPath: "/tmp/codex"),
+            helperInstaller: recorder,
+            integration: recorder,
+            syntheticEventService: recorder,
+            requestRestart: { false },
+            restartDelay: .zero
+        )
+
+        await model.repair()
+
+        XCTAssertEqual(model.phase, .needsTrust)
     }
 
     func testInstallDoesNotRequestRestart() async {
@@ -195,7 +232,10 @@ final class SetupViewModelTests: XCTestCase {
             helperInstaller: recorder,
             integration: recorder,
             syntheticEventService: recorder,
-            requestRestart: { restartRequested = true },
+            requestRestart: {
+                restartRequested = true
+                return true
+            },
             restartDelay: .zero
         )
 
@@ -213,7 +253,10 @@ final class SetupViewModelTests: XCTestCase {
             helperInstaller: recorder,
             integration: recorder,
             syntheticEventService: recorder,
-            requestRestart: { restartRequested = true },
+            requestRestart: {
+                restartRequested = true
+                return true
+            },
             restartDelay: .zero
         )
 

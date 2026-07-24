@@ -23,7 +23,7 @@ final class SetupViewModel {
     private let syntheticEventService: SyntheticEventTesting
     private let lastEvent: () -> Date?
     private let setIntegrationEnabled: (Bool) -> Void
-    private let requestRestart: () -> Void
+    private let requestRestart: () async -> Bool
     private let restartDelay: Duration
     var phase: SetupPhase
     var integrationStatus: IntegrationStatus?
@@ -37,7 +37,7 @@ final class SetupViewModel {
         syntheticEventService: SyntheticEventTesting,
         lastEvent: @escaping () -> Date? = { nil },
         setIntegrationEnabled: @escaping (Bool) -> Void = { _ in },
-        requestRestart: @escaping () -> Void = { },
+        requestRestart: @escaping () async -> Bool = { true },
         restartDelay: Duration = .seconds(3)
     ) {
         self.provider = provider
@@ -90,7 +90,15 @@ final class SetupViewModel {
             refreshDiagnostics()
             phase = .restarting
             try? await Task.sleep(for: restartDelay)
-            requestRestart()
+            let restarted = await requestRestart()
+            if !restarted {
+                // The relaunch didn't happen (e.g. NSWorkspace.openApplication
+                // failed) — the repair itself already succeeded and this
+                // process is still the one running, so recover to a usable
+                // state instead of leaving the UI stuck on "restarting"
+                // forever with its buttons hidden.
+                phase = provider == .codex ? .needsTrust : .installed
+            }
         } catch {
             phase = .failed(error.localizedDescription)
         }
