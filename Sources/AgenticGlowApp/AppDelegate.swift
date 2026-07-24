@@ -294,6 +294,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupWindow = window
     }
 
+    private func relaunch() {
+        UserDefaults.standard.set(true, forKey: "reopenSetupAfterRestart")
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.createsNewApplicationInstance = true
+        Task {
+            do {
+                _ = try await NSWorkspace.shared.openApplication(
+                    at: Bundle.main.bundleURL,
+                    configuration: configuration
+                )
+                NSApp.terminate(nil)
+            } catch {
+                // Relaunch failed — stay running rather than leaving no
+                // app at all. The flag would otherwise force-open Setup
+                // on some unrelated future launch, so clear it too.
+                UserDefaults.standard.removeObject(forKey: "reopenSetupAfterRestart")
+            }
+        }
+    }
+
     private func showUITestSessionWindow() {
         if let uiTestSessionWindow {
             uiTestSessionWindow.makeKeyAndOrderFront(nil)
@@ -370,7 +390,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             setIntegrationEnabled: {
                 UserDefaults.standard.set($0, forKey: Self.integrationEnabledKey(for: .claude))
-            }
+            },
+            requestRestart: { [weak self] in self?.relaunch() }
         )
 
         let codexModel = SetupViewModel(
@@ -385,7 +406,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             setIntegrationEnabled: {
                 UserDefaults.standard.set($0, forKey: Self.integrationEnabledKey(for: .codex))
-            }
+            },
+            requestRestart: { [weak self] in self?.relaunch() }
         )
 
         return SetupView(
