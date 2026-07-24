@@ -29,6 +29,8 @@ struct SetupView: View {
             async let claudeVersion: Void = claude.detectVersion()
             async let codexVersion: Void = codex.detectVersion()
             _ = await (claudeVersion, codexVersion)
+            claude.syncPhaseFromCurrentStatus()
+            codex.syncPhaseFromCurrentStatus()
         }
     }
 
