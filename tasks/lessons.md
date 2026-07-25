@@ -2,6 +2,42 @@
 
 Rules learned from real mistakes in this project. Read in full at session start. Add a new entry after any correction from John.
 
+## Blend modes don't survive Tinted/Monochrome widget rendering (2026-07-25)
+
+**What happened:** Restoring the percent pill to the widget allowance bars
+took three installed-widget cycles because I kept verifying compositing
+behavior with `ImageRenderer` offscreen renders, which always composite
+normally. Two attempts failed on the real desktop widget:
+
+1. Solid capsule with the numerals knocked out via
+   `.blendMode(.destinationOut)` + `.compositingGroup()`. The knockout
+   itself worked, but contrast was poor: in `.vibrant` both the capsule
+   and the hole resolve from the same wallpaper-derived material.
+2. Bright numerals over a 25%-opacity capsule, with a `destinationOut`
+   capsule erasing the bar underneath. The eraser was silently ignored,
+   so the bar drew a line straight through the digits.
+
+What finally worked was pure geometry: draw the track as two segments
+with a real gap where the pill sits, so there is nothing to erase.
+
+**Rules:**
+- `ImageRenderer` and `#Preview` prove layout and geometry only. They
+  always render `.fullColor` with normal compositing, so they cannot
+  verify `blendMode`, `compositingGroup`, `mask`, or anything else whose
+  result depends on `widgetRenderingMode`. Do not treat an offscreen
+  render as evidence for those.
+- In `.vibrant`/`.accented`, prefer geometry over compositing for
+  anything that must hold in every widget style. A gap in the layout
+  cannot be ignored by the renderer; a blend mode can.
+- In those styles luminance maps to prominence, so "dark" is not an
+  available color, only absence. Carry contrast on the text at full
+  strength and let a low-opacity shape behind it supply the container.
+  Opacity survives both the accent tinting and the luminance mapping,
+  because it applies after whatever color the system substitutes.
+- Budget for the install cycle up front when changing widget rendering:
+  build, sign inside-out, replace `/Applications`, kill the `.appex`,
+  screenshot. Guessing costs more than measuring here.
+
 ## macOS App Groups need the Team ID prefix when the app isn't sandboxed (2026-07-24)
 
 **What happened:** The desktop widget was stuck on "Waiting for AgenticGlow"

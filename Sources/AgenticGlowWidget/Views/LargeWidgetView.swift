@@ -2,11 +2,16 @@ import SwiftUI
 import WidgetKit
 import AgenticGlowCore
 
-/// Large's job: a richer dashboard. Up to 4 sessions, attention elevated
-/// above the rest, a per-provider allowance block, and provider setup
-/// notices. No app title or last-updated footer: on a real desktop widget
-/// canvas that content routinely clipped off the bottom, and the title was
-/// redundant (the widget gallery/desktop context already identifies it).
+/// Large's job: a richer dashboard. Up to 4 sessions, a per-provider
+/// allowance block, and provider setup notices. No app title or
+/// last-updated footer: on a real desktop widget canvas that content
+/// routinely clipped off the bottom, and the title was redundant (the
+/// widget gallery/desktop context already identifies it).
+///
+/// No attention banner either. Prompting the user about sessions that
+/// need them is the menu bar's and the notifications' job; the widget
+/// reports state. Each session row still carries its own phase ("Needs
+/// you"), which is status rather than a prompt.
 struct LargeWidgetView: View {
     /// Upper bound when there are 0-2 allowance windows to show alongside
     /// sessions. `displayedSessionLimit` scales this down as the window
@@ -19,9 +24,6 @@ struct LargeWidgetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if snapshot.attentionCount > 0 {
-                AttentionBanner(count: snapshot.attentionCount)
-            }
             if snapshot.sessions.isEmpty {
                 Text("No active or recent sessions")
                     .font(.system(size: 12, weight: .medium))
@@ -49,6 +51,11 @@ struct LargeWidgetView: View {
             }
             Spacer(minLength: 0)
         }
+        // Overflow used to bleed off both edges, so the first thing lost
+        // was the topmost line. Pinning to the top makes any future
+        // overflow fall off the bottom instead, where it costs a reset
+        // caption rather than the first session.
+        .frame(maxHeight: .infinity, alignment: .top)
         .padding()
     }
 

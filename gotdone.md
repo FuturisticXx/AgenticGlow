@@ -1,5 +1,40 @@
 # Got done
 
+## 2026-07-25 - Widget allowance pill restored, attention banner removed
+
+- Fixed the allowance bar looking broken at 100%: the percentage label was
+  positioned past the fill edge and clamped by a hardcoded 22pt half-width
+  guess, so at 100% both terms collapsed to the right edge and the number
+  landed on top of the filled bar. Pill size is now measured once from real
+  font metrics for the widest label ("100%"). Font and size unchanged.
+- Restored the percentage pill in Tinted/Monochrome desktop widget styles,
+  which previously dropped it and left a bare number on the bar. Two
+  approaches failed on the real widget before the working one: solid text on
+  a solid pill (washed out), and numerals knocked out as transparent holes
+  (legible but barely). What works is full-strength numerals over a
+  low-opacity capsule, since opacity survives both the accent tinting of
+  `.accented` and the luminance mapping of `.vibrant`.
+- Found that `.blendMode(.destinationOut)` is silently ignored in those
+  styles: an eraser clearing the bar beneath the pill worked in an offscreen
+  render and did nothing on the desktop, letting the bar draw a line through
+  the numerals. Replaced with two track segments and a real geometric gap.
+- Removed the attention banner from the medium and large widgets
+  (`AttentionBanner.swift` deleted). Prompting about sessions that need the
+  user belongs to the menu bar and notifications; the widget reports state.
+  Session rows still show "Needs you" as a phase, which is status.
+- That also fixed session text clipping off the top of the large widget: the
+  banner was an uncounted extra row, so with three allowance windows the
+  content overshot the fixed canvas by about a row. Large is now pinned to
+  the top so any future overflow falls off the bottom instead.
+- Hardened against CI: `NSFont` is no longer held in a `static let`, since it
+  is not `Sendable` in every SDK and a non-`Sendable` static is a hard error
+  under Swift 6 language mode. CI runs `macos-15`, well behind local Xcode.
+- Verified each fix on the real installed desktop widget in Tinted style, not
+  previews. 269 Core tests pass. Also learned the widget surface *can* be
+  captured with `screencapture -x -D <display>`, correcting an earlier note
+  in `docs/widget.md` that said it could not.
+- Not released. Ships with the next version bump.
+
 ## 2026-07-23 - Published v0.5.8
 
 - Released the standalone hook helper auto-refresh fix from commit `bbb6e35`, tagged `v0.5.8`.

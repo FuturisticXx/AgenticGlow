@@ -2,13 +2,17 @@ import SwiftUI
 import WidgetKit
 import AgenticGlowCore
 
-/// Medium's job: a compact operational summary. Up to 2 sessions, one
-/// allowance strip for whichever provider is lowest, and an attention
-/// banner pinned above everything when something needs the user.
+/// Medium's job: a compact operational summary. Up to 2 sessions and one
+/// allowance strip for whichever provider is lowest.
+///
+/// No attention banner: prompting the user about sessions that need them
+/// is the menu bar's and the notifications' job; the widget reports
+/// state. Each session row still carries its own phase ("Needs you"),
+/// which is status rather than a prompt.
 struct MediumWidgetView: View {
-    /// Medium's canvas is short; an attention banner, 2 session rows, and
-    /// an allowance strip already fill it. More would risk clipping
-    /// instead of just being unreachable (widgets don't scroll).
+    /// Medium's canvas is short; 2 session rows and an allowance strip
+    /// already fill it. More would risk clipping instead of just being
+    /// unreachable (widgets don't scroll).
     private static let maximumDisplayedSessions = 2
 
     let snapshot: WidgetSnapshot
@@ -16,9 +20,6 @@ struct MediumWidgetView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if snapshot.attentionCount > 0 {
-                AttentionBanner(count: snapshot.attentionCount)
-            }
             if snapshot.sessions.isEmpty {
                 Text("No active or recent sessions")
                     .font(.system(size: 12, weight: .medium))

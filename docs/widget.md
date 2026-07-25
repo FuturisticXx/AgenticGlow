@@ -171,9 +171,9 @@ gap doesn't falsely read as stale.
   count, then lowest individual allowance window remaining (across every
   provider and window kind, not just each provider's current window), then
   a calm "All quiet" state.
-- **Medium**: up to 2 sessions (`+ N more` if truncated), an attention
-  banner pinned above them when needed, and one status bar for whichever
-  individual allowance window (current or weekly, any provider) is lowest.
+- **Medium**: up to 2 sessions (`+ N more` if truncated) and one status
+  bar for whichever individual allowance window (current or weekly, any
+  provider) is lowest.
 - **Large**: a per-provider allowance block showing every window the
   provider reports (current, and weekly when the provider has one) using
   the menu-bar-style status bar, plus sessions and provider setup notices.
@@ -182,6 +182,15 @@ gap doesn't falsely read as stale.
   the bottom of the real fixed-height canvas, confirmed on an installed
   desktop widget, and neither carried information the widget's context
   (the desktop, right next to the app) doesn't already make obvious.
+  Content is pinned to the top of the canvas so that any overflow falls
+  off the bottom, costing a reset caption rather than the first session.
+
+Medium and large carry **no attention banner**. Prompting the user about
+sessions that need them belongs to the menu bar and to notifications; the
+widget reports state. Individual session rows still show a `.permission`
+phase as "Needs you", which is status rather than a prompt. Small is the
+exception: there the attention count is the headline itself (see above),
+not a banner layered over other content.
 - `.systemExtraLarge` was evaluated and skipped for this pass (iPad
   dashboard-oriented, not clearly worth it for a status companion).
 
@@ -205,8 +214,12 @@ The status bar itself (`WidgetAllowanceBar.swift`) is a widget-local port
 of the menu bar's `AllowanceBar` (`AllowanceSectionView.swift`, frozen,
 reference only): quiet capsule track, provider-colored gradient fill sized
 by `WidgetAllowanceWindow.normalizedProgress` (percent clamped to 0...1,
-4pt minimum visible width), and a white monospaced percentage pill at the
-fill edge. Below the threshold shared with the menu bar
+4pt minimum visible width), and a monospaced percentage pill centered on
+the fill edge. The pill is sized once from real font metrics for the
+widest label it can ever show ("100%") rather than from a hardcoded
+half-width guess; the old guess was narrower than a 3-digit pill, so 100%
+overhung the widget's right padding. Below the threshold shared with the
+menu bar
 (`AllowanceWarning.thresholdPercentLeft`, `AgenticGlowCore`) a row adds a
 red warning triangle and provider-colored caption text; a `nil` percentage
 renders as an "Unavailable" line with no bar, never an empty (0%-looking)
@@ -254,21 +267,44 @@ only visible in Tinted mode against a pale wallpaper:
 
 Fix: `WidgetAllowanceBar` and `AllowanceStrip` branch on
 `widgetRenderingMode`. In `.fullColor` they render exactly as designed
-(gradient fill, colored pill, provider-tinted captions). Outside
-`.fullColor` they fall back to `Color.primary`/`.foregroundStyle(.primary)`
-for the fill and percentage text — semantic styles WidgetKit guarantees
-stay legible against any rendering-mode substitution, at the cost of
-losing per-provider hue distinction in Tinted/Monochrome mode (an
-acceptable, and largely unavoidable, trade-off: the whole point of those
-styles is a single-hue treatment). The low-state red warning triangle
-still uses its fixed color unconditionally in every mode; a real
-remaining limitation if a future desktop test shows it also washing out.
+(gradient fill, colored pill with white numerals, provider-tinted
+captions). Outside `.fullColor` the fill and captions fall back to
+`Color.primary`/`.foregroundStyle(.primary)`, at the cost of losing
+per-provider hue distinction (an acceptable, and largely unavoidable,
+trade-off: the whole point of those styles is a single-hue treatment).
+The low-state red warning triangle still uses its fixed color
+unconditionally in every mode; a real remaining limitation if a future
+desktop test shows it also washing out.
 
-The percentage label's horizontal position is offset a fixed 14pt past the
-fill edge rather than centered exactly on it (`labelTrailingOffset` in
-`WidgetAllowanceBar`) — centering read as the number floating in the
-middle of the bar once it lost its full-color pill background, per direct
-feedback from the installed widget.
+An earlier pass dropped the percentage pill entirely outside
+`.fullColor`, leaving a bare number lying on the bar. That read as broken,
+worst at 100% where the fill spans the whole track and the number had no
+empty space to sit in. Restoring the pill took two more installed-widget
+rounds and produced three findings worth keeping:
+
+1. **Luminance maps to prominence, so "dark" is not available.** Bright
+   content becomes opaque, dark content becomes transparent. Solid text on
+   a solid pill washes out because both resolve to the same
+   wallpaper-derived tone. Knocking the numerals out as transparent holes
+   is legible but only barely, for the same reason.
+2. **The working answer is to carry contrast on the numerals, not the
+   capsule.** Full-strength text over a low-opacity capsule renders
+   exactly as legibly as the provider headings and reset captions beside
+   it. Opacity is the one relationship that survives both the accent
+   tinting of `.accented` and the luminance mapping of `.vibrant`, since
+   it applies after whatever color the system substitutes.
+3. **Blend modes are ignored in these styles.** A `.blendMode(.destinationOut)`
+   capsule used to erase the bar beneath the translucent pill worked in a
+   normal render and was silently dropped on the real widget, letting the
+   bar draw a line through the numerals. The track is therefore drawn as
+   two segments with a real gap where the pill sits: nothing to erase, so
+   nothing can leak through. Prefer geometry over compositing for anything
+   that must hold in every rendering mode.
+
+`ImageRenderer` and `#Preview` prove layout and geometry only. They always
+composite normally in `.fullColor`, so they cannot verify `blendMode`,
+`compositingGroup`, `mask`, or anything else whose result depends on
+`widgetRenderingMode`.
 
 ## Deep links
 
@@ -408,3 +444,40 @@ builder now signs the helper, then the widget with
 slices, a valid widget signature, and the shared App Group entitlement on both
 targets. A notarized release containing this feature has not yet been produced.
 App Intent filtering and additional interactive actions remain follow-up work.
+
+### Pill restoration and attention-banner removal (2026-07-25)
+
+Three changes, all verified against the installed desktop widget in
+Tinted style rather than previews:
+
+- **Percentage pill restored in every rendering mode**
+  (`WidgetAllowanceBar.swift`). See "Rendering-mode legibility" above for
+  the two failed approaches and why full-strength numerals over a
+  low-opacity capsule is the one that works. The pill is now sized from
+  real font metrics for "100%", which also fixed the pill overhanging the
+  widget's right padding at 100%. Font family, size, and weight were
+  unchanged throughout.
+- **Track drawn as two segments with a gap** where the pill sits, outside
+  `.fullColor`. Replaces a `.blendMode(.destinationOut)` eraser that the
+  system silently ignored in Tinted mode.
+- **Attention banner removed from medium and large**
+  (`AttentionBanner.swift` deleted; nothing referenced it afterwards).
+  Prompting is the menu bar's and notifications' job. This also resolved a
+  clipping bug: the banner was an extra row that
+  `LargeWidgetView.displayedSessionLimit` never counted, so with three
+  allowance windows the content overshot the fixed canvas by roughly a
+  row and cut the top line in half. Large is now also pinned to the top of
+  its canvas so future overflow falls off the bottom instead.
+
+Correction to the 2026-07-22 note above: the desktop widget surface **can**
+be captured programmatically after all, via `screencapture -x -D <display>`
+run outside the agent's command sandbox. The per-display flag is what
+matters; the widget appears in the normal display capture. Note that
+screenshot tooling which filters by allowlisted application will show a
+blank desktop, because desktop widgets are drawn by `WindowManager` rather
+than by AgenticGlow itself.
+
+`NSFont` is deliberately not held in a `static let` here: it is not
+`Sendable` in every SDK this ships against, and a non-`Sendable` static is
+a hard error under Swift 6 language mode. CI runs `macos-15`, well behind
+the local toolchain, so only the measured `CGFloat`s are stored.
