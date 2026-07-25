@@ -13,17 +13,23 @@ cask "agenticglow" do
   end
 
   depends_on macos: :sonoma
+
   app "AgenticGlow.app"
 
-  uninstall quit: "com.twodamax.agenticglow",
+  uninstall quit:   "com.twodamax.agenticglow",
             script: {
               executable: "#{appdir}/AgenticGlow.app/Contents/MacOS/AgenticGlow",
-              args: ["--remove-integrations"],
-              sudo: false,
+              args:       ["--remove-integrations"],
+              sudo:       false,
             }
 
   zap trash: [
     "~/Library/Application Support/AgenticGlow",
+    "~/Library/Caches/com.twodamax.agenticglow",
+    "~/Library/Containers/com.twodamax.agenticglow",
+    "~/Library/Containers/com.twodamax.agenticglow.widget",
+    "~/Library/Group Containers/group.com.twodamax.agenticglow",
+    "~/Library/Group Containers/Z52AX2BH7T.group.com.twodamax.agenticglow",
     "~/Library/Preferences/com.twodamax.agenticglow.plist",
   ]
 end
