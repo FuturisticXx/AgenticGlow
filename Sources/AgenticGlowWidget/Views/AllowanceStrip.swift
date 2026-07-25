@@ -87,22 +87,22 @@ struct AllowanceWindowRow: View {
         return percentLeft < AllowanceWarning.thresholdPercentLeft
     }
 
-    /// Matches the menu bar's own reset copy (`AllowancePresentation`,
-    /// frozen, reference only): a current window pairs a relative
-    /// countdown with the absolute clock time (plus date if it isn't
-    /// today) in parentheses, while a weekly window shows only the
-    /// absolute date and time, since a "142h 43m" weekly countdown is
-    /// less useful than a calendar reference.
+    /// Matches the menu bar's own reset copy (`AllowancePresentation`): a
+    /// countdown pairs with the absolute clock time (plus date if it isn't
+    /// today) in parentheses, but only while the reset is close enough for
+    /// the countdown to help. `WidgetSnapshotFormatting.showsCountdown`
+    /// owns that rule for both surfaces.
+    ///
+    /// Keyed off the reset's distance rather than `window.kind`, because
+    /// kind alone gets it wrong: Codex reports its weekly-scale window as
+    /// `.current`, which is how this line read "Weekly resets in 166h 12m
+    /// left (Sat, Aug 1 at 2:31 AM)".
     private var resetDetail: String? {
         guard let resetAt = window.resetAt else { return nil }
         let absolute = WidgetSnapshotFormatting.absoluteResetLabel(resetAt, now: now)
-        switch window.kind {
-        case .current:
-            guard let relative = WidgetSnapshotFormatting.relativeResetLabel(resetAt, now: now) else { return nil }
-            return absolute.map { "in \(relative) (\($0))" } ?? "in \(relative)"
-        case .weekly:
-            return absolute
-        }
+        guard WidgetSnapshotFormatting.showsCountdown(resetAt, now: now) else { return absolute }
+        guard let relative = WidgetSnapshotFormatting.relativeResetLabel(resetAt, now: now) else { return absolute }
+        return absolute.map { "in \(relative) (\($0))" } ?? "in \(relative)"
     }
 
     private var accessibilityLabel: String {

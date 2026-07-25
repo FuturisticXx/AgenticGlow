@@ -115,6 +115,19 @@ final class WidgetSnapshotFormattingTests: XCTestCase {
 
     // MARK: - Fixtures
 
+    // A countdown only helps when the reset is close. Codex reports its
+    // weekly-scale window as the *current* window, which produced captions
+    // like "Weekly resets in 166h 12m left (Sat, Aug 1 at 2:31 AM)" where
+    // the hour count is noise next to a date the reader already has.
+    func testCountdownIsShownOnlyWithinADay() {
+        let now = Date(timeIntervalSince1970: 1_783_099_000)
+        XCTAssertTrue(WidgetSnapshotFormatting.showsCountdown(now.addingTimeInterval(60), now: now))
+        XCTAssertTrue(WidgetSnapshotFormatting.showsCountdown(now.addingTimeInterval(23 * 3600), now: now))
+        XCTAssertFalse(WidgetSnapshotFormatting.showsCountdown(now.addingTimeInterval(25 * 3600), now: now))
+        XCTAssertFalse(WidgetSnapshotFormatting.showsCountdown(now.addingTimeInterval(7 * 24 * 3600), now: now))
+        XCTAssertFalse(WidgetSnapshotFormatting.showsCountdown(nil, now: now))
+    }
+
     private func date(_ year: Int, _ month: Int, _ day: Int, _ hour: Int, _ minute: Int) -> Date {
         calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour, minute: minute))!
     }

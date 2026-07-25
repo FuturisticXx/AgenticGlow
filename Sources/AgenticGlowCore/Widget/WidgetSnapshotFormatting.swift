@@ -32,6 +32,27 @@ public enum WidgetSnapshotFormatting {
         return remainingMinutes == 0 ? "\(hours)h left" : "\(hours)h \(remainingMinutes)m left"
     }
 
+    /// How far out a reset can be before its countdown stops being worth
+    /// showing.
+    public static let countdownHorizon: TimeInterval = 24 * 60 * 60
+
+    /// Whether a reset is close enough that a relative countdown helps.
+    ///
+    /// Codex can report its weekly-scale window as the *current* window
+    /// (no separate 5-hour window at all), which is how captions like
+    /// "Weekly resets in 166h 12m left (Sat, Aug 1 at 2:31 AM)" happened:
+    /// a three-digit hour count sitting in front of the calendar date that
+    /// already answers the question. Under a day the countdown is the
+    /// useful half; past that the date is, so the countdown is dropped.
+    ///
+    /// Keyed off the actual distance rather than the window kind or a
+    /// same-day check: a 5-hour window opened late at night resets
+    /// tomorrow and still wants its countdown.
+    public static func showsCountdown(_ resetAt: Date?, now: Date) -> Bool {
+        guard let resetAt else { return false }
+        return resetAt.timeIntervalSince(now) < countdownHorizon
+    }
+
     public static func absoluteResetLabel(_ resetAt: Date?, now: Date, calendar: Calendar = .current) -> String? {
         guard let resetAt else { return nil }
         let style: Date.FormatStyle = calendar.isDate(resetAt, inSameDayAs: now)

@@ -80,10 +80,6 @@ struct AllowancePresentation {
     }
 
     private static func relativeReset(_ reset: Date, now: Date) -> String {
-        let seconds = max(0, Int(reset.timeIntervalSince(now)))
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
-        let countdown = hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
         // Usually a same-day 5h window, but Codex can report only a
         // weekly-scale window here with no separate secondary window, so
         // the reset can be days out and needs a calendar date, not just a
@@ -91,6 +87,16 @@ struct AllowancePresentation {
         let clockTime = Calendar.current.isDate(reset, inSameDayAs: now)
             ? reset.formatted(date: .omitted, time: .shortened)
             : reset.formatted(.dateTime.month(.abbreviated).day().hour().minute())
+        // Past a day out the countdown is noise in front of a date that
+        // already answers the question, so the date stands alone. Shared
+        // with the widget via Core so the two can't drift apart.
+        guard WidgetSnapshotFormatting.showsCountdown(reset, now: now) else {
+            return clockTime
+        }
+        let seconds = max(0, Int(reset.timeIntervalSince(now)))
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        let countdown = hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
         return "\(countdown) (\(clockTime))"
     }
 

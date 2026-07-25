@@ -187,4 +187,25 @@ final class AllowancePresentationTests: XCTestCase {
         XCTAssertFalse(presentation.accessibilityCurrent.contains("low"))
         XCTAssertNil(presentation.accessibilityWeekly)
     }
+
+    func testFarOutCurrentResetOmitsTheCountdown() {
+        // Codex reports its weekly-scale window as "current", so the detail
+        // read "Weekly · 166h 12m (Sat, Aug 1 at 2:31 AM)". John: the hour
+        // count "is not needed. It only adds confusion."
+        let now = Date(timeIntervalSince1970: 1_783_099_000)
+        let reset = now.addingTimeInterval(7 * 24 * 60 * 60)
+        let allowance = ProviderAllowance(
+            provider: .codex,
+            currentWindowLabel: "Weekly",
+            currentPercentUsed: 97,
+            currentResetAt: reset,
+            weeklyPercentUsed: nil,
+            weeklyResetAt: nil,
+            fetchedAt: Date()
+        )
+        let presentation = AllowancePresentation(allowance: allowance, now: now)
+
+        let expectedDate = reset.formatted(.dateTime.month(.abbreviated).day().hour().minute())
+        XCTAssertEqual(presentation.currentDetail, "Weekly · \(expectedDate)")
+    }
 }
