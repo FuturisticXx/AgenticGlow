@@ -14,7 +14,7 @@ Complete these checks for every release that contains the AgenticGlow widget:
 - Confirm the app and widget are universal (`arm64` and `x86_64`) and pass
   strict signature validation.
 - Confirm both signed targets contain
-  `group.com.twodamax.agenticglow`; a valid outer app signature alone is not
+  `Z52AX2BH7T.group.com.twodamax.agenticglow`; a valid outer app signature alone is not
   sufficient evidence that the nested widget can open the shared container.
 - Install the candidate at `/Applications/AgenticGlow.app`, then use
   `pluginkit -m -A -D -v -i com.twodamax.agenticglow.widget` to confirm exactly

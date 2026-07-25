@@ -69,7 +69,7 @@ targets:
       properties:
         com.apple.security.app-sandbox: true
         com.apple.security.application-groups:
-          - group.com.twodamax.agenticglow
+          - Z52AX2BH7T.group.com.twodamax.agenticglow
     dependencies:
       - target: AgenticGlowCore
     settings:
@@ -108,7 +108,7 @@ targets:
       path: Config/AgenticGlow.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.twodamax.agenticglow
+          - Z52AX2BH7T.group.com.twodamax.agenticglow
     dependencies:
       - target: AgenticGlowCore
       - target: AgenticGlowEvent

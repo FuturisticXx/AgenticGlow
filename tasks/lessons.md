@@ -2,6 +2,84 @@
 
 Rules learned from real mistakes in this project. Read in full at session start. Add a new entry after any correction from John.
 
+## macOS App Groups need the Team ID prefix when the app isn't sandboxed (2026-07-24)
+
+**What happened:** The desktop widget was stuck on "Waiting for AgenticGlow"
+for two sessions. Root cause: the App Group was the bare
+`group.com.twodamax.agenticglow`. On macOS, an App Group shared between a
+non-sandboxed containing app and a sandboxed extension must be
+Team-ID-prefixed (`Z52AX2BH7T.group...`); the bare `group.` form is the
+App Store / fully-sandboxed convention. Fixing the prefix in `project.yml`
+(three references, plus the release verifier) fixed it completely.
+
+The failure mode is vicious because every check passes. Both targets signed
+with matching entitlements, `codesign` and `pluginkit` verification passed,
+`containerURL(forSecurityApplicationGroupIdentifier:)` returned a path in
+both processes, the app wrote the snapshot successfully, and the widget
+could `stat` that file and read its true size. Only reading the file's
+*contents* failed, and it failed by killing the extension process outright:
+no throwable error (so `try?` was useless), no crash report.
+
+**Rules:**
+- For any macOS App Group shared between a non-sandboxed app and a sandboxed
+  extension, use the Team-ID-prefixed identifier. If a sandboxed extension
+  can stat a shared file but dies reading it, suspect this first.
+- A widget extension dying with `NSCocoaErrorDomain Code=4099 "connection
+  ... was invalidated"` and no crash report means the process was killed,
+  not that it threw. Stop looking for a catchable error.
+- `project.yml` is the source of truth for entitlements. Editing
+  `Config/*.entitlements` directly is silently reverted by the next
+  `xcodegen generate`. Always change the generator input, then regenerate
+  and confirm the generated file still holds the change.
+
+## Bisect the widget before theorizing about it (2026-07-24)
+
+**What happened:** Before bisecting, I burned most of a session on three
+confident theories that were all wrong: that sandboxing the app would fix it,
+that `.atomic` writes were replacing the inode and breaking access, and that
+`Data(contentsOf:)` was memory-mapping the file so a concurrent rewrite
+raised SIGBUS. Each sounded mechanically plausible and each cost a full
+build/sign/install cycle to disprove. I also wrongly concluded I had
+corrupted the machine's WidgetKit state, and only John's reboot disproved
+that: the failure reproduced identically on a clean boot. What actually found
+the bug in about fifteen minutes was mechanical bisection, replacing the
+timeline provider with a hardcoded entry and a `Text` view (reloads
+succeeded), then restoring one piece at a time until the read was isolated.
+
+**Rules:**
+- For an opaque widget failure, bisect before theorizing. Strip the provider
+  to a hardcoded entry and a trivial view, confirm success, then restore one
+  component per build. Each cycle is roughly two minutes and yields a fact
+  rather than a hypothesis.
+- Change exactly one variable per build. Twice this session I changed the
+  read method and the view together and had to redo the run to interpret it.
+- Run the known-good control *before* concluding the environment is at
+  fault, and prefer a reboot over more diagnosis when suspecting system
+  state. My "the environment is poisoned" claim was wrong and cost real
+  time.
+
+## A valid timeline entry can still render an empty state (2026-07-24)
+
+**What happened:** `chronod` logged `getTimelines(3) result`, `reload:
+succeeded with 1 entries`, `Content load successful`, and `Evaluated inner
+view with result: LIVE` for the AgenticGlow widget. I read that as proof
+the render pipeline was healthy and the bug lay elsewhere. It was not:
+`AppGroupSnapshotSource.loadSnapshot()` was returning `.noSnapshotYet`,
+which is a perfectly valid `AgenticGlowWidgetEntry`, so WidgetKit
+faithfully built and cached a successful timeline whose content was the
+"Waiting for AgenticGlow" empty state. Success in the WidgetKit logs says
+the extension returned *an* entry, never that the entry contains real data.
+
+**Rule:** When diagnosing a widget showing an empty/placeholder state,
+never treat `reload: succeeded`, `LIVE view assigned`, or `Content load
+successful` as evidence the data path works. Those only prove the
+extension answered. Instrument the provider's own load result (or assert
+on it in a test) to learn *which* entry case was returned. Related, and
+confirmed this session: the widget process could `stat` the shared
+snapshot file (`exists=true size=1180`) while `Data(contentsOf:)` on that
+same path still failed, so file existence is likewise not evidence of
+readability.
+
 ## Xcode widget previews can't catch Tinted/Monochrome rendering bugs (2026-07-22)
 
 **What happened:** Built a custom allowance status bar (colored gradient

@@ -111,7 +111,7 @@ cache data.
 
 The optional desktop widget runs in a separate, sandboxed process. The main app
 writes one local `WidgetSnapshot.json` file to the private
-`group.com.twodamax.agenticglow` App Group container so the widget can display
+`Z52AX2BH7T.group.com.twodamax.agenticglow` App Group container so the widget can display
 current status. The snapshot contains only the provider, session ID, project
 name, phase, tool category, elapsed and update times, normalized allowance
 values, and provider-installed flags already described above. It contains no

@@ -16,13 +16,54 @@ This pass ships:
 - The WidgetKit extension itself (`Sources/AgenticGlowWidget/`): small,
   medium, and large layouts, all built and previewed against sample data.
 - `AppGroupSnapshotSource` and `AppGroupSnapshotWriter`, which read and write
-  `WidgetSnapshot.json` through `group.com.twodamax.agenticglow`.
+  `WidgetSnapshot.json` through `Z52AX2BH7T.group.com.twodamax.agenticglow`.
 - Live `AppModel` synchronization and `WidgetCenter.reloadAllTimelines()`
   calls when a meaningfully different snapshot is written.
 - Matching signed App Group entitlements for the app and widget extension.
   A signed local Release build installed at `/Applications/AgenticGlow.app`
   produced a real snapshot containing Codex and Claude sessions plus both
   allowance records on July 21, 2026.
+
+## The App Group ID must carry the Team ID prefix
+
+The App Group is `Z52AX2BH7T.group.com.twodamax.agenticglow`, not the bare
+`group.com.twodamax.agenticglow`. The Team ID prefix is mandatory here and is
+not cosmetic: on macOS, an App Group shared between a **non-sandboxed**
+containing app (AgenticGlow) and a **sandboxed** app extension (the widget)
+only resolves to the same accessible container when the identifier is
+Team-ID-prefixed. Bare `group.`-prefixed IDs are the App Store / fully
+sandboxed convention.
+
+With the bare ID, everything looked correct and nothing reported an error:
+
+- Both targets signed with the same App Group entitlement, and
+  `codesign`/`pluginkit` verification passed.
+- `FileManager.containerURL(forSecurityApplicationGroupIdentifier:)` returned
+  a path in **both** processes, and the app wrote `WidgetSnapshot.json` there
+  successfully every couple of seconds.
+- The widget could `stat` that exact file and see its real size and
+  modification date.
+
+But when the widget actually **read** the file's contents, the extension
+process was killed outright. Not an exception, not an error return: there is
+no Swift error to catch and no crash report is produced. The visible symptoms
+were a widget permanently stuck on its "Waiting for AgenticGlow" empty state
+(the last entry it ever managed to render), `chronod` logging
+`getTimelines` failures with `NSCocoaErrorDomain Code=4099 "connection ... was
+invalidated"`, and a runaway relaunch storm of well over a thousand extension
+launches every ten minutes as WidgetKit retried.
+
+If this ever regresses, the fastest confirmation is a bisect on the widget's
+timeline provider: return a hardcoded entry without calling `loadSnapshot()`
+and the reloads succeed immediately, restore the read and they fail again.
+Note that `reload: succeeded`, `Content load successful`, and `LIVE view
+assigned` in the logs only prove the extension returned *an* entry, never that
+the entry holds real data, since the empty state is itself a valid entry.
+
+`project.yml` is the source of truth for both entitlement files. Change the
+group there and regenerate with `xcodegen generate`; editing
+`Config/*.entitlements` directly is silently reverted on the next
+regeneration.
 
 The final desktop render with current real data is not yet verified. macOS had
 zero AgenticGlow widget instances after the stale test widget was removed, so
@@ -264,7 +305,7 @@ widget). No macOS 26-only symbols.
 1. `xcodegen generate`
 2. `xcodebuild test -project AgenticGlow.xcodeproj -scheme AgenticGlow -destination 'platform=macOS' -skip-testing:AgenticGlowUITests` — covers every pure Core widget file (snapshot codable/schema, builder, formatting, freshness, deep link, snapshot-loading safety). On Xcode versions that still prepare the skipped UI runner, run the built non-UI XCTest bundles directly and record that limitation instead of treating a runner timeout as a product-test failure.
 3. Xcode canvas: open any file under `Sources/AgenticGlowWidget/Views/` and use the `#Preview` blocks — every family has previews across the major states (busy, attention, failed, low allowance, provider not set up, stale, no data yet, not configured, error).
-4. Real install: build and run AgenticGlow once with the Apple Development identity, then right-click the desktop, choose **Edit Widgets**, search for **AgenticGlow**, and add a widget. The app writes `WidgetSnapshot.json` into `~/Library/Group Containers/group.com.twodamax.agenticglow/` and asks WidgetKit to reload after meaningful changes.
+4. Real install: build and run AgenticGlow once with the Apple Development identity, then right-click the desktop, choose **Edit Widgets**, search for **AgenticGlow**, and add a widget. The app writes `WidgetSnapshot.json` into `~/Library/Group Containers/Z52AX2BH7T.group.com.twodamax.agenticglow/` and asks WidgetKit to reload after meaningful changes.
 5. Before trusting the result, run `pluginkit -m -A -D -v -i com.twodamax.agenticglow.widget` and confirm exactly one registration points inside `/Applications/AgenticGlow.app`. A DerivedData or `/tmp` path means macOS may launch a stale extension with different entitlements.
 
 ## Live-data verification
@@ -285,7 +326,7 @@ comes from the existing `ClaudeIntegrationManager`/`CodexIntegrationManager`
 The installed local Release build is signed with matching App Group
 entitlements for `com.twodamax.agenticglow` and
 `com.twodamax.agenticglow.widget`. The signed extension profile includes
-`group.com.twodamax.agenticglow`, deep signature validation passes, and
+`Z52AX2BH7T.group.com.twodamax.agenticglow`, deep signature validation passes, and
 launching the app writes a decodable live snapshot to the shared container.
 
 On July 21, 2026, the installed app had one widget registration pointing to
@@ -312,13 +353,13 @@ Cleaned up a second stale `pluginkit` registration found at
 publish tooling) and a transient one that appeared at
 `build/DerivedData/.../AgenticGlow.app` after this session's own local
 Debug build/install; exactly one registration remains, pointing to
-`/Applications/AgenticGlow.app`. Confirmed matching `group.com.twodamax.agenticglow`
+`/Applications/AgenticGlow.app`. Confirmed matching `Z52AX2BH7T.group.com.twodamax.agenticglow`
 entitlement on both the app and widget, and a universal (`x86_64 arm64`)
 widget binary.
 
 Could not read the live `WidgetSnapshot.json` directly from a shell in this
 session: macOS App Sandbox group-container files are only readable by
-processes carrying the matching `group.com.twodamax.agenticglow`
+processes carrying the matching `Z52AX2BH7T.group.com.twodamax.agenticglow`
 entitlement, and neither `cat`, Python, nor `osascript` running outside the
 app have it (`Operation not permitted` even with root-equivalent POSIX
 permissions on the file). This is expected sandbox behavior, not a bug.

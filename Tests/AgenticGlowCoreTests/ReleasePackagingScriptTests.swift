@@ -43,7 +43,7 @@ final class ReleasePackagingScriptTests: XCTestCase {
             "lipo -archs \"$widget/Contents/MacOS/AgenticGlowWidget\"",
             "codesign --verify --strict --verbose=2 \"$widget\"",
             "codesign -d --entitlements :- \"$widget\"",
-            "group.com.twodamax.agenticglow",
+            "Z52AX2BH7T.group.com.twodamax.agenticglow",
         ]
 
         for requiredCheck in requiredChecks {
