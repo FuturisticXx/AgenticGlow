@@ -1,5 +1,24 @@
 # Current Work
 
+## Release v0.5.11 (in progress, 2026-07-25)
+
+Shipping the widget allowance pill restoration and attention banner
+removal (commit `dcc046b`). Approved in chat; both gate variables named
+explicitly before use, per the checklist convention.
+
+- [ ] `Scripts/build-release.sh 0.5.11` (gates, xcodegen, universal build, inside-out signing)
+- [ ] `Scripts/create-dmg.sh 0.5.11` (DMG, sign, notarize, staple, validate)
+- [ ] `Scripts/verify-release.sh 0.5.11`
+- [ ] `Scripts/generate-cask.sh 0.5.11` and update the README install link
+- [ ] Commit, tag `v0.5.11`, push
+- [ ] `gh release create v0.5.11` with the DMG; verify the downloaded asset
+- [ ] Push the regenerated cask to `FuturisticXx/homebrew-agenticglow`
+- [ ] `brew upgrade --cask agenticglow`; verify version, signature, single
+      pluginkit registration, Gatekeeper
+- [ ] Kill the `.appex` and screenshot the widget to confirm the notarized
+      build renders the fix (this is the whole point of the release)
+- [ ] Record evidence in `docs/release-checklist.md` and `gotdone.md`
+
 - Widget allowance-window parity + typography pass: shipped. Merged via
   PR #2, released as v0.5.6, then patched to v0.5.7 for two bugs found
   live-testing the real desktop widget (a provider with live data still

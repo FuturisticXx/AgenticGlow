@@ -23,7 +23,7 @@ for **AgenticGlow**, and add the size you want. See
 ## Installation
 
 The latest signed and notarized public release is
-[v0.5.10](https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.5.10).
+[v0.5.11](https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.5.11).
 
 ### DMG
 
