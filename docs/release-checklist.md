@@ -297,6 +297,51 @@ Public release 0.5.5 evidence recorded 2026-07-18:
 - The running `/Applications/AgenticGlow.app` was quit, replaced with the notarized 0.5.5 build, and relaunched; version, strict signature, and Gatekeeper all verified post-install.
 - Not independently screenshot-verified this time: this fix only changes which branch of an already-visually-confirmed formatting call fires (the same `.formatted()` pattern already proven live in the v0.5.4 popover screenshot), and is covered by a unit test built directly from this user's own real cached allowance data, so unit coverage was treated as sufficient rather than re-rendering the popover.
 
+Public release 0.5.11 evidence recorded 2026-07-25:
+
+- Released from commit `729107d` (tag `v0.5.11`): the widget allowance
+  percentage pill restored in every rendering mode, the attention banner
+  removed from the medium and large widgets, reset captions dropping the
+  countdown when a reset is more than a day out, and a new Settings option
+  for a monochrome menu bar icon.
+- Both release gate variables were named to the owner in chat and explicitly
+  approved before use (`AGENTICGLOW_NAME_CLEARED`,
+  `AGENTICGLOW_RELEASE_BUILD_APPROVED`), per the convention below.
+- The full non-UI suite passed on the release commit with zero failures; the
+  privacy gate passed; CI passed on `macos-15`.
+- Signed universal `arm64`/`x86_64` build passed strict code-signature checks.
+  Apple accepted notarization submission
+  `9376f63d-ee69-4989-8232-ba3e8abdda46`; the DMG was stapled and validated,
+  and Gatekeeper accepted the app and DMG as `Notarized Developer ID`.
+- Released DMG SHA-256
+  `22534720aef449dec20cc6eadfc3496ac310cc0adff4944dd32dea188f321498`; the
+  asset downloaded back from the GitHub release matched the checksum, staple
+  validation, and Gatekeeper assessment.
+- `Cask/agenticglow.rb` was regenerated with the 0.5.11 checksum (main commit
+  `729107d`) and pushed to the official tap
+  `FuturisticXx/homebrew-agenticglow` (tap commit `070d56e`).
+- `brew upgrade --cask agenticglow` upgraded the installed app from 0.5.9 to
+  0.5.11 and relaunched it; version, strict signature, and Gatekeeper all
+  verified post-install.
+- The tag was force-moved from `ed8217c` to `729107d` with the owner's
+  explicit authorization. The original tag had been pushed before two later
+  fixes landed and never had a release attached, so nothing could have
+  consumed it.
+- Widget verification on the notarized build, after killing the `.appex` so
+  WidgetKit respawned it: the percentage pill renders in Tinted style, no
+  attention banner, no clipping at either edge, Codex weekly reads "Weekly
+  resets Sat, Aug 1 at 2:31 PM" with no countdown, while the Claude 5h and
+  weekly windows keep theirs at 4h 3m and 13m out.
+- Registration hygiene: a local Debug build earlier in the session had
+  registered `.../DerivedData/.../Debug/AgenticGlow.app` as the only widget
+  extension, reporting version 0.1.0, with no `/Applications` registration at
+  all. Removed with `pluginkit -r`, re-registered the installed extension, and
+  confirmed exactly one registration under `/Applications` at 0.5.11. The
+  stale DerivedData bundles were then deleted. This is the trap already
+  documented under "Verify the installed widget host"; it recurs after every
+  local Debug build because Xcode's `RegisterWithLaunchServices` phase runs
+  each time.
+
 ## Current Goal
 
 Maintain the public AgenticGlow release and graduate its Cask from the official AgenticGlow tap to `homebrew/homebrew-cask` when Homebrew's notability threshold is met.

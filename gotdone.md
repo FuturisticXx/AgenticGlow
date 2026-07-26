@@ -50,8 +50,18 @@
 - Live-verified both icon modes on the active display: monochrome renders
   black on the light menu bar, indistinguishable in tone from the OpenAI and
   Claude icons beside it; color still renders Claude orange.
-- Not released yet. v0.5.11 is built, signed, and notarized but was rebuilt
-  after these changes, so the artifact needs regenerating before publishing.
+- Released as v0.5.11 from commit `729107d`. Apple accepted notarization
+  `9376f63d-ee69-4989-8232-ba3e8abdda46`; DMG SHA-256
+  `22534720aef449dec20cc6eadfc3496ac310cc0adff4944dd32dea188f321498`; the
+  downloaded GitHub asset matched checksum, staple, and Gatekeeper. Cask
+  pushed to the official tap (`070d56e`); `brew upgrade --cask agenticglow`
+  took the installed app from 0.5.9 to 0.5.11.
+- All four changes verified on the notarized build's real desktop widget.
+- Cleaned up a live hazard found during release verification: a local Debug
+  build from earlier in the session had become the *only* registered widget
+  extension, reporting version 0.1.0, with no `/Applications` registration.
+  Fixed the registration and deleted the stale DerivedData bundles.
+- GitHub release: https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.5.11
 
 ## 2026-07-23 - Published v0.5.8
 
