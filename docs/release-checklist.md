@@ -16,10 +16,14 @@ Complete these checks for every release that contains the AgenticGlow widget:
 - Confirm both signed targets contain
   `Z52AX2BH7T.group.com.twodamax.agenticglow`; a valid outer app signature alone is not
   sufficient evidence that the nested widget can open the shared container.
-- Install the candidate at `/Applications/AgenticGlow.app`, then use
-  `pluginkit -m -A -D -v -i com.twodamax.agenticglow.widget` to confirm exactly
-  one registration points to that installed app. Remove stale DerivedData or
-  temporary-build registrations before visual verification.
+- Install the candidate at `/Applications/AgenticGlow.app`, then run
+  `Scripts/verify-widget-registration.sh <VERSION>`. It asserts exactly one
+  registration, that it points at the installed bundle, and that its version
+  matches the installed app, printing the `pluginkit -r` / `pluginkit -a`
+  remediation when it fails. Run it after any local build too, not just at
+  release: Xcode's `RegisterWithLaunchServices` phase runs on every build, so
+  a Debug build can quietly take over the registration and serve stale code
+  to the desktop.
 - Launch the installed app and confirm it writes a fresh, decodable
   `WidgetSnapshot.json` in the shared App Group container with both configured
   providers represented.
@@ -28,8 +32,10 @@ Complete these checks for every release that contains the AgenticGlow widget:
   extension does not prove the desktop render.
 
 `Scripts/build-release.sh` and `Scripts/verify-release.sh` automate the signing,
-architecture, signature, and App Group checks. Installation and live rendering
-remain manual release gates.
+architecture, signature, and App Group checks against the build artifact.
+`Scripts/verify-widget-registration.sh` covers the installed app afterwards,
+which `verify-release.sh` cannot: it runs before anything is installed. Live
+rendering remains the one manual gate.
 
 ## Historical Release Evidence
 

@@ -173,6 +173,12 @@ remove-and-add attempt did not terminate that stale extension. Later, after the
 old widget was removed, the system contained no AgenticGlow desktop instance at
 all even though the app, extension registration, and snapshot were valid.
 
+**Update (2026-07-25):** this recurred a third time, so it is now automated.
+Run `Scripts/verify-widget-registration.sh [VERSION]` instead of eyeballing
+`pluginkit` output; it asserts exactly one registration, pointing at the
+installed bundle, at the installed app's version, and prints the exact
+remediation when it fails. Run it after local builds, not just releases.
+
 **Rule:** Diagnose WidgetKit as four separate gates: installed host bundle,
 extension registration, shared snapshot, and installed desktop instance. Use
 `pluginkit -m -A -D -v -i <widget-bundle-id>` to verify exactly one registration
