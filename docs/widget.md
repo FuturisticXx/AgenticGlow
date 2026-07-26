@@ -170,7 +170,11 @@ gap doesn't falsely read as stale.
 - **Small**: one glance. Priority: attention count, then active session
   count, then lowest individual allowance window remaining (across every
   provider and window kind, not just each provider's current window), then
-  a calm "All quiet" state.
+  a calm "All quiet" state. The attention headline uses a neutral
+  `pause.circle` in `.secondary`, not a yellow exclamation: a session
+  awaiting permission is paused waiting on the user, and stating that is
+  reporting rather than prompting. The previous yellow also never survived
+  Tinted/Monochrome styles, which substitute custom colors.
 - **Medium**: up to 2 sessions (`+ N more` if truncated) and one status
   bar for whichever individual allowance window (current or weekly, any
   provider) is lowest.
@@ -185,7 +189,8 @@ gap doesn't falsely read as stale.
   Content is pinned to the top of the canvas so that any overflow falls
   off the bottom, costing a reset caption rather than the first session.
 
-Medium and large carry **no attention banner**. Prompting the user about
+Small keeps attention at the top of its priority ladder while medium and
+large carry **no attention banner**. Prompting the user about
 sessions that need them belongs to the menu bar and to notifications; the
 widget reports state. Individual session rows still show a `.permission`
 phase as "Needs you", which is status rather than a prompt. Small is the

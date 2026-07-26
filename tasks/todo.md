@@ -9,10 +9,13 @@ with explicit authorization after two fixes landed post-tagging.
 
 Follow-ups noticed during this work, not yet done:
 
-- The small widget still leads with the attention count as its headline. Left
-  alone deliberately: there it is the widget's only content, not a banner over
-  other content. If it ever feels naggy, swap the yellow
-  `exclamationmark.circle.fill` for a neutral glyph and keep the count.
+Done 2026-07-25: the small widget's attention headline now uses a neutral
+`pause.circle` in `.secondary` instead of a yellow exclamation, keeping the
+count. Attention stays at the top of small's priority ladder, since there the
+count is the widget's only content rather than a banner over other content.
+`PhaseGlyph.permission` still uses `exclamationmark.circle.fill` for the
+per-session row indicator in medium and large; that is row status, not a
+prompt, and was left alone.
 Done 2026-07-25: removed the stale `~/Library/Containers/com.twodamax.agenticglow`
 and `...ui-tests.xctrunner` containers, left over from a brief sandboxing
 experiment and an old UI test run. They made the `defaults` CLI redirect the

@@ -4,6 +4,12 @@ import AgenticGlowCore
 
 /// Small's job: one glance, one number. Priority: attention needed >
 /// active sessions > lowest allowance remaining > calm idle state.
+///
+/// Attention stays at the top of that ladder while medium and large carry
+/// no attention banner at all, and the difference is deliberate: here the
+/// count is the widget's only content rather than a banner layered over
+/// other content, so dropping it would report "3 sessions active" while
+/// one of them sits blocked. It reports state; it does not prompt.
 struct SmallWidgetView: View {
     let snapshot: WidgetSnapshot
     let now: Date
@@ -25,7 +31,14 @@ struct SmallWidgetView: View {
     @ViewBuilder
     private var headline: some View {
         if snapshot.attentionCount > 0 {
-            glyph("exclamationmark.circle.fill", color: .yellow)
+            // Deliberately not an exclamation mark. Prompting belongs to the
+            // menu bar and notifications; the widget reports state, and the
+            // state is that a session is paused waiting on the user, which
+            // `pause.circle` says without raising an alarm. The old yellow
+            // also never survived Tinted/Monochrome widget styles, which
+            // substitute custom colors, so a semantic style renders more
+            // predictably as well.
+            glyph("pause.circle", color: .secondary)
             Text(snapshot.attentionCount == 1 ? "1 session" : "\(snapshot.attentionCount) sessions")
                 .font(.system(size: 28, weight: .medium))
                 .monospacedDigit()
