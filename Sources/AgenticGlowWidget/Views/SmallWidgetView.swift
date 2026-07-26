@@ -11,6 +11,12 @@ import AgenticGlowCore
 /// other content, so dropping it would report "3 sessions active" while
 /// one of them sits blocked. It reports state; it does not prompt.
 struct SmallWidgetView: View {
+    /// The headline is the widest thing on a 170pt canvas and its text is
+    /// data-driven, so "1 session" truncated to "1 ses..." on a real
+    /// desktop widget. Shrink to fit rather than truncate: a slightly
+    /// smaller number still reads at a glance, an elided one looks broken.
+    private static let headlineMinimumScale: CGFloat = 0.6
+
     let snapshot: WidgetSnapshot
     let now: Date
 
@@ -42,6 +48,8 @@ struct SmallWidgetView: View {
             Text(snapshot.attentionCount == 1 ? "1 session" : "\(snapshot.attentionCount) sessions")
                 .font(.system(size: 28, weight: .medium))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(Self.headlineMinimumScale)
             Text("needs you")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
@@ -50,6 +58,8 @@ struct SmallWidgetView: View {
             Text(snapshot.activeCount == 1 ? "1 session" : "\(snapshot.activeCount) sessions")
                 .font(.system(size: 28, weight: .medium))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(Self.headlineMinimumScale)
             Text("active")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
@@ -58,6 +68,8 @@ struct SmallWidgetView: View {
             Text(WidgetSnapshotFormatting.percentLeftLabel(lowest.percentLeft))
                 .font(.system(size: 28, weight: .medium))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(Self.headlineMinimumScale)
             Text(lowest.provider.displayName)
                 .font(.system(size: 14, weight: .semibold))
             Text(lowest.label)
@@ -67,6 +79,8 @@ struct SmallWidgetView: View {
             glyph("checkmark.circle", color: .secondary)
             Text("All quiet")
                 .font(.system(size: 28, weight: .medium))
+                .lineLimit(1)
+                .minimumScaleFactor(Self.headlineMinimumScale)
         }
     }
 

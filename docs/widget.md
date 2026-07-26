@@ -170,7 +170,11 @@ gap doesn't falsely read as stale.
 - **Small**: one glance. Priority: attention count, then active session
   count, then lowest individual allowance window remaining (across every
   provider and window kind, not just each provider's current window), then
-  a calm "All quiet" state. The attention headline uses a neutral
+  a calm "All quiet" state. Every headline is `lineLimit(1)` with a
+  `minimumScaleFactor`, because the 28pt line is the widest thing on a
+  170pt canvas and its text is data-driven: "1 session" truncated to
+  "1 ses..." on a real desktop widget. Shrinking beats eliding, since a
+  slightly smaller number still reads at a glance. The attention headline uses a neutral
   `pause.circle` in `.secondary`, not a yellow exclamation: a session
   awaiting permission is paused waiting on the user, and stating that is
   reporting rather than prompting. The previous yellow also never survived
