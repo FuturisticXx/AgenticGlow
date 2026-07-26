@@ -33,7 +33,25 @@
   previews. 269 Core tests pass. Also learned the widget surface *can* be
   captured with `screencapture -x -D <display>`, correcting an earlier note
   in `docs/widget.md` that said it could not.
-- Not released. Ships with the next version bump.
+- Dropped the reset countdown when a reset is more than a day out. The Codex
+  weekly caption read "Weekly resets in 166h 12m left (Sat, Aug 1 at 2:31 AM)"
+  in both the widget and the menu bar. The widget picked its format from
+  `window.kind` and the menu bar always prepended a countdown; both were wrong
+  because Codex reports its weekly-scale window as the *current* window, so
+  kind says nothing about distance. Now keyed off the actual distance, shared
+  through `WidgetSnapshotFormatting.showsCountdown` so the two surfaces can't
+  drift. Near resets keep their countdown, which is the useful case.
+- Added a "Menu bar icon" setting with Color (default) and Monochrome. In
+  monochrome the working icon becomes a template image and macOS flattens it
+  to the bar's own black or white, which also keeps it dimming in step with
+  other icons on inactive displays. Yellow "needs you", green celebration, and
+  the orange low-allowance badge stay colored, since those carry meaning.
+  Brainstormed and spec'd first (`docs/superpowers/specs/2026-07-25-menu-bar-icon-style-design.md`).
+- Live-verified both icon modes on the active display: monochrome renders
+  black on the light menu bar, indistinguishable in tone from the OpenAI and
+  Claude icons beside it; color still renders Claude orange.
+- Not released yet. v0.5.11 is built, signed, and notarized but was rebuilt
+  after these changes, so the artifact needs regenerating before publishing.
 
 ## 2026-07-23 - Published v0.5.8
 
