@@ -13,12 +13,16 @@ Follow-ups noticed during this work, not yet done:
   alone deliberately: there it is the widget's only content, not a banner over
   other content. If it ever feels naggy, swap the yellow
   `exclamationmark.circle.fill` for a neutral glyph and keep the count.
-- A stale `~/Library/Containers/com.twodamax.agenticglow` directory makes the
-  `defaults` CLI redirect the app's domain into a sandbox container that no
-  longer applies, so `defaults write com.twodamax.agenticglow ...` fails. The
-  app itself correctly uses `~/Library/Preferences/com.twodamax.agenticglow.plist`.
-  Harmless today, but worth understanding before it confuses a future debug
-  session.
+Done 2026-07-25: removed the stale `~/Library/Containers/com.twodamax.agenticglow`
+and `...ui-tests.xctrunner` containers, left over from a brief sandboxing
+experiment and an old UI test run. They made the `defaults` CLI redirect the
+app's domain into a container the app never reads, so command-line preference
+reads and writes silently went to the wrong file. `defaults read
+com.twodamax.agenticglow` now resolves to the real plist. Deletion needs
+Finder and an authentication; `rm` and Finder-via-AppleScript are both blocked
+by TCC, so this is a hand step. The widget's own container
+(`com.twodamax.agenticglow.widget`) is sandboxed and must be left alone, as
+must the App Group container holding `WidgetSnapshot.json`.
 
 - Widget allowance-window parity + typography pass: shipped. Merged via
   PR #2, released as v0.5.6, then patched to v0.5.7 for two bugs found
