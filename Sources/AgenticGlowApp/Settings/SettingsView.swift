@@ -35,6 +35,17 @@ struct SettingsView: View {
             Toggle("Show elapsed turn timer", isOn: $preferences.showTimer)
             Section("Appearance") {
                 VStack(alignment: .leading, spacing: 6) {
+                    Picker("Menu bar icon", selection: $preferences.menuBarIconStyle) {
+                        Text("Color").tag(MenuBarIconStyle.color)
+                        Text("Monochrome").tag(MenuBarIconStyle.monochrome)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("AgenticGlow.MenuBarIconStyle")
+                    Text("Monochrome matches the menu bar's own black or white.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("Glass Clarity")
                         Spacer()

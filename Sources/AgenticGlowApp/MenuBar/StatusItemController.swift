@@ -7,6 +7,7 @@ import SwiftUI
 @MainActor
 final class StatusItemController: NSObject, NSPopoverDelegate {
     private let model: AppModel
+    private let preferences: PreferencesStore
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let popover = NSPopover()
     private let symbolView = NSImageView()
@@ -55,6 +56,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         openIntegrations: @escaping () -> Void
     ) {
         self.model = model
+        self.preferences = preferences
         super.init()
 
         popover.behavior = .transient
@@ -218,12 +220,37 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             setSymbol(name, color: presentation.color)
         } else if providers.count > 1, model.reduceMotion {
             motionProviders = nil
-            setSymbol(name, color: ProviderColor.bothBlend(on: barAppearance))
+            setSymbol(
+                name,
+                color: ProviderColor.bothBlend(on: barAppearance),
+                template: monochromeWorkingIcon
+            )
         } else {
             motionProviders = providers
             currentSymbolName = name
-            setSymbol(name, color: ProviderColor.nsColor(for: providers[0], on: barAppearance))
+            setSymbol(
+                name,
+                color: ProviderColor.nsColor(for: providers[0], on: barAppearance),
+                template: monochromeWorkingIcon
+            )
         }
+    }
+
+    /// Whether the *working* icon drops its provider color. Read fresh at
+    /// each use rather than observed, same as `barAppearance`: this view is
+    /// redrawn by a frame task, so a change lands within a frame and there
+    /// is nothing to storm.
+    private var monochromeWorkingIcon: Bool {
+        preferences.menuBarIconStyle == .monochrome
+    }
+
+    /// Only for the permission dissolve, which bakes the working glyph and
+    /// the yellow exclamation into a single image and therefore cannot use
+    /// a template (it would flatten the yellow away too). Everywhere else
+    /// the monochrome icon is a real template image and macOS picks the
+    /// tone, including the dimming applied on inactive displays.
+    private static func monochromeTone(on appearance: ProviderColor.BarAppearance) -> NSColor {
+        appearance == .light ? .black : .white
     }
 
     /// macOS re-tints each menu bar light or dark for the wallpaper behind
@@ -233,10 +260,15 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         return match == .aqua ? .light : .dark
     }
 
-    private func setSymbol(_ name: String, color: NSColor) {
+    private func setSymbol(_ name: String, color: NSColor, template: Bool = false) {
         currentSymbolName = name
         currentSolidColor = color
-        symbolView.image = Self.symbolImage(name, color: color, rotatedDegrees: 0)
+        symbolView.image = Self.symbolImage(
+            name,
+            color: color,
+            rotatedDegrees: 0,
+            template: template
+        )
     }
 
     /// Rotation is baked into the image alongside the color: rotating the view
@@ -246,12 +278,19 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private static func symbolImage(
         _ name: String,
         color: NSColor,
-        rotatedDegrees degrees: Double
+        rotatedDegrees degrees: Double,
+        template: Bool = false
     ) -> NSImage? {
-        let config = NSImage.SymbolConfiguration(paletteColors: [color])
-        guard let base = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
-            .withSymbolConfiguration(config) else { return nil }
-        base.isTemplate = false
+        // A template image carries no color of its own; the menu bar
+        // flattens it to whatever tone it is currently using. That is the
+        // whole point of the monochrome style, and it is also why the
+        // colored states must never take this path.
+        let configured = template
+            ? NSImage(systemSymbolName: name, accessibilityDescription: nil)
+            : NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+                .withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [color]))
+        guard let base = configured else { return nil }
+        base.isTemplate = template
         guard degrees != 0 else { return base }
         let size = NSSize(width: 18, height: 18)
         let image = NSImage(size: size, flipped: false) { rect in
@@ -270,7 +309,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             base.draw(in: NSRect(origin: origin, size: drawSize))
             return true
         }
-        image.isTemplate = false
+        image.isTemplate = template
         return image
     }
 
@@ -386,16 +425,25 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             ? (seconds / Motion.rotationPeriod).truncatingRemainder(dividingBy: 1)
             : 0
         let rotated = -360.0 * turns
+        // Monochrome applies to the working icon only. `motionProviders`
+        // being non-nil is exactly "an agent is working", so the idle,
+        // completed, failed, and celebration glyphs keep their colors.
+        let monochrome = monochromeWorkingIcon && motionProviders != nil
         if dissolvesPermission {
             let opacity = PermissionDissolve.workingOpacity(at: seconds)
             symbolView.image = Self.dissolveImage(
                 workingName: name,
-                workingColor: color,
+                workingColor: monochrome ? Self.monochromeTone(on: barAppearance) : color,
                 rotatedDegrees: rotated,
                 workingOpacity: opacity
             )
         } else {
-            symbolView.image = Self.symbolImage(name, color: color, rotatedDegrees: rotated)
+            symbolView.image = Self.symbolImage(
+                name,
+                color: color,
+                rotatedDegrees: rotated,
+                template: monochrome
+            )
         }
     }
 

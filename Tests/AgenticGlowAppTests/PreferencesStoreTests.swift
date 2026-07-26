@@ -133,4 +133,44 @@ final class PreferencesStoreTests: XCTestCase {
         XCTAssertTrue(defaults.bool(forKey: "codexUsageEnabled"))
         XCTAssertFalse(defaults.bool(forKey: "claudeUsageEnabled"))
     }
+
+    func testMenuBarIconStyleDefaultsToColorAndPersists() {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let preferences = PreferencesStore(defaults: defaults)
+
+        // Defaults to today's behavior so no existing user's icon changes
+        // on upgrade.
+        XCTAssertEqual(preferences.menuBarIconStyle, .color)
+
+        preferences.menuBarIconStyle = .monochrome
+
+        XCTAssertEqual(defaults.string(forKey: "menuBarIconStyle"), "monochrome")
+        XCTAssertEqual(
+            PreferencesStore(defaults: defaults).menuBarIconStyle,
+            .monochrome
+        )
+    }
+
+    func testMenuBarIconStyleSurvivesReconfigure() {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set("monochrome", forKey: "menuBarIconStyle")
+        let preferences = PreferencesStore()
+
+        preferences.reconfigure(defaults: defaults)
+
+        XCTAssertEqual(preferences.menuBarIconStyle, .monochrome)
+    }
+
+    func testUnknownStoredMenuBarIconStyleFallsBackToColor() {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set("chartreuse", forKey: "menuBarIconStyle")
+
+        XCTAssertEqual(PreferencesStore(defaults: defaults).menuBarIconStyle, .color)
+    }
 }
