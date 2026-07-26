@@ -124,6 +124,26 @@ targets:
           mkdir -p "$destination"
           cp "$BUILT_PRODUCTS_DIR/agenticglow-event" "$destination/agenticglow-event"
           chmod 755 "$destination/agenticglow-event"
+      # Xcode's RegisterWithLaunchServices phase runs on every build, so a
+      # local build can quietly become the only registered widget extension
+      # and serve stale code to the desktop while every other check passes.
+      # This surfaces that as a build warning instead of leaving it to be
+      # noticed by hand. Advisory only: it never fails a build, and it is a
+      # no-op wherever AgenticGlow is not installed, including CI.
+      - name: Check installed widget registration
+        basedOnDependencyAnalysis: false
+        script: |
+          set -uo pipefail
+          if [ ! -d "/Applications/AgenticGlow.app" ]; then
+            exit 0
+          fi
+          output="$("$SRCROOT/Scripts/verify-widget-registration.sh" 2>&1)" || {
+            echo "warning: the installed AgenticGlow widget registration is wrong."
+            printf '%s\n' "$output" | while IFS= read -r line; do
+              echo "warning: $line"
+            done
+            exit 0
+          }
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow

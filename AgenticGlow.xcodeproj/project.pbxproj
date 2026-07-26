@@ -1064,6 +1064,7 @@
 				B6CDBE77C9B57FC33357F386 /* Frameworks */,
 				A7564A0C94FA32F815D35BE7 /* Embed Foundation Extensions */,
 				A2D175711CD09DAAA5B1994E /* Embed AgenticGlow event helper */,
+				78D6CF67BEFAF2D3B7F7822E /* Check installed widget registration */,
 			);
 			buildRules = (
 			);
@@ -1197,6 +1198,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		78D6CF67BEFAF2D3B7F7822E /* Check installed widget registration */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Check installed widget registration";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -uo pipefail\nif [ ! -d \"/Applications/AgenticGlow.app\" ]; then\n  exit 0\nfi\noutput=\"$(\"$SRCROOT/Scripts/verify-widget-registration.sh\" 2>&1)\" || {\n  echo \"warning: the installed AgenticGlow widget registration is wrong.\"\n  printf '%s\\n' \"$output\" | while IFS= read -r line; do\n    echo \"warning: $line\"\n  done\n  exit 0\n}\n";
+		};
 		A2D175711CD09DAAA5B1994E /* Embed AgenticGlow event helper */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
