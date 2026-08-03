@@ -758,3 +758,9 @@
 - One `brew style` offense remains and was left alone: `Cask/Desc: Description shouldn't contain the platform` flags "macOS" in the `desc` line. Changing it is user-facing product copy rather than a packaging fix, and it only matters for a future homebrew-cask core submission, which is already deferred.
 - Version and sha256 deliberately unchanged (`0.5.10` / `733ab210...`); this is a metadata-only correction to the already-published release. Pushed to main (`4b70ef0`) and the tap (`392a1b9`).
 - Not executed: an actual `brew uninstall --zap` run, which would have deleted John's live app and session data. The paths were taken from the real filesystem and the syntax is validated by `brew style`, but the zap itself has not been run end to end.
+
+## 2026-08-02: Expire stale process-less active sessions
+
+- Fixed `SessionResolver` so process-less `.thinking` and `.usingTool` events become Idle after 30 minutes without an update, matching the existing live-process stale-session behavior. The existing four-hour unknown-process retention remains unchanged.
+- Added regression coverage for 29:59, exactly 30:00, 30:01, tool use, and four-hour retention.
+- Verified focused `SessionResolverTests`, the complete non-UI suite from an internal temporary copy because XCTest denies source-file reads from this external-volume checkout, and `git diff --check`.

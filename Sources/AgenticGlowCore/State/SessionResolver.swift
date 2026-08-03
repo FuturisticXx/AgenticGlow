@@ -73,9 +73,13 @@ public enum SessionResolver {
             } else {
                 memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
                 guard age <= unknownProcessExpiration else { return nil }
-                phase = event.phase == .completed && age > completionDisplayDuration
-                    ? .idle
-                    : event.phase
+                if event.phase == .completed && age > completionDisplayDuration {
+                    phase = .idle
+                } else if event.phase.isActive && age > staleActiveDuration {
+                    phase = .idle
+                } else {
+                    phase = event.phase
+                }
             }
 
             return SessionSnapshot(

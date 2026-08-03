@@ -326,6 +326,14 @@ final class SessionResolverTests: XCTestCase {
         )
         XCTAssertEqual(stillThinking.sessions.first?.phase, .thinking)
 
+        let atCutoff = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+        XCTAssertEqual(atCutoff.sessions.first?.phase, .thinking)
+
         let resolved = SessionResolver.resolve(
             events: [event],
             now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 1),
@@ -338,6 +346,50 @@ final class SessionResolverTests: XCTestCase {
 
     func testStuckUsingToolWithLiveProcessBecomesIdleAfterStaleActiveDuration() {
         let event = event(provider: .codex, session: "stuck-tool", phase: .usingTool, updated: 100)
+        var memory = ResolutionMemory()
+
+        let resolved = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 1),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+        XCTAssertEqual(resolved.sessions.first?.phase, .idle)
+    }
+
+    func testThinkingWithoutProcessRemainsActiveUntilStaleActiveDuration() {
+        let event = eventWithoutProcessID(
+            provider: .claude,
+            session: "buzz-thinking",
+            phase: .thinking,
+            updated: 100
+        )
+        var memory = ResolutionMemory()
+
+        let stillThinking = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration - 1),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+        XCTAssertEqual(stillThinking.sessions.first?.phase, .thinking)
+
+        let resolved = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 1),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+        XCTAssertEqual(resolved.sessions.first?.phase, .idle)
+    }
+
+    func testUsingToolWithoutProcessBecomesIdleAfterStaleActiveDuration() {
+        let event = eventWithoutProcessID(
+            provider: .claude,
+            session: "buzz-tool",
+            phase: .usingTool,
+            updated: 100
+        )
         var memory = ResolutionMemory()
 
         let resolved = SessionResolver.resolve(
@@ -471,25 +523,17 @@ final class SessionResolverTests: XCTestCase {
     }
 
     func testUnknownProcessExpiresAfterFourHours() {
-        var event = event(provider: .codex, session: "old", phase: .thinking, updated: 100)
-        event = NormalizedEvent(
-            schemaVersion: event.schemaVersion,
-            provider: event.provider,
-            surface: event.surface,
-            sessionID: event.sessionID,
-            turnID: event.turnID,
-            phase: event.phase,
-            label: event.label,
-            toolCategory: event.toolCategory,
-            projectName: event.projectName,
-            workingDirectory: event.workingDirectory,
-            sourceBundleID: event.sourceBundleID,
-            sourceProcessID: nil,
-            sourceProcessStartedAt: nil,
-            turnStartedAt: event.turnStartedAt,
-            updatedAt: event.updatedAt
-        )
+        let event = eventWithoutProcessID(provider: .codex, session: "old", phase: .thinking, updated: 100)
         var memory = ResolutionMemory()
+
+        let retained = SessionResolver.resolve(
+            events: [event],
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 1),
+            memory: &memory,
+            isProcessAlive: { _, _ in true }
+        )
+        XCTAssertEqual(retained.sessions.first?.phase, .idle)
+
         let resolved = SessionResolver.resolve(
             events: [event],
             now: Date(timeIntervalSince1970: 100 + 14_401),
@@ -564,4 +608,30 @@ private func deadPidEvent(
         updatedAt: base.updatedAt
     )
     return base
+}
+
+private func eventWithoutProcessID(
+    provider: AgentProvider,
+    session: String,
+    phase: SessionPhase,
+    updated: TimeInterval
+) -> NormalizedEvent {
+    let base = event(provider: provider, session: session, phase: phase, updated: updated)
+    return NormalizedEvent(
+        schemaVersion: base.schemaVersion,
+        provider: base.provider,
+        surface: base.surface,
+        sessionID: base.sessionID,
+        turnID: base.turnID,
+        phase: base.phase,
+        label: base.label,
+        toolCategory: base.toolCategory,
+        projectName: base.projectName,
+        workingDirectory: base.workingDirectory,
+        sourceBundleID: base.sourceBundleID,
+        sourceProcessID: nil,
+        sourceProcessStartedAt: nil,
+        turnStartedAt: base.turnStartedAt,
+        updatedAt: base.updatedAt
+    )
 }
