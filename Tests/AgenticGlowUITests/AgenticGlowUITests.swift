@@ -95,5 +95,8 @@ final class AgenticGlowUITests: XCTestCase {
         XCTAssertTrue(
             app.sliders["AgenticGlow.GlassClarity"].waitForExistence(timeout: 3)
         )
+        XCTAssertTrue(
+            app.buttons["AgenticGlow.GlobalShortcut"].waitForExistence(timeout: 3)
+        )
     }
 }

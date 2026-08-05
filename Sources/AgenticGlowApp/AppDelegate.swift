@@ -23,36 +23,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotKeyEventHandlerRef: EventHandlerRef?
     private static let hotKeyID = EventHotKeyID(signature: OSType(0x41474C57), id: 1) // "AGLW"
 
-    private func registerGlobalHotKey() {
+    @discardableResult
+    private func registerGlobalHotKey(_ shortcut: GlobalShortcut) -> GlobalShortcutRegistrationResult {
+        guard shortcut.isSupported else { return .invalid }
         var eventType = EventTypeSpec(
             eventClass: OSType(kEventClassKeyboard),
             eventKind: UInt32(kEventHotKeyPressed)
         )
-        let selfPtr = Unmanaged.passUnretained(self).toOpaque()
-        InstallEventHandler(
-            GetApplicationEventTarget(),
-            { _, _, userData in
-                guard let userData else { return noErr }
-                let delegate = Unmanaged<AppDelegate>.fromOpaque(userData).takeUnretainedValue()
-                delegate.handleGlobalHotKeyPressed()
-                return noErr
-            },
-            1,
-            &eventType,
-            selfPtr,
-            &hotKeyEventHandlerRef
-        )
+        if hotKeyEventHandlerRef == nil {
+            let selfPtr = Unmanaged.passUnretained(self).toOpaque()
+            InstallEventHandler(
+                GetApplicationEventTarget(),
+                { _, _, userData in
+                    guard let userData else { return noErr }
+                    let delegate = Unmanaged<AppDelegate>.fromOpaque(userData).takeUnretainedValue()
+                    delegate.handleGlobalHotKeyPressed()
+                    return noErr
+                },
+                1,
+                &eventType,
+                selfPtr,
+                &hotKeyEventHandlerRef
+            )
+        }
+        var newHotKeyRef: EventHotKeyRef?
         let status = RegisterEventHotKey(
-            UInt32(kVK_ANSI_A),
-            UInt32(cmdKey | shiftKey),
+            shortcut.keyCode,
+            shortcut.modifiers,
             Self.hotKeyID,
             GetApplicationEventTarget(),
             0,
-            &hotKeyRef
+            &newHotKeyRef
         )
-        if status != noErr {
-            NSLog("AgenticGlow: failed to register the global Command+Shift+A hotkey (status \(status))")
+        guard status == noErr, let newHotKeyRef else {
+            return .unavailable
         }
+        if let hotKeyRef { UnregisterEventHotKey(hotKeyRef) }
+        hotKeyRef = newHotKeyRef
+        return .registered
     }
 
     private func unregisterGlobalHotKey() {
@@ -233,7 +241,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         usageAvailabilityObserver = UsageAvailabilityObserver(model: model)
         usageAvailabilityObserver.start()
         if fixtureName == nil {
-            registerGlobalHotKey()
+            let result = registerGlobalHotKey(preferences.globalShortcut)
+            if result != .registered {
+                NSLog("AgenticGlow: failed to register the configured global shortcut")
+            }
         }
         model.start()
         notificationService?.start()
@@ -331,6 +342,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             settingsPresentationChanged: { [weak self] isPresented in
                 self?.statusItemController.setSettingsPresented(isPresented)
+            },
+            registerGlobalShortcut: { [weak self] shortcut in
+                guard let self else { return .unavailable }
+                let result = self.registerGlobalHotKey(shortcut)
+                if result == .registered {
+                    self.preferences.globalShortcut = shortcut
+                }
+                return result
             }
         )
     }

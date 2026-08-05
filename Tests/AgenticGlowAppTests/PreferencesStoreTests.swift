@@ -153,6 +153,41 @@ final class PreferencesStoreTests: XCTestCase {
         )
     }
 
+    func testGlobalShortcutDefaultsToExistingCommandShiftA() {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        _ = PreferencesStore(defaults: defaults)
+
+        XCTAssertEqual(defaults.object(forKey: "globalShortcutKeyCode") as? UInt32, 0)
+        XCTAssertEqual(defaults.object(forKey: "globalShortcutModifiers") as? UInt32, 768)
+        XCTAssertEqual(defaults.string(forKey: "globalShortcutDisplay"), "⇧⌘A")
+    }
+
+    func testGlobalShortcutPersistsCustomCombination() {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let preferences = PreferencesStore(defaults: defaults)
+        let expected = GlobalShortcut(keyCode: 1, modifiers: 256, displayName: "⌘S")
+
+        preferences.globalShortcut = expected
+
+        XCTAssertEqual(PreferencesStore(defaults: defaults).globalShortcut, expected)
+    }
+
+    func testUnsupportedStoredGlobalShortcutFallsBackToExistingDefault() {
+        let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(12, forKey: "globalShortcutKeyCode")
+        defaults.set(256, forKey: "globalShortcutModifiers")
+        defaults.set("⌘Q", forKey: "globalShortcutDisplay")
+
+        XCTAssertEqual(PreferencesStore(defaults: defaults).globalShortcut, .existingDefault)
+    }
+
     func testMenuBarIconStyleSurvivesReconfigure() {
         let suiteName = "PreferencesStoreTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

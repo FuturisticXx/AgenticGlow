@@ -764,3 +764,8 @@
 - Fixed `SessionResolver` so process-less `.thinking` and `.usingTool` events become Idle after 30 minutes without an update, matching the existing live-process stale-session behavior. The existing four-hour unknown-process retention remains unchanged.
 - Added regression coverage for 29:59, exactly 30:00, 30:01, tool use, and four-hour retention.
 - Verified focused `SessionResolverTests`, the complete non-UI suite from an internal temporary copy because XCTest denies source-file reads from this external-volume checkout, and `git diff --check`.
+
+## 2026-08-04: Configurable global keyboard shortcut
+
+- Added a Keyboard Shortcut setting that records and persists a Command-key combination, updates the registered global hotkey safely, and keeps Command-Q and Command-W reserved for macOS.
+- Added focused preference persistence and fallback tests plus a UI accessibility assertion for the recorder.
