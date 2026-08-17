@@ -93,7 +93,8 @@ public enum SessionResolver {
                 elapsedSeconds: event.turnStartedAt.map { max(0, Int(now.timeIntervalSince($0))) },
                 turnStartedAt: event.turnStartedAt,
                 updatedAt: event.updatedAt,
-                toolCategory: phase == .usingTool ? event.toolCategory : nil
+                toolCategory: phase == .usingTool ? event.toolCategory : nil,
+                model: event.model
             )
         }
         .sorted(by: sort)

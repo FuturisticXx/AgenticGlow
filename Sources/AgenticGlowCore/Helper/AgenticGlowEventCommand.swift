@@ -24,10 +24,11 @@ public struct AgenticGlowEventCommand {
         guard arguments.count >= 3,
               let provider = AgentProvider(rawValue: arguments[1]),
               let event = HookEventKind(rawValue: arguments[2]),
-              let payload = try? JSONSerialization.jsonObject(with: input) as? [String: Any]
+              let parsed = try? JSONSerialization.jsonObject(with: input) as? [String: Any]
         else {
             return 64
         }
+        let payload = provider == .cursor ? CursorHookPayload.normalized(parsed) : parsed
 
         do {
             let normalizedCandidate = try HookNormalizer.normalize(

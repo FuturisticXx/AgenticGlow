@@ -8,11 +8,12 @@ struct StatusPresentation: Equatable {
     let color: NSColor
     let animates: Bool
     let showsAllowanceBadge: Bool
-    /// Providers coloring the working icon, in a stable Claude-then-Codex
-    /// order. Empty unless the dominant state is thinking or using a tool:
-    /// one entry drives a solid tint, two entries drive the cross-fade. The
-    /// controller resolves actual colors per menu bar appearance at render
-    /// time, so the icon can adapt when the wallpaper flips the bar.
+    /// Providers coloring the working icon, in a stable Claude-then-Codex-
+    /// then-Cursor order. Empty unless the dominant state is thinking or
+    /// using a tool: one entry drives a solid tint, two or more drive the
+    /// cross-fade. The controller resolves actual colors per menu bar
+    /// appearance at render time, so the icon can adapt when the wallpaper
+    /// flips the bar.
     let activeProviders: [AgentProvider]
     /// True when a session awaits permission while at least one other session
     /// works and Reduce Motion is off: the controller alternates the icon
@@ -79,7 +80,7 @@ struct StatusPresentation: Equatable {
             color = SessionPhasePresentation.nsColor(for: .idle)
             animates = false
         }
-        let workingProviders = [AgentProvider.claude, .codex].filter {
+        let workingProviders = AgentProvider.menuBarTintOrder.filter {
             resolved.activeProviders.contains($0)
         }
         let working = resolved.dominantPhase.isActive

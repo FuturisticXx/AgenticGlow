@@ -18,7 +18,8 @@ final class WidgetSnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(snapshot.activeCount, 0)
         XCTAssertEqual(snapshot.providers, [
             WidgetProviderSummary(provider: .codex, installed: false),
-            WidgetProviderSummary(provider: .claude, installed: false)
+            WidgetProviderSummary(provider: .claude, installed: false),
+            WidgetProviderSummary(provider: .cursor, installed: false)
         ])
     }
 

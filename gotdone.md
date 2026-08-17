@@ -1,5 +1,26 @@
 # Got done
 
+## 2026-08-17 - Cursor as a first-class provider
+
+- Added Cursor alongside Codex and Claude using the existing `AgentProvider`
+  layer. No rewrite. Cursor sessions share the same list, menu bar tint,
+  widget, notifications, and setup cards.
+- Integration is official user-level hooks at `~/.cursor/hooks.json`
+  (verified against Cursor 3.16.17). AgenticGlow never writes project
+  `.cursor/hooks.json` files.
+- Cursor hook JSON is mapped through `CursorHookPayload` onto the shared
+  normalizer. Prompts, commands, tool I/O, emails, and transcript paths
+  are stripped. Optional `model` is stored when Cursor sends it.
+- Permission / "waiting for you" is unsupported: Cursor has no documented
+  notification or permission hooks. Usage and allowance are unsupported:
+  there is no local API, and the dashboard is not scraped. Cloud agents
+  are out of scope because user-level hooks do not run there.
+- Cursor teal is a third provider color. Two-provider menu-bar cross-fade
+  is unchanged. Codex and Claude allowance adapters are unchanged.
+- Documented capabilities, limitations, and privacy in
+  `docs/integrations.md` and `docs/privacy.md`. Privacy script updated
+  for `model` and `status.cursor.com`.
+
 ## 2026-07-25 - Widget allowance pill restored, attention banner removed
 
 - Fixed the allowance bar looking broken at 100%: the percentage label was

@@ -101,7 +101,7 @@ struct SessionListView: View {
     }
 
     private func providerName(_ provider: AgentProvider) -> String {
-        provider == .codex ? "Codex" : "Claude"
+        provider.displayName
     }
 
     @ViewBuilder
@@ -117,7 +117,7 @@ struct SessionListView: View {
             ContentUnavailableView(
                 "No active sessions",
                 systemImage: "circle.hexagongrid",
-                description: Text("Start Codex or Claude to see live status.")
+                description: Text("Start Codex, Claude, or Cursor to see live status.")
             )
         } else {
             ScrollView {
@@ -155,10 +155,13 @@ struct SessionListView: View {
         if resolved.permissionCount == 1 { return "1 agent needs you" }
         if resolved.permissionCount > 1 { return "\(resolved.permissionCount) agents need you" }
         if !resolved.activeProviders.isEmpty {
-            let names = [AgentProvider.claude, .codex]
+            let names = AgentProvider.menuBarTintOrder
                 .filter { resolved.activeProviders.contains($0) }
-                .map(providerName)
-            return "\(names.joined(separator: " and ")) working"
+                .map(\.displayName)
+            if names.count <= 2 {
+                return "\(names.joined(separator: " and ")) working"
+            }
+            return "\(names.dropLast().joined(separator: ", ")), and \(names.last!) working"
         }
         let count = resolved.sessions.count
         return count == 1 ? "1 session" : "\(count) sessions"

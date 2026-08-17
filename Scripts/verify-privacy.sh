@@ -8,7 +8,7 @@ privacy="docs/privacy.md"
 required_fields=(
   schemaVersion provider surface sessionID turnID phase label toolCategory
   projectName workingDirectory sourceBundleID sourceProcessID
-  sourceProcessStartedAt turnStartedAt updatedAt
+  sourceProcessStartedAt turnStartedAt updatedAt model
 )
 
 for field in "${required_fields[@]}"; do
@@ -43,8 +43,10 @@ fi
 # Provider status checks must stay credential-free and fully documented.
 grep -q 'status.claude.com' Sources/AgenticGlowCore/Status/StatusPageClient.swift
 grep -q 'status.openai.com' Sources/AgenticGlowCore/Status/StatusPageClient.swift
+grep -q 'status.cursor.com' Sources/AgenticGlowCore/Status/StatusPageClient.swift
 grep -q 'status.claude.com' "$privacy"
 grep -q 'status.openai.com' "$privacy"
+grep -q 'status.cursor.com' "$privacy"
 if grep -rniE 'cookie|credential|authorization' Sources/AgenticGlowCore/Status; then
   echo "Forbidden credential material in provider status implementation" >&2
   exit 1

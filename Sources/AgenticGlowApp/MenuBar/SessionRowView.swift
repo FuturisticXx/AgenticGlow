@@ -107,6 +107,9 @@ struct SessionRowView: View {
                 detailRow("Started", started)
             }
             detailRow("Current step", fields.currentStep)
+            if let model = fields.model {
+                detailRow("Model", model)
+            }
             detailRow("Surface", fields.surface)
             detailRow("Last updated", fields.lastUpdated)
             if let note = fields.note {
@@ -186,15 +189,6 @@ struct SessionRowView: View {
         case .seconds(let s): return "\(s)s"
         case .minutes(let m, let s): return "\(m)m \(s)s"
         case .hours(let h, let m): return m == 0 ? "\(h)h" : "\(h)h \(m)m"
-        }
-    }
-}
-
-private extension AgentProvider {
-    var displayName: String {
-        switch self {
-        case .codex: "Codex"
-        case .claude: "Claude"
         }
     }
 }

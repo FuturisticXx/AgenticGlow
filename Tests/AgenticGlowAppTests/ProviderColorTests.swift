@@ -52,6 +52,13 @@ final class ProviderColorTests: XCTestCase {
         }
     }
 
+    func testPopoverCursorIsTeal() {
+        let c = ProviderColor.nsColor(for: .cursor).usingColorSpace(.sRGB)!
+        XCTAssertEqual(c.redComponent, 0.00, accuracy: 0.001)
+        XCTAssertEqual(c.greenComponent, 0.70, accuracy: 0.001)
+        XCTAssertEqual(c.blueComponent, 0.58, accuracy: 0.001)
+    }
+
     func testBothBlendIsMidpointOfClaudeAndCodexPerAppearance() {
         for bar in [ProviderColor.BarAppearance.light, .dark] {
             let claude = ProviderColor.nsColor(for: .claude, on: bar).usingColorSpace(.sRGB)!
@@ -60,6 +67,30 @@ final class ProviderColorTests: XCTestCase {
             XCTAssertEqual(blend.redComponent, (claude.redComponent + codex.redComponent) / 2, accuracy: 0.01)
             XCTAssertEqual(blend.greenComponent, (claude.greenComponent + codex.greenComponent) / 2, accuracy: 0.01)
             XCTAssertEqual(blend.blueComponent, (claude.blueComponent + codex.blueComponent) / 2, accuracy: 0.01)
+        }
+    }
+
+    func testBlendOfThreeProvidersAveragesAllThree() {
+        for bar in [ProviderColor.BarAppearance.light, .dark] {
+            let claude = ProviderColor.nsColor(for: .claude, on: bar).usingColorSpace(.sRGB)!
+            let codex = ProviderColor.nsColor(for: .codex, on: bar).usingColorSpace(.sRGB)!
+            let cursor = ProviderColor.nsColor(for: .cursor, on: bar).usingColorSpace(.sRGB)!
+            let blend = ProviderColor.blend(of: [.claude, .codex, .cursor], on: bar).usingColorSpace(.sRGB)!
+            XCTAssertEqual(
+                blend.redComponent,
+                (claude.redComponent + codex.redComponent + cursor.redComponent) / 3,
+                accuracy: 0.01
+            )
+            XCTAssertEqual(
+                blend.greenComponent,
+                (claude.greenComponent + codex.greenComponent + cursor.greenComponent) / 3,
+                accuracy: 0.01
+            )
+            XCTAssertEqual(
+                blend.blueComponent,
+                (claude.blueComponent + codex.blueComponent + cursor.blueComponent) / 3,
+                accuracy: 0.01
+            )
         }
     }
 }

@@ -314,6 +314,14 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertEqual(resolved.activeProviders, [.claude, .codex])
     }
 
+    func testActiveProvidersIncludeCursor() {
+        let resolved = resolve(
+            event(provider: .cursor, session: "work", phase: .thinking, updated: 999),
+            event(provider: .claude, session: "idle", phase: .idle, updated: 999)
+        )
+        XCTAssertEqual(resolved.activeProviders, [.cursor])
+    }
+
     func testStuckThinkingWithLiveProcessBecomesIdleAfterStaleActiveDuration() {
         let event = event(provider: .codex, session: "stuck", phase: .thinking, updated: 100)
         var memory = ResolutionMemory()

@@ -3,10 +3,11 @@ import SwiftUI
 import AgenticGlowCore
 
 /// Single source of truth for the provider color language: Claude orange,
-/// Codex azure, and the violet midpoint shown for "both working" when motion
-/// is reduced and the tint cannot cross-fade. The allowance pills and session
-/// rows read the popover palette; the menu bar icon picks a palette per bar
-/// appearance so it deepens on light wallpapers and brightens on dark ones.
+/// Codex azure, and Cursor teal. When more than one agent is working and
+/// Reduce Motion forbids a cross-fade, the icon uses a blended midpoint.
+/// Allowance pills and session rows read the popover palette; the menu bar
+/// icon picks a palette per bar appearance so it deepens on light
+/// wallpapers and brightens on dark ones.
 enum ProviderColor {
     /// The menu bar's effective appearance behind the status item. macOS
     /// decides this per wallpaper; the controller observes it and re-renders.
@@ -32,24 +33,35 @@ enum ProviderColor {
         return NSColor(srgbRed: r, green: g, blue: b, alpha: 1)
     }
 
+    /// Midpoint of the given providers for the active bar appearance.
+    /// Used when more than one agent is working but Reduce Motion forbids
+    /// the cross-fade.
+    static func blend(of providers: [AgentProvider], on bar: BarAppearance) -> NSColor {
+        let values = providers.map { barComponents(for: $0, on: bar) }
+        guard !values.isEmpty else {
+            return nsColor(for: .codex, on: bar)
+        }
+        let count = Double(values.count)
+        return NSColor(
+            srgbRed: values.map(\.0).reduce(0, +) / count,
+            green: values.map(\.1).reduce(0, +) / count,
+            blue: values.map(\.2).reduce(0, +) / count,
+            alpha: 1
+        )
+    }
+
     /// Static midpoint of Claude orange and Codex azure for the active bar
     /// appearance. Used as the icon tint when both agents are working but
     /// Reduce Motion forbids the cross-fade.
     static func bothBlend(on bar: BarAppearance) -> NSColor {
-        let a = barComponents(for: .claude, on: bar)
-        let b = barComponents(for: .codex, on: bar)
-        return NSColor(
-            srgbRed: (a.0 + b.0) / 2,
-            green: (a.1 + b.1) / 2,
-            blue: (a.2 + b.2) / 2,
-            alpha: 1
-        )
+        blend(of: [.claude, .codex], on: bar)
     }
 
     private static func components(for provider: AgentProvider) -> (Double, Double, Double) {
         switch provider {
         case .claude: (0.82, 0.37, 0.22)
         case .codex: (0.25, 0.55, 1.00)
+        case .cursor: (0.00, 0.70, 0.58)
         }
     }
 
@@ -62,6 +74,8 @@ enum ProviderColor {
         case (.claude, .dark): (0.85, 0.47, 0.34)
         case (.codex, .light): (0.10, 0.42, 0.88)
         case (.codex, .dark): (0.25, 0.55, 1.00)
+        case (.cursor, .light): (0.00, 0.48, 0.42)
+        case (.cursor, .dark): (0.18, 0.82, 0.70)
         }
     }
 }

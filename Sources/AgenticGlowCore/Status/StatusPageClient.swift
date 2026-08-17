@@ -20,6 +20,8 @@ public struct StatusPageClient: ProviderStatusRequesting {
             URL(string: "https://status.claude.com/api/v2/status.json")!
         case .codex:
             URL(string: "https://status.openai.com/api/v2/status.json")!
+        case .cursor:
+            URL(string: "https://status.cursor.com/api/v2/status.json")!
         }
     }
 

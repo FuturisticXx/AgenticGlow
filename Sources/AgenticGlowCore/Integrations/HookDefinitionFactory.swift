@@ -29,6 +29,19 @@ public enum HookDefinitionFactory {
         }
         return entry
     }
+
+    /// Cursor's native hook entry: a flat `{ command, timeout }` object.
+    /// Never sets `failClosed`, so a helper failure cannot block the agent.
+    public static func cursorEntry(
+        helperURL: URL,
+        provider: AgentProvider,
+        event: HookEventKind
+    ) -> [String: Any] {
+        [
+            "command": command(helperURL: helperURL, provider: provider, event: event),
+            "timeout": 5
+        ]
+    }
 }
 
 enum HookConfiguration {
@@ -152,7 +165,7 @@ enum HookConfiguration {
         return true
     }
 
-    private static func parseManagedCommand(
+    static func parseManagedCommand(
         _ command: String
     ) -> (path: String, provider: AgentProvider, event: String)? {
         let characters = Array(command)

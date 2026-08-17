@@ -19,7 +19,7 @@ public enum ToolCategory: String, Codable, Sendable {
             .search
         case "WebFetch", "WebSearch", "web_search":
             .browse
-        case "Bash", "exec_command", "write_stdin":
+        case "Bash", "Shell", "exec_command", "write_stdin":
             .command
         case "Task", "spawn_agent":
             .delegate

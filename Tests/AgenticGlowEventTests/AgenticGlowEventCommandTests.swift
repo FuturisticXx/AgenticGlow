@@ -137,6 +137,38 @@ final class AgenticGlowEventCommandTests: XCTestCase {
         XCTAssertEqual(endCode, 0)
         XCTAssertEqual(try store.loadAll(), [])
     }
+
+    func testCursorPayloadMapsConversationIdentityAndOmitsSecrets() throws {
+        let directory = temporaryDirectory()
+        let store = FileSessionStateStore(directory: directory)
+        let command = AgenticGlowEventCommand(
+            store: store,
+            processIdentity: { _, _ in .fixture }
+        )
+        let input = Data("""
+        {"conversation_id":"conv-live-secret","generation_id":"gen-1","workspace_roots":["/tmp/Moodpaper"],"model":"composer-2.5","prompt":"SECRET_PROMPT","user_email":"secret@example.com","transcript_path":"/tmp/secret.jsonl"}
+        """.utf8)
+
+        let code = command.run(
+            arguments: ["agenticglow-event", "cursor", "UserPromptSubmit", "--agenticglow-hook"],
+            input: input,
+            environment: [:],
+            now: Date(timeIntervalSince1970: 500)
+        )
+
+        XCTAssertEqual(code, 0)
+        let event = try XCTUnwrap(try store.loadAll().first)
+        XCTAssertEqual(event.provider, .cursor)
+        XCTAssertEqual(event.phase, .thinking)
+        XCTAssertEqual(event.projectName, "Moodpaper")
+        XCTAssertEqual(event.model, "composer-2.5")
+        XCTAssertTrue(event.sessionID.hasPrefix("sid_"))
+        let encoded = String(decoding: try JSONEncoder.agenticglow.encode(event), as: UTF8.self)
+        XCTAssertFalse(encoded.contains("SECRET_PROMPT"))
+        XCTAssertFalse(encoded.contains("secret@example.com"))
+        XCTAssertFalse(encoded.contains("conv-live-secret"))
+        XCTAssertFalse(encoded.contains("/tmp/secret.jsonl"))
+    }
 }
 
 private final class RecordingDiagnosticLogger: DiagnosticLogging {

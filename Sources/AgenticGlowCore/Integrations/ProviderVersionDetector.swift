@@ -2,6 +2,12 @@ import Foundation
 
 public enum ProviderVersionDetector {
     public static func detect(executableURL: URL) -> String? {
+        if executableURL.pathExtension == "app",
+           let bundle = Bundle(url: executableURL),
+           let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+           !version.isEmpty {
+            return version
+        }
         let process = Process()
         let output = Pipe()
         process.executableURL = executableURL

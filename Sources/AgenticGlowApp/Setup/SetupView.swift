@@ -4,6 +4,7 @@ import AgenticGlowCore
 struct SetupView: View {
     @Bindable var claude: SetupViewModel
     @Bindable var codex: SetupViewModel
+    @Bindable var cursor: SetupViewModel
     let onComplete: () -> Void
 
     var body: some View {
@@ -13,7 +14,8 @@ struct SetupView: View {
                 .foregroundStyle(.secondary)
             integrationCard("Codex", model: codex)
             integrationCard("Claude", model: claude)
-            Text("Codex requires one final step: open Codex, run /hooks, review the AgenticGlow entries, and choose Trust.")
+            integrationCard("Cursor", model: cursor)
+            Text("Codex requires one final step: open Codex, run /hooks, review the AgenticGlow entries, and choose Trust. Cursor reloads hooks automatically.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             HStack {
@@ -28,9 +30,11 @@ struct SetupView: View {
         .task {
             async let claudeVersion: Void = claude.detectVersion()
             async let codexVersion: Void = codex.detectVersion()
-            _ = await (claudeVersion, codexVersion)
+            async let cursorVersion: Void = cursor.detectVersion()
+            _ = await (claudeVersion, codexVersion, cursorVersion)
             claude.syncPhaseFromCurrentStatus()
             codex.syncPhaseFromCurrentStatus()
+            cursor.syncPhaseFromCurrentStatus()
         }
     }
 
@@ -81,7 +85,7 @@ struct SetupView: View {
     }
 
     private var isConfigured: Bool {
-        [claude.phase, codex.phase].contains(.installed)
-            || [claude.phase, codex.phase].contains(.needsTrust)
+        [claude.phase, codex.phase, cursor.phase].contains(.installed)
+            || [claude.phase, codex.phase, cursor.phase].contains(.needsTrust)
     }
 }

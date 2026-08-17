@@ -24,6 +24,10 @@ public struct NormalizedEvent: Codable, Equatable, Sendable {
     public let sourceProcessStartedAt: Date?
     public let turnStartedAt: Date?
     public let updatedAt: Date
+    /// Provider model slug when the hook payload includes one. Optional so
+    /// older session files and providers that never report a model still
+    /// decode. Never stores prompts, transcripts, or account identifiers.
+    public let model: String?
 
     public init(
         schemaVersion: Int,
@@ -40,7 +44,8 @@ public struct NormalizedEvent: Codable, Equatable, Sendable {
         sourceProcessID: Int32?,
         sourceProcessStartedAt: Date?,
         turnStartedAt: Date?,
-        updatedAt: Date
+        updatedAt: Date,
+        model: String? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.provider = provider
@@ -57,6 +62,7 @@ public struct NormalizedEvent: Codable, Equatable, Sendable {
         self.sourceProcessStartedAt = sourceProcessStartedAt
         self.turnStartedAt = turnStartedAt
         self.updatedAt = updatedAt
+        self.model = model
     }
 
     public func validate() throws {

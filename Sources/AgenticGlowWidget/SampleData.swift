@@ -58,23 +58,30 @@ enum SampleData {
         weeklyPercentLeft: 53, weeklyResetAt: now.addingTimeInterval(4 * 86_400), fetchedAt: now
     )
 
+    static let cursorWorkingSession = WidgetSessionSummary(
+        provider: .cursor, sessionID: "sample-5", projectName: "Agent-Control-Plane",
+        phase: .thinking, toolCategory: nil, elapsedSeconds: 84, updatedAt: now, needsAttention: false
+    )
+
     static let bothProvidersInstalled = [
         WidgetProviderSummary(provider: .claude, installed: true),
-        WidgetProviderSummary(provider: .codex, installed: true)
+        WidgetProviderSummary(provider: .codex, installed: true),
+        WidgetProviderSummary(provider: .cursor, installed: true)
     ]
 
     static let onlyClaudeInstalled = [
         WidgetProviderSummary(provider: .claude, installed: true),
-        WidgetProviderSummary(provider: .codex, installed: false)
+        WidgetProviderSummary(provider: .codex, installed: false),
+        WidgetProviderSummary(provider: .cursor, installed: false)
     ]
 
     static let busySnapshot = WidgetSnapshot(
         generatedAt: now,
-        sessions: [attentionSession, editingSession, workingSession],
+        sessions: [attentionSession, editingSession, workingSession, cursorWorkingSession],
         allowances: [claudeAllowance, codexAllowanceLow],
         providers: bothProvidersInstalled,
         attentionCount: 1,
-        activeCount: 2
+        activeCount: 3
     )
 
     static let attentionOnlySnapshot = WidgetSnapshot(

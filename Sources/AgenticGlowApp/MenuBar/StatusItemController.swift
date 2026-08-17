@@ -222,7 +222,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
             motionProviders = nil
             setSymbol(
                 name,
-                color: ProviderColor.bothBlend(on: barAppearance),
+                color: ProviderColor.blend(of: providers, on: barAppearance),
                 template: monochromeWorkingIcon
             )
         } else {
@@ -395,25 +395,36 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         let color: NSColor
         if let providers = motionProviders, providers.count == 2 {
             let bar = barAppearance
-            let claude = ProviderColor.nsColor(for: providers[0], on: bar)
-            let codex = ProviderColor.nsColor(for: providers[1], on: bar)
+            let first = ProviderColor.nsColor(for: providers[0], on: bar)
+            let second = ProviderColor.nsColor(for: providers[1], on: bar)
             // While dissolving, the sweep is synced to the dissolve cycle so
-            // the orange peak always lands mid-dwell where it is visible; the
-            // free-running sweep drifts against the 11s cycle and kept hiding
-            // its orange inside the yellow dwell.
-            let blueShare: Double
+            // the second-color peak always lands mid-dwell where it is visible;
+            // the free-running sweep drifts against the 11s cycle and kept hiding
+            // its second color inside the yellow dwell.
+            let firstShare: Double
             if dissolvesPermission {
-                blueShare = PermissionDissolve.sweepBlueShare(at: seconds)
+                firstShare = PermissionDissolve.sweepBlueShare(at: seconds)
             } else {
                 let phase = seconds.truncatingRemainder(dividingBy: 2 * Motion.crossfadePeriod)
-                blueShare = (1 - cos(.pi * phase / Motion.crossfadePeriod)) / 2
+                firstShare = (1 - cos(.pi * phase / Motion.crossfadePeriod)) / 2
             }
-            // Providers are Claude-then-Codex. The cosine dwells at its
-            // extremes, so an uncapped sweep parks on full orange, which reads
-            // as an alert. Cap the orange end and let blue saturate fully: the
-            // icon stays blue-based, and solid orange means "Claude alone".
-            let orangeShare = Motion.crossfadePeakShare * (1 - blueShare)
-            color = Self.blend(claude, codex, 1 - orangeShare)
+            // The cosine dwells at its extremes, so an uncapped sweep parks on
+            // the second color, which can read as an alert. Cap that end and
+            // let the first color saturate fully.
+            let secondShare = Motion.crossfadePeakShare * (1 - firstShare)
+            color = Self.blend(first, second, 1 - secondShare)
+        } else if let providers = motionProviders, providers.count > 2 {
+            let pairPeriod = 2 * Motion.crossfadePeriod
+            let pairIndex = Int(seconds / pairPeriod) % providers.count
+            let first = ProviderColor.nsColor(for: providers[pairIndex], on: barAppearance)
+            let second = ProviderColor.nsColor(
+                for: providers[(pairIndex + 1) % providers.count],
+                on: barAppearance
+            )
+            let phase = seconds.truncatingRemainder(dividingBy: pairPeriod)
+            let firstShare = (1 - cos(.pi * phase / Motion.crossfadePeriod)) / 2
+            let secondShare = Motion.crossfadePeakShare * (1 - firstShare)
+            color = Self.blend(first, second, 1 - secondShare)
         } else if let providers = motionProviders, providers.count == 1 {
             color = ProviderColor.nsColor(for: providers[0], on: barAppearance)
         } else if motionRotating, let solid = currentSolidColor {

@@ -219,11 +219,13 @@ enum UITestFixtureFactory {
     @MainActor
     static func setupRepairModels(arguments: [String]) -> (
         claude: SetupViewModel,
-        codex: SetupViewModel
+        codex: SetupViewModel,
+        cursor: SetupViewModel
     )? {
         guard name(arguments: arguments) == "setup-repair" else { return nil }
         let claude = UITestSetupRecorder(provider: .claude)
         let codex = UITestSetupRecorder(provider: .codex)
+        let cursor = UITestSetupRecorder(provider: .cursor)
         return (
             SetupViewModel(
                 provider: .claude,
@@ -238,6 +240,13 @@ enum UITestFixtureFactory {
                 helperInstaller: codex,
                 integration: codex,
                 syntheticEventService: codex
+            ),
+            SetupViewModel(
+                provider: .cursor,
+                executableURL: URL(fileURLWithPath: "/tmp/cursor"),
+                helperInstaller: cursor,
+                integration: cursor,
+                syntheticEventService: cursor
             )
         )
     }

@@ -49,7 +49,7 @@ public enum HookNormalizer {
         case .sessionStart, .sessionEnd:
             phase = .idle
             label = "Idle"
-        case .userPromptSubmit, .postToolUse:
+        case .userPromptSubmit, .postToolUse, .postToolUseFailure:
             phase = .thinking
             label = "Thinking"
         case .preToolUse:
@@ -59,8 +59,13 @@ public enum HookNormalizer {
             phase = .permission
             label = "Awaiting permission"
         case .stop:
-            phase = .completed
-            label = "Completed"
+            if (payload["status"] as? String)?.lowercased() == "error" {
+                phase = .failed
+                label = "Failed"
+            } else {
+                phase = .completed
+                label = "Completed"
+            }
         }
 
         let turnStartedAt: Date?
@@ -69,7 +74,7 @@ public enum HookNormalizer {
             turnStartedAt = now
         case .sessionStart, .sessionEnd, .stop:
             turnStartedAt = nil
-        case .preToolUse, .postToolUse, .permissionRequest, .notification:
+        case .preToolUse, .postToolUse, .postToolUseFailure, .permissionRequest, .notification:
             turnStartedAt = previous?.turnStartedAt
         }
 
@@ -92,7 +97,8 @@ public enum HookNormalizer {
             sourceProcessID: processIdentity?.processID,
             sourceProcessStartedAt: processIdentity?.startedAt,
             turnStartedAt: turnStartedAt,
-            updatedAt: now
+            updatedAt: now,
+            model: Self.modelName(in: payload)
         )
         try normalizedEvent.validate()
         return normalizedEvent
@@ -107,6 +113,17 @@ public enum HookNormalizer {
             return provider.displayName
         }
         return name
+    }
+
+    /// Keep only a short model slug. Cursor's hook payload also includes
+    /// `user_email` and `transcript_path`; those are never copied here.
+    private static func modelName(in payload: [String: Any]) -> String? {
+        let raw = (payload["model_id"] as? String)
+            ?? (payload["model"] as? String)
+        guard let raw, !raw.isEmpty, !raw.contains("\n"), raw.count <= 64 else {
+            return nil
+        }
+        return raw
     }
 
     public static func sessionIdentifier(_ raw: String) -> String {

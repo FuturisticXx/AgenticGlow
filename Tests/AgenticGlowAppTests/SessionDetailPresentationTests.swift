@@ -74,6 +74,24 @@ final class SessionDetailPresentationTests: XCTestCase {
         XCTAssertEqual(detail.currentStep, "Running swift build", "failed keeps the last action as the current step")
     }
 
+    func testDetailIncludesModelWhenPresent() {
+        let session = SessionSnapshot(
+            provider: .cursor,
+            surface: .desktop,
+            sessionID: "session",
+            phase: .thinking,
+            label: "Thinking",
+            projectName: "AgenticGlow",
+            sourceBundleID: AgentProvider.cursorBundleIdentifier,
+            elapsedSeconds: 12,
+            turnStartedAt: Date(timeIntervalSince1970: 40),
+            updatedAt: Date(timeIntervalSince1970: 90),
+            model: "composer-2.5"
+        )
+        let detail = SessionDetailPresentation.detail(for: session, now: Date(timeIntervalSince1970: 100))
+        XCTAssertEqual(detail.model, "composer-2.5")
+    }
+
     func testNonFailedPhasesHaveNoNote() {
         for phase in [SessionPhase.idle, .thinking, .usingTool, .permission, .completed, .disconnected] {
             let detail = SessionDetailPresentation.detail(for: session(phase: phase), now: Date(timeIntervalSince1970: 100))

@@ -126,3 +126,85 @@ rm -rf ~/Library/Application\ Support/AgenticGlow/bin
 ```
 
 This removes only AgenticGlow-marked hooks and AgenticGlow-owned files. Your provider configurations remain intact.
+
+## Cursor Integration
+
+### Config Path
+`~/.cursor/hooks.json`
+
+AgenticGlow installs **user-level** Cursor hooks only. It does not write project
+hooks into a repository's `.cursor/hooks.json`, because those files are often
+committed to git.
+
+Verified against Cursor 3.16.17 (`/Applications/Cursor.app`, bundle ID
+`com.todesktop.230313mzl4w4u92`). Cursor documents this interface at
+[cursor.com/docs/hooks](https://cursor.com/docs/hooks).
+
+### Installed Events
+AgenticGlow installs observe-only hooks for:
+- `sessionStart`
+- `sessionEnd`
+- `beforeSubmitPrompt`
+- `preToolUse`
+- `postToolUse`
+- `postToolUseFailure`
+- `stop`
+
+Each command calls `agenticglow-event` with provider `cursor` and the matching
+AgenticGlow event kind. Hooks are fail-open: they never set `failClosed`, never
+return a deny/ask permission, and never write a `followup_message`. A helper
+failure cannot block the Cursor agent.
+
+### What AgenticGlow Reads
+Cursor's hook stdin JSON uses `conversation_id` as the stable session identity
+and `workspace_roots` for the project path. AgenticGlow maps those onto the
+shared session model, plus `generation_id` as the turn identifier, `tool_name`
+when present, `model` / `model_id` when present, and `stop.status` for
+completion versus failure.
+
+It does **not** store `prompt`, `command`, `tool_input`, `tool_output`,
+`user_email`, `transcript_path`, `error_message`, or transcript contents.
+
+### Reload Behavior
+Cursor watches `hooks.json` and reloads it automatically. After Install or
+Repair for Cursor, you do not need to quit Cursor. If hooks still do not fire,
+check Cursor Settings → Hooks and confirm the workspace is trusted.
+
+### Known Limitations
+- Cursor does not document `Notification` or `PermissionRequest` hooks.
+  AgenticGlow therefore cannot detect Cursor's own approval dialogs or
+  "waiting for you" prompts. Permission attention for Cursor is unsupported.
+- User-level hooks do not run in Cursor Cloud Agents. Cloud and dashboard
+  background agents are not visible through this integration.
+- Cursor CLI hook coverage is partial. Some CLI turns may only report a subset
+  of events.
+- Cursor does not document a local programmatic allowance, plan-usage, or
+  spend API. AgenticGlow does not scrape the Cursor dashboard and does not
+  show Cursor usage bars.
+- Tab completion hooks are not installed. They are too frequent and are not
+  agent sessions.
+- Subagent start/stop hooks are not installed, so Task subagents stay folded
+  into the parent conversation rather than appearing as extra sessions.
+- Enabling Cursor's "third-party skills" can also load Claude Code hooks.
+  AgenticGlow still attributes Cursor sessions as Cursor because it installs
+  native `~/.cursor/hooks.json` entries that pass `cursor` to the helper.
+
+### Backup
+On first modification, AgenticGlow creates a backup at:
+`~/.cursor/hooks.json.<uuid>.bak-agenticglow`
+
+### Repair Behavior
+Running repair removes any existing AgenticGlow Cursor hooks and reinstalls
+the supported events. Other hooks in the file are preserved.
+
+### Removal Behavior
+Running remove deletes only entries marked with `--agenticglow-hook`. All
+other Cursor hooks and settings are preserved.
+
+### Future Cursor Changes
+If Cursor renames hook events, changes the stdin schema, or stops spawning
+user-level hooks, AgenticGlow will show Cursor as installed with no live
+sessions rather than guessing from UI scraping. The provider layer can gain
+new fields without rewriting Codex or Claude. A deeper integration would need
+Cursor to document: a permission-prompt hook, a local usage/allowance API, and
+stable per-window session identity for Cloud Agents.

@@ -98,7 +98,7 @@ struct SettingsView: View {
                         serviceStatusChanged(value)
                     }
                 ))
-                Text("Checks the public Anthropic and OpenAI status pages when you open AgenticGlow. Off by default. No account data is sent.")
+                Text("Checks the public Anthropic, OpenAI, and Cursor status pages when you open AgenticGlow. Off by default. No account data is sent.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

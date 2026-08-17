@@ -42,7 +42,7 @@ private struct ProviderAllowanceRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(provider == .codex ? "Codex" : "Claude")
+            Text(provider.displayName)
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .center)
             switch state {
@@ -125,7 +125,7 @@ private struct ProviderAllowanceRow: View {
         ProviderColor.color(for: provider)
     }
 
-    private var providerName: String { provider == .codex ? "Codex" : "Claude" }
+    private var providerName: String { provider.displayName }
 }
 
 /// Slim capsule allowance bar: quiet track, gradient fill in the provider

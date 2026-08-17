@@ -121,6 +121,7 @@ private extension AgentProvider {
         switch self {
         case .codex: "Codex"
         case .claude: "Claude"
+        case .cursor: "Cursor"
         }
     }
 }

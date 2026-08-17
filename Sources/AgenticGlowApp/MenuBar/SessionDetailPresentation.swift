@@ -10,6 +10,7 @@ struct SessionDetail: Equatable {
     let started: String?
     let lastUpdated: String
     let surface: String
+    let model: String?
     let note: String?
 }
 
@@ -20,15 +21,16 @@ enum SessionDetailPresentation {
             started: session.turnStartedAt.map { absoluteTime(from: $0, relativeTo: now) },
             lastUpdated: relativeTime(from: session.updatedAt, to: now),
             surface: session.surface.displayName,
+            model: session.model,
             note: session.phase == .failed ? Self.failedNote : nil
         )
     }
 
-    /// AgenticGlow infers "failed" from a mid-task disconnect; it has no
-    /// error message or exit code from the agent itself, so the copy says
-    /// only what is actually known.
+    /// Cursor can report `status: error` from its documented `stop` hook.
+    /// Codex and Claude failures are still inferred from a mid-task
+    /// disconnect. The copy covers both without claiming a detailed reason.
     private static let failedNote =
-        "Stopped while working. AgenticGlow doesn't receive an error reason, this is inferred from the session disconnecting before it finished."
+        "Stopped while working. AgenticGlow may not receive a detailed error reason."
 
     /// Absolute clock time, e.g. "3:42 PM" today or "Jul 17, 3:42 PM" on an
     /// earlier day, so it reads as a fixed anchor alongside the row's live

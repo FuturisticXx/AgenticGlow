@@ -158,6 +158,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     hooksURL: FileManager.default.homeDirectoryForCurrentUser
                         .appendingPathComponent(".codex/hooks.json"),
                     helperURL: HelperInstaller.defaultDestination
+                ),
+                CursorIntegrationManager(
+                    hooksURL: FileManager.default.homeDirectoryForCurrentUser
+                        .appendingPathComponent(".cursor/hooks.json"),
+                    helperURL: HelperInstaller.defaultDestination
                 )
             ]
             : []
@@ -435,6 +440,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return SetupView(
                 claude: models.claude,
                 codex: models.codex,
+                cursor: models.cursor,
                 onComplete: onComplete
             )
         }
@@ -448,6 +454,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .appendingPathComponent(".claude/settings.json")
         let codexHooksURL = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".codex/hooks.json")
+        let cursorHooksURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".cursor/hooks.json")
 
         let claudeManager = ClaudeIntegrationManager(
             settingsURL: claudeSettingsURL,
@@ -457,12 +465,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             hooksURL: codexHooksURL,
             helperURL: HelperInstaller.defaultDestination
         )
+        let cursorManager = CursorIntegrationManager(
+            hooksURL: cursorHooksURL,
+            helperURL: HelperInstaller.defaultDestination
+        )
 
         let store = FileSessionStateStore(directory: FileSessionStateStore.defaultDirectory)
         let syntheticEventService = SyntheticEventService(store: store)
 
         let claudeExecutable = ExecutableLocator.locate("claude")
         let codexExecutable = ExecutableLocator.locate("codex")
+        let cursorExecutable = ExecutableLocator.locate("cursor")
 
         let claudeModel = SetupViewModel(
             provider: .claude,
@@ -500,9 +513,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
+        let cursorModel = SetupViewModel(
+            provider: .cursor,
+            executableURL: cursorExecutable,
+            helperInstaller: helperInstaller,
+            integration: cursorManager,
+            syntheticEventService: syntheticEventService,
+            lastEvent: { [weak model] in
+                model?.resolved.sessions
+                    .first { $0.provider == .cursor }?.updatedAt
+            },
+            setIntegrationEnabled: {
+                UserDefaults.standard.set($0, forKey: Self.integrationEnabledKey(for: .cursor))
+            },
+            requestRestart: { [weak self] in
+                await self?.relaunch() ?? false
+            }
+        )
+
         return SetupView(
             claude: claudeModel,
             codex: codexModel,
+            cursor: cursorModel,
             onComplete: onComplete
         )
     }
@@ -532,6 +564,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .appendingPathComponent(".claude/settings.json")
         let codexHooksURL = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(".codex/hooks.json")
+        let cursorHooksURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".cursor/hooks.json")
         let helperDestination = HelperInstaller.defaultDestination
 
         try? ClaudeIntegrationManager(
@@ -540,6 +574,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ).remove()
         try? CodexIntegrationManager(
             hooksURL: codexHooksURL,
+            helperURL: helperDestination
+        ).remove()
+        try? CursorIntegrationManager(
+            hooksURL: cursorHooksURL,
             helperURL: helperDestination
         ).remove()
         try? FileManager.default.removeItem(at: helperDestination)

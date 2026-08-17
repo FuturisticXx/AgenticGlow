@@ -8,6 +8,7 @@ final class HookNormalizerTests: XCTestCase {
         for (cwd, provider, expected) in [
             ("/", AgentProvider.claude, "Claude"),
             ("/", AgentProvider.codex, "Codex"),
+            ("/", AgentProvider.cursor, "Cursor"),
         ] {
             let event = try XCTUnwrap(HookNormalizer.normalize(
                 provider: provider,
@@ -336,6 +337,50 @@ final class HookNormalizerTests: XCTestCase {
         )
 
         XCTAssertThrowsError(try event.validate())
+    }
+
+    func testCursorStopErrorBecomesFailedWithoutPersistingErrorMessage() throws {
+        let payload: [String: Any] = [
+            "session_id": "cursor-session",
+            "cwd": "/tmp/AgenticGlow",
+            "status": "error",
+            "error_message": "SECRET_ERROR_MUST_NOT_PERSIST",
+            "model": "composer-2.5"
+        ]
+
+        let event = try XCTUnwrap(HookNormalizer.normalize(
+            provider: .cursor,
+            event: .stop,
+            payload: payload,
+            environment: [:],
+            processIdentity: .fixture,
+            previous: nil,
+            now: Date(timeIntervalSince1970: 500)
+        ))
+
+        XCTAssertEqual(event.phase, .failed)
+        XCTAssertEqual(event.label, "Failed")
+        XCTAssertEqual(event.model, "composer-2.5")
+        let encoded = String(decoding: try JSONEncoder.agenticglow.encode(event), as: UTF8.self)
+        XCTAssertFalse(encoded.contains("SECRET_ERROR_MUST_NOT_PERSIST"))
+    }
+
+    func testCursorCompletedStopStaysCompleted() throws {
+        let event = try XCTUnwrap(HookNormalizer.normalize(
+            provider: .cursor,
+            event: .stop,
+            payload: [
+                "session_id": "cursor-session",
+                "cwd": "/tmp/AgenticGlow",
+                "status": "completed"
+            ],
+            environment: [:],
+            processIdentity: .fixture,
+            previous: nil,
+            now: Date(timeIntervalSince1970: 500)
+        ))
+
+        XCTAssertEqual(event.phase, .completed)
     }
 
     private func fixture(_ name: String) throws -> [String: Any] {

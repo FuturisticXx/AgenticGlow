@@ -17,4 +17,17 @@ final class ExecutableLocatorTests: XCTestCase {
 
         XCTAssertLessThan(chatGPTBinary, homebrewLauncher)
     }
+
+    func testCursorAppBinaryIsPreferredOverHomebrew() {
+        let candidates = ExecutableLocator.candidatePaths(
+            for: "cursor",
+            homeDirectory: "/Users/example"
+        )
+
+        XCTAssertEqual(
+            candidates.first,
+            "/Applications/Cursor.app/Contents/Resources/app/bin/cursor"
+        )
+        XCTAssertTrue(candidates.contains("/opt/homebrew/bin/cursor"))
+    }
 }

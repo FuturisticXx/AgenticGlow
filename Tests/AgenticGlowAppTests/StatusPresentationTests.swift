@@ -274,9 +274,14 @@ final class StatusPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.activeProviders, [.codex])
     }
 
-    func testActiveProvidersAreBothInClaudeThenCodexOrder() {
-        let presentation = working(activeProviders: [.codex, .claude])
-        XCTAssertEqual(presentation.activeProviders, [.claude, .codex])
+    func testActiveProvidersAreClaudeThenCodexThenCursor() {
+        let presentation = working(activeProviders: [.cursor, .codex, .claude])
+        XCTAssertEqual(presentation.activeProviders, [.claude, .codex, .cursor])
+    }
+
+    func testActiveProviderIsCursorOnly() {
+        let presentation = working(activeProviders: [.cursor])
+        XCTAssertEqual(presentation.activeProviders, [.cursor])
     }
 
     func testPermissionHasNoProviderTints() {

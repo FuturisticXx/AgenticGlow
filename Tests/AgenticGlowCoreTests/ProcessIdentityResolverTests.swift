@@ -23,6 +23,30 @@ final class ProcessIdentityResolverTests: XCTestCase {
         XCTAssertEqual(identity?.bundleIdentifier, "com.apple.Terminal")
     }
 
+    func testResolvesCursorDesktopApp() {
+        let inspector = FakeProcessInspector(
+            parentPID: 40,
+            rows: [
+                40: .init(pid: 40, parentPID: 30, name: "zsh", startedAt: nil, bundleID: nil),
+                30: .init(
+                    pid: 30,
+                    parentPID: 1,
+                    name: "Cursor",
+                    startedAt: Date(timeIntervalSince1970: 30),
+                    bundleID: AgentProvider.cursorBundleIdentifier
+                )
+            ]
+        )
+
+        let identity = ProcessIdentityResolver(inspector: inspector).resolve(
+            provider: .cursor,
+            environment: [:]
+        )
+
+        XCTAssertEqual(identity?.processID, 30)
+        XCTAssertEqual(identity?.bundleIdentifier, AgentProvider.cursorBundleIdentifier)
+    }
+
     func testDoesNotReturnUnrelatedAncestor() {
         let inspector = FakeProcessInspector(
             parentPID: 30,

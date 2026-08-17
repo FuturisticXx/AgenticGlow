@@ -13,6 +13,7 @@ public struct SessionSnapshot: Identifiable, Equatable, Sendable {
     public let turnStartedAt: Date?
     public let updatedAt: Date
     public let toolCategory: ToolCategory?
+    public let model: String?
 
     public init(
         provider: AgentProvider,
@@ -25,7 +26,8 @@ public struct SessionSnapshot: Identifiable, Equatable, Sendable {
         elapsedSeconds: Int?,
         turnStartedAt: Date? = nil,
         updatedAt: Date,
-        toolCategory: ToolCategory? = nil
+        toolCategory: ToolCategory? = nil,
+        model: String? = nil
     ) {
         self.provider = provider
         self.surface = surface
@@ -38,6 +40,7 @@ public struct SessionSnapshot: Identifiable, Equatable, Sendable {
         self.turnStartedAt = turnStartedAt
         self.updatedAt = updatedAt
         self.toolCategory = toolCategory
+        self.model = model
     }
 }
 

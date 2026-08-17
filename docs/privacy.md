@@ -20,9 +20,11 @@ telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports
 - `sourceProcessStartedAt`
 - `turnStartedAt`
 - `updatedAt`
+- `model` (optional; present when a provider hook reports a model slug)
 
 AgenticGlow does not store prompts, responses, assistant messages, commands, tool
-arguments, tool responses, transcript contents, or file contents.
+arguments, tool responses, transcript contents, file contents, email addresses,
+or transcript paths.
 
 For Codex session presence, AgenticGlow also asks the installed local
 `codex app-server` for recent thread metadata. It decodes only the thread ID,
@@ -64,6 +66,7 @@ minutes:
 
 - Claude: `https://status.claude.com/api/v2/status.json`
 - Codex: `https://status.openai.com/api/v2/status.json`
+- Cursor: `https://status.cursor.com/api/v2/status.json`
 
 These are plain GET requests to public status pages. No cookies, credentials,
 account data, or identifiers are sent. The normalized result (operational or
@@ -79,8 +82,8 @@ only, not system-wide Accessibility access. If the permission is denied, or
 Codex has no matching window open, AgenticGlow silently falls back to today's
 generic app activation. No window content, title, or other data is read back or
 stored; the project name used to find the right window comes only from data
-already collected (see Stored session fields above). Claude sessions are
-unaffected: Claude's desktop app has no automation support to use here.
+already collected (see Stored session fields above). Claude and Cursor sessions
+are unaffected: those desktop apps have no automation support to use here.
 
 ## Notifications
 

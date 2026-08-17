@@ -51,7 +51,18 @@ This is a private web endpoint, not a supported Anthropic API. It can change or
 stop working without notice. HTTP 401 or 403 is treated as an expired cookie and
 the UI instructs the user to update Usage Access.
 
+## Cursor
+
+Unsupported. Cursor documents agent lifecycle hooks and a cloud Agents API, but
+does not document a local programmatic subscription-allowance, plan-usage, or
+spend interface for third-party Mac apps. AgenticGlow does not scrape
+cursor.com account pages and does not store Cursor credentials. The allowance
+UI omits Cursor rather than showing placeholder or guessed values.
+
 ## Revisit condition
 
 Replace the private Claude connection if Anthropic publishes a supported
 programmatic allowance interface and credential-use contract for local apps.
+
+Add Cursor allowance only if Cursor publishes a supported local or documented
+programmatic usage interface that does not require scraping account pages.
