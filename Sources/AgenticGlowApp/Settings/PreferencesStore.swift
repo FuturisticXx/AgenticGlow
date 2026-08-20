@@ -1,4 +1,5 @@
 import Foundation
+import AgenticGlowCore
 import Observation
 
 struct GlobalShortcut: Equatable {
@@ -66,6 +67,27 @@ final class PreferencesStore {
     var notifyQuotaLow: Bool {
         didSet { defaults.set(notifyQuotaLow, forKey: "notifyQuotaLow") }
     }
+    var notifyUsageReset: Bool {
+        didSet { defaults.set(notifyUsageReset, forKey: "notifyUsageReset") }
+    }
+    /// Stored as raw provider names so a provider added later participates
+    /// without a schema change or a new key per provider.
+    var usageResetProviders: Set<AgentProvider> {
+        didSet {
+            defaults.set(
+                usageResetProviders.map(\.rawValue).sorted(),
+                forKey: "usageResetProviders"
+            )
+        }
+    }
+    var usageResetNativeNotification: Bool {
+        didSet { defaults.set(usageResetNativeNotification, forKey: "usageResetNativeNotification") }
+    }
+    /// Off by default. Messages delivery needs an Automation permission and
+    /// a recipient, so it is never something the user gets without asking.
+    var usageResetMessages: Bool {
+        didSet { defaults.set(usageResetMessages, forKey: "usageResetMessages") }
+    }
     var serviceStatusEnabled: Bool {
         didSet { defaults.set(serviceStatusEnabled, forKey: "serviceStatusEnabled") }
     }
@@ -100,6 +122,11 @@ final class PreferencesStore {
         // Notification toggles default on; absence of a stored value means true.
         self.notifyPermission = defaults.object(forKey: "notifyPermission") as? Bool ?? true
         self.notifyQuotaLow = defaults.object(forKey: "notifyQuotaLow") as? Bool ?? true
+        self.notifyUsageReset = defaults.object(forKey: "notifyUsageReset") as? Bool ?? true
+        self.usageResetProviders = Self.storedUsageResetProviders(in: defaults)
+        self.usageResetNativeNotification =
+            defaults.object(forKey: "usageResetNativeNotification") as? Bool ?? true
+        self.usageResetMessages = defaults.bool(forKey: "usageResetMessages")
         self.serviceStatusEnabled = defaults.bool(forKey: "serviceStatusEnabled")
         self.menuBarIconStyle = Self.storedIconStyle(in: defaults)
         self.globalShortcut = Self.storedGlobalShortcut(in: defaults)
@@ -120,6 +147,11 @@ final class PreferencesStore {
         let claudeUsageEnabled = defaults.bool(forKey: "claudeUsageEnabled")
         let notifyPermission = defaults.object(forKey: "notifyPermission") as? Bool ?? true
         let notifyQuotaLow = defaults.object(forKey: "notifyQuotaLow") as? Bool ?? true
+        let notifyUsageReset = defaults.object(forKey: "notifyUsageReset") as? Bool ?? true
+        let usageResetProviders = Self.storedUsageResetProviders(in: defaults)
+        let usageResetNativeNotification =
+            defaults.object(forKey: "usageResetNativeNotification") as? Bool ?? true
+        let usageResetMessages = defaults.bool(forKey: "usageResetMessages")
         let serviceStatusEnabled = defaults.bool(forKey: "serviceStatusEnabled")
         let menuBarIconStyle = Self.storedIconStyle(in: defaults)
         let globalShortcut = Self.storedGlobalShortcut(in: defaults)
@@ -138,6 +170,10 @@ final class PreferencesStore {
         self.claudeUsageEnabled = claudeUsageEnabled
         self.notifyPermission = notifyPermission
         self.notifyQuotaLow = notifyQuotaLow
+        self.notifyUsageReset = notifyUsageReset
+        self.usageResetProviders = usageResetProviders
+        self.usageResetNativeNotification = usageResetNativeNotification
+        self.usageResetMessages = usageResetMessages
         self.serviceStatusEnabled = serviceStatusEnabled
         self.menuBarIconStyle = menuBarIconStyle
         self.globalShortcut = globalShortcut
@@ -150,6 +186,16 @@ final class PreferencesStore {
     private static func storedIconStyle(in defaults: UserDefaults) -> MenuBarIconStyle {
         defaults.string(forKey: "menuBarIconStyle")
             .flatMap(MenuBarIconStyle.init(rawValue:)) ?? .color
+    }
+
+    /// Absent means "every provider", so enabling usage for a provider
+    /// added in a later release does not silently skip its reset alerts.
+    /// Unrecognized stored names are dropped rather than crashing.
+    private static func storedUsageResetProviders(in defaults: UserDefaults) -> Set<AgentProvider> {
+        guard let stored = defaults.object(forKey: "usageResetProviders") as? [String] else {
+            return Set(AgentProvider.allCases)
+        }
+        return Set(stored.compactMap(AgentProvider.init(rawValue:)))
     }
 
     private static func storedGlobalShortcut(in defaults: UserDefaults) -> GlobalShortcut {

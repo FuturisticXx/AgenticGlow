@@ -121,8 +121,20 @@ public actor AllowanceRefreshCoordinator {
         case .popoverOpened:
             return age >= AllowanceRefreshPolicy.popoverMaximumAge
         case .idle:
-            return age >= AllowanceRefreshPolicy.idleInterval
+            return age >= idleInterval(for: provider)
         }
+    }
+
+    /// Falls back to the closer reset-watch cadence while the provider's
+    /// last good reading shows an exhausted window that is due back.
+    private func idleInterval(for provider: AgentProvider) -> TimeInterval {
+        guard
+            case let .available(allowance, _)? = states[provider],
+            AllowanceRefreshPolicy.isWatchingForReset(allowance, now: now())
+        else {
+            return AllowanceRefreshPolicy.idleInterval
+        }
+        return AllowanceRefreshPolicy.resetWatchInterval
     }
 
     private func recordFailure(

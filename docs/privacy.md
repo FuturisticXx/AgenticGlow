@@ -95,6 +95,27 @@ exhausted alerts for one provider window reuse one notification identifier so an
 exhausted alert replaces the earlier warning instead of adding another retained
 notification.
 
+## Usage reset alerts
+
+Reset alerts announce a provider window whose usage AgenticGlow has observed
+coming back. Detection compares consecutive local readings of the allowance data
+already described above, adds no network request, and stores only one small
+local file, `usage-reset-state.json`, next to the allowance cache: per provider
+window, the last known availability and when it was observed. That file exists
+so relaunching AgenticGlow does not repeat an alert already delivered. It holds
+no percentages, no usage history, no credentials, and no recipient.
+
+Messages delivery is off by default and does nothing until the user turns it on
+and enters a recipient. The recipient is a phone number or Apple Account address
+stored only as a generic password in macOS Keychain, never in UserDefaults, a
+settings file, source, or a log line. AgenticGlow logs whether a message
+succeeded or failed and never logs who it was addressed to. Sending uses macOS
+Apple Events automation against the Messages app, which shows a one-time
+permission prompt scoped to Messages only. If that permission is denied, or
+Messages is not signed in, the failure is reported locally and usage monitoring
+continues unaffected. The message contains only the AgenticGlow name, the
+provider name, and the window that reset.
+
 ## Stored allowance fields
 
 For each enabled provider, AgenticGlow stores only the latest normalized value:

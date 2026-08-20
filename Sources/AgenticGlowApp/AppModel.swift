@@ -16,6 +16,7 @@ final class AppModel {
     private let activator: ApplicationActivating
     private let allowanceCoordinator: AllowanceRefreshCoordinator?
     private let notifier: (any AgentNotifying)?
+    private let resetAlerts: (any UsageResetAlerting)?
     private let statusMonitor: ProviderStatusMonitor?
     private let codexSessionDiscoverer: (any CodexSessionDiscovering)?
     private let widgetSnapshotWriter: (any WidgetSnapshotWriting)?
@@ -31,6 +32,7 @@ final class AppModel {
     private var lastWidgetSnapshot: WidgetSnapshot?
     private var cachedInstalledProviders: [AgentProvider: Bool] = [:]
     private var installedProvidersCheckedAt: Date?
+    private var lastUsageResets: [AgentProvider: UsageResetDelivery] = [:]
 
     private(set) var resolved: ResolvedSessions
     private(set) var storeErrorDescription: String?
@@ -51,6 +53,7 @@ final class AppModel {
         activator: ApplicationActivating,
         allowanceCoordinator: AllowanceRefreshCoordinator? = nil,
         notifier: (any AgentNotifying)? = nil,
+        resetAlerts: (any UsageResetAlerting)? = nil,
         statusMonitor: ProviderStatusMonitor? = nil,
         codexSessionDiscoverer: (any CodexSessionDiscovering)? = nil,
         widgetSnapshotWriter: (any WidgetSnapshotWriting)? = nil,
@@ -63,6 +66,7 @@ final class AppModel {
         self.activator = activator
         self.allowanceCoordinator = allowanceCoordinator
         self.notifier = notifier
+        self.resetAlerts = resetAlerts
         self.statusMonitor = statusMonitor
         self.codexSessionDiscoverer = codexSessionDiscoverer
         self.widgetSnapshotWriter = widgetSnapshotWriter
@@ -202,6 +206,24 @@ final class AppModel {
         allowanceStates[provider] ?? .off
     }
 
+    /// The most recent confirmed reset for a provider, kept only while it
+    /// is still worth showing in the popover. A test alert is not a real
+    /// reset, so it never records one.
+    func usageReset(for provider: AgentProvider) -> UsageResetDelivery? {
+        guard let delivery = lastUsageResets[provider],
+              now().timeIntervalSince(delivery.detectedAt) < Self.usageResetNoticeLifetime
+        else { return nil }
+        return delivery
+    }
+
+    func recordUsageReset(_ delivery: UsageResetDelivery) {
+        lastUsageResets[delivery.key.provider] = delivery
+    }
+
+    /// Long enough to still be there when the user comes back to the Mac,
+    /// short enough that yesterday's reset is not presented as news.
+    static let usageResetNoticeLifetime: TimeInterval = 6 * 3600
+
     var hasLowAllowance: Bool {
         allowanceStates.values.contains { state in
             guard case let .available(allowance, _) = state else { return false }
@@ -265,6 +287,10 @@ final class AppModel {
             let previous = allowanceStates[provider]
             let state = await allowanceCoordinator.state(for: provider)
             allowanceStates[provider] = state
+            // Every state reaches the reset detector, including failures and
+            // off, so it can carry evidence forward or drop it deliberately
+            // rather than inferring from an absent update.
+            resetAlerts?.allowanceObserved(provider: provider, state: state)
             guard case let .available(allowance, _) = state else { continue }
             notifier?.allowanceUpdated(provider: provider, allowance: allowance)
             var previousAllowance: ProviderAllowance?

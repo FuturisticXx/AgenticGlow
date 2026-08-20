@@ -98,7 +98,7 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         LSUIElement: true
-        NSAppleEventsUsageDescription: AgenticGlow asks Codex to bring the window for a session you click to the front, on whichever display it is on.
+        NSAppleEventsUsageDescription: AgenticGlow asks Codex to bring the window for a session you click to the front, and asks Messages to send the usage reset alerts you turn on in Settings.
         NSHumanReadableCopyright: Copyright © 2026 AgenticGlow contributors
         CFBundleURLTypes:
           - CFBundleURLName: com.twodamax.agenticglow
@@ -109,6 +109,11 @@ targets:
       properties:
         com.apple.security.application-groups:
           - Z52AX2BH7T.group.com.twodamax.agenticglow
+        # Hardened Runtime blocks Apple Events without this. It grants
+        # nothing on its own: macOS still asks the user to approve each
+        # target app individually under Privacy & Security, Automation.
+        # Used for raising a Codex window and for Messages reset alerts.
+        com.apple.security.automation.apple-events: true
     dependencies:
       - target: AgenticGlowCore
       - target: AgenticGlowEvent

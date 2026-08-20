@@ -1,5 +1,22 @@
 import AppKit
 import SwiftUI
+import AgenticGlowCore
+
+/// Keeps the Keychain out of the view. `save` returns an error message to
+/// show, or nil on success, so the view never handles a thrown error and
+/// the recipient value never travels through a preference object.
+struct MessagesRecipientBinding {
+    var load: () -> String?
+    var save: (String) -> String?
+
+    init(
+        load: @escaping () -> String? = { nil },
+        save: @escaping (String) -> String? = { _ in nil }
+    ) {
+        self.load = load
+        self.save = save
+    }
+}
 
 struct SettingsView: View {
     @Bindable var preferences: PreferencesStore
@@ -10,10 +27,15 @@ struct SettingsView: View {
     let notificationsDenied: () async -> Bool
     let settingsPresentationChanged: (Bool) -> Void
     let registerGlobalShortcut: (GlobalShortcut) -> GlobalShortcutRegistrationResult
+    let messagesRecipient: MessagesRecipientBinding
+    let sendTestUsageResetAlert: () -> Void
     @State private var launchAtLoginEnabled: Bool
     @State private var showsDeniedHint = false
     @State private var isRecordingShortcut = false
     @State private var shortcutAlert: ShortcutAlert?
+    @State private var recipient: String
+    @State private var recipientError: String?
+    @State private var confirmsTestAlert = false
 
     init(
         preferences: PreferencesStore,
@@ -23,7 +45,9 @@ struct SettingsView: View {
         serviceStatusChanged: @escaping (Bool) -> Void = { _ in },
         notificationsDenied: @escaping () async -> Bool = { false },
         settingsPresentationChanged: @escaping (Bool) -> Void = { _ in },
-        registerGlobalShortcut: @escaping (GlobalShortcut) -> GlobalShortcutRegistrationResult = { _ in .unavailable }
+        registerGlobalShortcut: @escaping (GlobalShortcut) -> GlobalShortcutRegistrationResult = { _ in .unavailable },
+        messagesRecipient: MessagesRecipientBinding = MessagesRecipientBinding(),
+        sendTestUsageResetAlert: @escaping () -> Void = {}
     ) {
         self.preferences = preferences
         self.updates = updates
@@ -33,7 +57,10 @@ struct SettingsView: View {
         self.notificationsDenied = notificationsDenied
         self.settingsPresentationChanged = settingsPresentationChanged
         self.registerGlobalShortcut = registerGlobalShortcut
+        self.messagesRecipient = messagesRecipient
+        self.sendTestUsageResetAlert = sendTestUsageResetAlert
         _launchAtLoginEnabled = State(initialValue: launchAtLogin.isEnabled)
+        _recipient = State(initialValue: messagesRecipient.load() ?? "")
     }
 
     var body: some View {
@@ -90,6 +117,7 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            usageResetSection
             Section {
                 Toggle("Show provider incidents", isOn: Binding(
                     get: { preferences.serviceStatusEnabled },
@@ -147,6 +175,87 @@ struct SettingsView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
+        .confirmationDialog(
+            "Send a test message?",
+            isPresented: $confirmsTestAlert,
+            titleVisibility: .visible
+        ) {
+            Button("Send Test Alert") { sendTestUsageResetAlert() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("A real iMessage will be sent to your configured recipient.")
+        }
+    }
+
+    @ViewBuilder
+    private var usageResetSection: some View {
+        Section("Usage Reset Alerts") {
+            Toggle("Notify when usage resets", isOn: $preferences.notifyUsageReset)
+            Text("Alerts only after AgenticGlow sees usage actually return, not when a reset time passes.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ForEach(AgentProvider.allCases, id: \.rawValue) { provider in
+                Toggle(provider.displayName, isOn: Binding(
+                    get: { preferences.usageResetProviders.contains(provider) },
+                    set: { isOn in
+                        if isOn {
+                            preferences.usageResetProviders.insert(provider)
+                        } else {
+                            preferences.usageResetProviders.remove(provider)
+                        }
+                    }
+                ))
+                .disabled(!preferences.notifyUsageReset)
+                .accessibilityIdentifier("AgenticGlow.UsageReset.\(provider.rawValue)")
+            }
+
+            Toggle("macOS notification", isOn: $preferences.usageResetNativeNotification)
+                .disabled(!preferences.notifyUsageReset)
+            Toggle("Messages", isOn: $preferences.usageResetMessages)
+                .disabled(!preferences.notifyUsageReset)
+                .accessibilityIdentifier("AgenticGlow.UsageReset.Messages")
+
+            if preferences.usageResetMessages {
+                VStack(alignment: .leading, spacing: 6) {
+                    TextField(
+                        "Phone number or Apple Account",
+                        text: $recipient
+                    )
+                    .accessibilityIdentifier("AgenticGlow.UsageReset.Recipient")
+                    .onSubmit(saveRecipient)
+                    Button("Save Recipient", action: saveRecipient)
+                    if let recipientError {
+                        Text(recipientError)
+                            .font(.caption)
+                            .foregroundStyle(Color(nsColor: .systemRed))
+                    }
+                    Text("Stored in your Keychain, never in a settings file. The first message asks macOS for permission to control Messages.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Button("Send Test Alert") {
+                if preferences.usageResetMessages {
+                    confirmsTestAlert = true
+                } else {
+                    sendTestUsageResetAlert()
+                }
+            }
+            .disabled(!preferences.notifyUsageReset || !hasUsageResetChannel)
+            .accessibilityIdentifier("AgenticGlow.UsageReset.Test")
+        }
+    }
+
+    /// With no channel on there is nothing for a test to exercise, and a
+    /// button that silently does nothing is worse than a disabled one.
+    private var hasUsageResetChannel: Bool {
+        preferences.usageResetNativeNotification || preferences.usageResetMessages
+    }
+
+    private func saveRecipient() {
+        recipientError = messagesRecipient.save(recipient)
     }
 
     private func updateGlobalShortcut(_ shortcut: GlobalShortcut) {

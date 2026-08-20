@@ -40,6 +40,23 @@ if grep -n 'UserDefaults' Sources/AgenticGlowApp/Settings/ClaudeSessionCredentia
   exit 1
 fi
 
+# The Messages recipient is personal contact data. It belongs in the Keychain,
+# never in a settings plist, and must never reach a log line.
+grep -q 'kSecClassGenericPassword' Sources/AgenticGlowApp/Settings/ClaudeSessionCredentialStore.swift
+grep -Fq 'SystemKeychainAccess' Sources/AgenticGlowApp/Settings/MessagesRecipientStore.swift
+if grep -n 'UserDefaults' Sources/AgenticGlowApp/Settings/MessagesRecipientStore.swift; then
+  echo "Messages recipient storage must not use UserDefaults" >&2
+  exit 1
+fi
+# Naming the field is fine; interpolating its value into a log line is not.
+if grep -nE 'log\(.*\\\((recipient|alert\.messageText)' \
+  Sources/AgenticGlowApp/Services/UsageResetAlertCoordinator.swift; then
+  echo "Messages recipient must never be logged" >&2
+  exit 1
+fi
+grep -q 'usage-reset-state.json' "$privacy"
+grep -q 'Keychain' "$privacy"
+
 # Provider status checks must stay credential-free and fully documented.
 grep -q 'status.claude.com' Sources/AgenticGlowCore/Status/StatusPageClient.swift
 grep -q 'status.openai.com' Sources/AgenticGlowCore/Status/StatusPageClient.swift

@@ -1,5 +1,63 @@
 # Got done
 
+## 2026-08-19 - Usage reset alerts
+
+- Added Usage Reset Alerts: AgenticGlow now announces when an exhausted
+  provider window actually becomes available again. Built on the existing
+  allowance layer rather than a new pipeline. No provider integration,
+  credential handling, or refresh architecture was changed.
+- Detection compares consecutive observations, never a reset timestamp.
+  A reset time only says when availability is expected; only a live
+  reading proves it arrived. `UsageWindowReader` maps any
+  `ProviderAllowance` onto provider-neutral window observations and
+  `UsageResetDetector` fires only on persisted exhausted to observed
+  available.
+- A `.stale` allowance observes as `.unknown`, not as availability. Stale
+  means the last good fetch replayed after a failure, so treating it as
+  live is exactly how a network blip could fake a reset. `.unknown` never
+  clears evidence, so exhausted then unknown then available still counts,
+  while unknown to available on its own stays silent.
+- Evidence persists to `usage-reset-state.json` beside the allowance
+  cache at 0600, so relaunching during an exhausted window cannot repeat
+  an alert already delivered. Turning a provider's usage off forgets its
+  evidence, matching the existing cache deletion.
+- Window identity is provider plus window label. Codex relabels windows
+  by duration when a plan changes, so a renamed window is a new key that
+  starts unknown and stays quiet rather than firing falsely.
+- Idle refresh drops from 300s to 60s only while an exhausted window is
+  within five minutes of its expected reset, or has no reset time at all.
+  A week-long exhaustion keeps the normal cadence instead of polling the
+  provider every minute for days.
+- Two delivery channels behind one coordinator: macOS notifications on by
+  default, Messages off by default and inert until a recipient is set.
+  The recipient is a Keychain generic password, never a settings plist,
+  and is never written to a log line. A privacy gate enforces both.
+- Live testing found a real defect that 325 passing tests missed. An
+  `osascript` probe to Messages blocked for two minutes on what was
+  almost certainly an unanswered Automation prompt, and `MessagesNotifier`
+  had no timeout. Because deliveries run on one serial queue, a single
+  hung send would have stalled every later alert including native
+  notifications. Sends are now bounded at 30 seconds using two dispatch
+  blocks racing onto one continuation. A task group would not work here:
+  exiting one awaits its children, which a blocked AppleScript call never
+  lets happen.
+- Added `com.apple.security.automation.apple-events` and rewrote
+  `NSAppleEventsUsageDescription` to cover both Codex window raising and
+  Messages. The entitlement grants nothing on its own; macOS still asks
+  the user to approve each target app separately.
+- Verified: full non-UI suite green at 516 tests, 0 failures, from an
+  internal temporary copy (the known external-volume XCTest limitation).
+  Signed build carries the entitlement under hardened runtime. Privacy
+  gate passes.
+- Not verified: no real provider reset has been observed, no iMessage has
+  ever been sent, and the Settings section has not been rendered on
+  screen. The Messages path fails safely under test but end-to-end
+  delivery is unproven.
+- Incidental find: `testmanagerd` wedged mid-session and made every test
+  bundle hang before connecting to the daemon, including untouched ones.
+  `pkill -9 testmanagerd` cleared it. SIGTERM was ignored. Worth
+  suspecting whenever bundles that passed minutes ago start hanging.
+
 ## 2026-08-17 - Cursor as a first-class provider
 
 - Added Cursor alongside Codex and Claude using the existing `AgentProvider`
