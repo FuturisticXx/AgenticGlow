@@ -1,5 +1,21 @@
 # Got done
 
+## 2026-08-19 - Settings no longer reads the Keychain on every render
+
+- `SettingsView.init` was reading the Messages recipient from the Keychain.
+  The Settings scene re-evaluates whenever an observed preference changes,
+  and SwiftUI re-initializes the view struct each time, so every toggle
+  flip in that window caused a synchronous main-thread Keychain read.
+- Moved the read into the existing `.task`, next to the notification
+  permission check. `.task` runs once per view identity rather than per
+  render, so a re-init cannot restart it and clobber text being typed,
+  while closing and reopening Settings still re-reads the stored value.
+- Found by reading the diff back, not by a failing test. No unit test
+  covers SwiftUI re-initialization behavior, which is exactly the gap
+  that let it through the first time.
+- Verified: full non-UI suite green at 516 tests, 0 failures, plus the
+  privacy gate.
+
 ## 2026-08-19 - Usage reset alerts
 
 - Added Usage Reset Alerts: AgenticGlow now announces when an exhausted

@@ -33,7 +33,11 @@ struct SettingsView: View {
     @State private var showsDeniedHint = false
     @State private var isRecordingShortcut = false
     @State private var shortcutAlert: ShortcutAlert?
-    @State private var recipient: String
+    /// Loaded in `.task`, never in `init`. SwiftUI re-initializes this view
+    /// whenever an observed preference changes, so reading the Keychain from
+    /// the initializer meant a synchronous Keychain hit on the main thread
+    /// every time any toggle in this window moved.
+    @State private var recipient = ""
     @State private var recipientError: String?
     @State private var confirmsTestAlert = false
 
@@ -60,7 +64,6 @@ struct SettingsView: View {
         self.messagesRecipient = messagesRecipient
         self.sendTestUsageResetAlert = sendTestUsageResetAlert
         _launchAtLoginEnabled = State(initialValue: launchAtLogin.isEnabled)
-        _recipient = State(initialValue: messagesRecipient.load() ?? "")
     }
 
     var body: some View {
@@ -164,6 +167,7 @@ struct SettingsView: View {
         .frame(width: 520)
         .task {
             showsDeniedHint = await notificationsDenied()
+            recipient = messagesRecipient.load() ?? ""
         }
         .onDisappear {
             settingsPresentationChanged(false)
