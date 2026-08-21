@@ -1,5 +1,21 @@
 import Foundation
+import os
 import AgenticGlowCore
+
+/// Reset alerts are the one part of AgenticGlow whose failures are silent
+/// by nature: a message that never arrives looks exactly like a window
+/// that never reset. `NSLog` produced nothing queryable for this process,
+/// so a real misfire left no trail at all. A subsystem logger makes the
+/// whole pipeline inspectable with
+/// `log show --predicate 'subsystem == "com.twodamax.agenticglow"'`.
+///
+/// Messages are logged `.public` deliberately: every string reaching this
+/// logger is composed in this file from provider and window names, never
+/// from a recipient. `Scripts/verify-privacy.sh` enforces that.
+private let usageResetLogger = Logger(
+    subsystem: ProductMetadata.bundleIdentifier,
+    category: "UsageReset"
+)
 
 /// What actually happened for one delivered reset alert. Drives the
 /// "Alert sent" line in the popover and nothing else.
@@ -52,7 +68,11 @@ final class UsageResetAlertCoordinator: UsageResetAlerting {
         nativeEnabled: @escaping () -> Bool,
         messagesEnabled: @escaping () -> Bool,
         now: @escaping () -> Date = Date.init,
-        log: @escaping (String) -> Void = { NSLog("AgenticGlow: %@", $0) },
+        log: @escaping (String) -> Void = {
+            // .notice persists to the log store; .info and .debug are
+            // memory-only and would vanish before anyone looked.
+            usageResetLogger.notice("\($0, privacy: .public)")
+        },
         didDeliver: @escaping (UsageResetDelivery) -> Void = { _ in }
     ) {
         self.scheduler = scheduler

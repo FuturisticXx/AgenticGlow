@@ -1,5 +1,27 @@
 # Got done
 
+## 2026-08-19 - Reset alert diagnostics move to a subsystem logger
+
+- Replaced `NSLog` in `UsageResetAlertCoordinator` with an `os.Logger` on
+  subsystem `com.twodamax.agenticglow`, category `UsageReset`, so the
+  whole delivery pipeline can be filtered precisely rather than grepped
+  out of everything the process emits.
+- Level is `.notice` deliberately: `.info` and `.debug` are memory-only
+  and would vanish before anyone went looking. Messages are annotated
+  `.public` because every string reaching this logger is composed in that
+  file from provider and window names. The recipient never reaches it,
+  and `Scripts/verify-privacy.sh` enforces that.
+- Correction to the reasoning that prompted this: `NSLog` was not proven
+  broken. `log show` returns zero entries for every process on this Mac,
+  so `NSLog` output was invisible to the tool, not absent. Verified with
+  a standalone probe binary that subsystem logging is reachable through
+  `log stream` but not `log show` here. On this machine use:
+  `log stream --predicate 'subsystem == "com.twodamax.agenticglow"'`.
+  The change stands on its own merits; the original justification was
+  based on a broken measurement.
+- Verified: full non-UI suite green at 516 tests, 0 failures, privacy
+  gate passes, subsystem and category confirmed live via `log stream`.
+
 ## 2026-08-19 - Usage reset alert Settings actually works
 
 Three defects, all in SwiftUI behavior rather than in logic, all invisible
