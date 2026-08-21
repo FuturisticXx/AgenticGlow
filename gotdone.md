@@ -1,5 +1,41 @@
 # Got done
 
+## 2026-08-19 - Usage reset alert Settings actually works
+
+Three defects, all in SwiftUI behavior rather than in logic, all invisible
+to a 516-test suite that only exercises this code against fakes. Found by
+running the app and by one screenshot, not by testing.
+
+- The recipient text field never rendered. In a `.formStyle(.grouped)` Form
+  a titled `TextField` splits into an external label plus a trailing input,
+  and nested inside the section's `VStack` the input collapsed to nothing.
+  The row showed "Phone number or Apple Account" as a dead label with
+  nowhere to type. Now an explicit `.roundedBorder` field with the text as
+  a prompt and `.labelsHidden()`.
+- The Send Test Alert confirmation never appeared. `.alert(item:)` and
+  `.confirmationDialog(...)` were stacked on the same view, and macOS
+  registers only one presentation per view, so the dialog was silently
+  dropped and the button did nothing at all. Moved onto the button itself.
+- Typing a recipient and clicking away discarded it in silence, leaving
+  Messages enabled with no destination. Now saves on focus loss as well as
+  on Return and on the button, and the section states its real condition:
+  an orange warning when nothing is stored, and an unsaved-change notice
+  when the field differs from the Keychain.
+- The test confirmation only claims a real iMessage will be sent when a
+  recipient is actually stored. With Messages on but nothing saved the test
+  is native-only, so the old wording was a lie.
+- Verified: full non-UI suite green at 516 tests, 0 failures, plus the
+  privacy gate. Confirmed live in a running Debug build.
+
+Two traps worth remembering:
+
+- `open -b <bundleID>` resolves through LaunchServices and launched
+  `/Applications/AgenticGlow.app` instead of the Debug build under test,
+  silently swapping the binary being tested. Launch by explicit path.
+- Rebuilding while an instance runs from the same path kills it with
+  `SIGKILL (Code Signature Invalid)`, because the signed pages change
+  underneath the process. Expected, not a crash to investigate.
+
 ## 2026-08-19 - Settings no longer reads the Keychain on every render
 
 - `SettingsView.init` was reading the Messages recipient from the Keychain.

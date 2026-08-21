@@ -40,6 +40,11 @@ struct SettingsView: View {
     @State private var recipient = ""
     @State private var recipientError: String?
     @State private var confirmsTestAlert = false
+    /// What is actually in the Keychain, as opposed to what is currently
+    /// typed. Messages delivery uses the stored value, so the two drifting
+    /// apart is the difference between an alert arriving and vanishing.
+    @State private var storedRecipient = ""
+    @FocusState private var recipientFocused: Bool
 
     init(
         preferences: PreferencesStore,
@@ -167,7 +172,8 @@ struct SettingsView: View {
         .frame(width: 520)
         .task {
             showsDeniedHint = await notificationsDenied()
-            recipient = messagesRecipient.load() ?? ""
+            storedRecipient = messagesRecipient.load() ?? ""
+            recipient = storedRecipient
         }
         .onDisappear {
             settingsPresentationChanged(false)
@@ -178,16 +184,6 @@ struct SettingsView: View {
                 message: Text(alert.message),
                 dismissButton: .default(Text("OK"))
             )
-        }
-        .confirmationDialog(
-            "Send a test message?",
-            isPresented: $confirmsTestAlert,
-            titleVisibility: .visible
-        ) {
-            Button("Send Test Alert") { sendTestUsageResetAlert() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("A real iMessage will be sent to your configured recipient.")
         }
     }
 
@@ -222,17 +218,44 @@ struct SettingsView: View {
 
             if preferences.usageResetMessages {
                 VStack(alignment: .leading, spacing: 6) {
+                    // An explicit bordered field with the text as a prompt.
+                    // A titled TextField in a grouped Form splits into an
+                    // external label plus a trailing input, and nested in
+                    // this VStack the input collapsed to zero width, so the
+                    // row rendered as a label with nowhere to type.
                     TextField(
-                        "Phone number or Apple Account",
-                        text: $recipient
+                        "",
+                        text: $recipient,
+                        prompt: Text("Phone number or Apple Account")
                     )
+                    .textFieldStyle(.roundedBorder)
+                    .labelsHidden()
+                    .accessibilityLabel("Messages recipient")
                     .accessibilityIdentifier("AgenticGlow.UsageReset.Recipient")
+                    .focused($recipientFocused)
                     .onSubmit(saveRecipient)
+                    // Clicking away used to discard the typed value in
+                    // silence, leaving Messages enabled with no destination.
+                    .onChange(of: recipientFocused) { _, focused in
+                        if !focused { saveRecipient() }
+                    }
                     Button("Save Recipient", action: saveRecipient)
                     if let recipientError {
                         Text(recipientError)
                             .font(.caption)
                             .foregroundStyle(Color(nsColor: .systemRed))
+                    } else if storedRecipient.isEmpty {
+                        Label(
+                            "No recipient saved yet, so no message will be sent.",
+                            systemImage: "exclamationmark.triangle.fill"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(Color(nsColor: .systemOrange))
+                        .accessibilityIdentifier("AgenticGlow.UsageReset.NoRecipient")
+                    } else if recipient.trimmed != storedRecipient {
+                        Text("Unsaved change. Click Save Recipient to use it.")
+                            .font(.caption)
+                            .foregroundStyle(Color(nsColor: .systemOrange))
                     }
                     Text("Stored in your Keychain, never in a settings file. The first message asks macOS for permission to control Messages.")
                         .font(.caption)
@@ -241,7 +264,7 @@ struct SettingsView: View {
             }
 
             Button("Send Test Alert") {
-                if preferences.usageResetMessages {
+                if sendsTestMessage {
                     confirmsTestAlert = true
                 } else {
                     sendTestUsageResetAlert()
@@ -249,7 +272,28 @@ struct SettingsView: View {
             }
             .disabled(!preferences.notifyUsageReset || !hasUsageResetChannel)
             .accessibilityIdentifier("AgenticGlow.UsageReset.Test")
+            // Attached to the button, not to the Form. Stacking this on the
+            // same view as the shortcut alert meant only one of the two
+            // presentations ever registered, so this dialog never appeared
+            // and the button did nothing at all.
+            .confirmationDialog(
+                "Send a test message?",
+                isPresented: $confirmsTestAlert,
+                titleVisibility: .visible
+            ) {
+                Button("Send Test Alert") { sendTestUsageResetAlert() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("A real iMessage will be sent to your saved recipient.")
+            }
         }
+    }
+
+    /// Only warn about a real message when one will actually be sent. With
+    /// Messages on but nothing stored, the test is native-only and a
+    /// confirmation would be a lie.
+    private var sendsTestMessage: Bool {
+        preferences.usageResetMessages && !storedRecipient.isEmpty
     }
 
     /// With no channel on there is nothing for a test to exercise, and a
@@ -259,7 +303,13 @@ struct SettingsView: View {
     }
 
     private func saveRecipient() {
-        recipientError = messagesRecipient.save(recipient)
+        let value = recipient.trimmed
+        guard value != storedRecipient else { return }
+        recipientError = messagesRecipient.save(value)
+        if recipientError == nil {
+            storedRecipient = value
+            recipient = value
+        }
     }
 
     private func updateGlobalShortcut(_ shortcut: GlobalShortcut) {
@@ -356,5 +406,11 @@ private final class ShortcutRecorderButton: NSButton {
         if modifiers.contains(.shift) { result += "⇧" }
         if modifiers.contains(.command) { result += "⌘" }
         return result
+    }
+}
+
+private extension String {
+    var trimmed: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
