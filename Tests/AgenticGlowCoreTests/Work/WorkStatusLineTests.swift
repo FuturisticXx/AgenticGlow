@@ -65,6 +65,15 @@ final class WorkStatusLineTests: XCTestCase {
         )
     }
 
+    func testActiveLineListsOnlyActiveSessionSlugs() {
+        let group = WorkGrouping.groups(from: [
+            session(id: "g", phase: .usingTool, model: "grok-4.6"),
+            session(id: "c", phase: .failed, model: "claude-sonnet-5-thinking-high"),
+            session(id: "p", phase: .failed, model: "composer-2.5-fast")
+        ])[0]
+        XCTAssertEqual(WorkStatusLine.compact(for: group), "1 active · Grok")
+    }
+
     func testMultiSessionPermissionKeepsNeedsYou() {
         let group = WorkGrouping.groups(from: [
             session(id: "ask", phase: .permission, model: "grok-4.6"),

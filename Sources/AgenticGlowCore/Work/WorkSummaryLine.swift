@@ -4,28 +4,32 @@ import Foundation
 /// work owns the current attention. Otherwise this is today's copy.
 public enum WorkSummaryLine {
     public static func popover(resolved: ResolvedSessions) -> String {
-        let sessions = resolved.sessions
-        let groups = WorkGrouping.groups(from: sessions)
+        let groups = WorkGrouping.groups(from: resolved.sessions)
+        let sessions = groups.flatMap(\.sessions)
+        let permissionCount = sessions.filter { $0.phase == .permission }.count
+        let activeProviders = Set(
+            sessions.filter(\.phase.isActive).map(\.provider)
+        )
 
-        if resolved.permissionCount >= 1 {
+        if permissionCount >= 1 {
             if let name = overlappingOwnerName(
                 of: sessions.filter { $0.phase == .permission },
                 in: groups
             ) {
                 return "\(name) needs you"
             }
-            if resolved.permissionCount == 1 { return "1 agent needs you" }
-            return "\(resolved.permissionCount) agents need you"
+            if permissionCount == 1 { return "1 agent needs you" }
+            return "\(permissionCount) agents need you"
         }
 
-        if !resolved.activeProviders.isEmpty {
+        if !activeProviders.isEmpty {
             if let name = overlappingOwnerName(
                 of: sessions.filter(\.phase.isActive),
                 in: groups
             ) {
                 return "\(name) working"
             }
-            return providerWorkingCopy(resolved.activeProviders)
+            return providerWorkingCopy(activeProviders)
         }
 
         let count = sessions.count

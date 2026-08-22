@@ -244,6 +244,48 @@ final class WidgetSnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(WidgetSmallCopy.subtitle(for: snapshot), "active")
     }
 
+    func testDuplicateAdapterReportsCompressToOneCursorRow() {
+        let sid = "sid_dd1e00780b983db555e9b4a776bc48b98ca13eafb30b5dee3c79e004117e541c"
+        let claude = SessionSnapshot(
+            provider: .claude,
+            surface: .desktop,
+            sessionID: sid,
+            phase: .thinking,
+            label: "Thinking",
+            projectName: "AgenticGlow",
+            workingDirectory: "/tmp/AgenticGlow",
+            sourceBundleID: nil,
+            elapsedSeconds: 12,
+            updatedAt: now,
+            model: "grok-4.6"
+        )
+        let cursor = SessionSnapshot(
+            provider: .cursor,
+            surface: .desktop,
+            sessionID: sid,
+            phase: .usingTool,
+            label: "Reading",
+            projectName: "AgenticGlow",
+            workingDirectory: "/tmp/AgenticGlow",
+            sourceBundleID: AgentProvider.cursorBundleIdentifier,
+            elapsedSeconds: 12,
+            updatedAt: now,
+            toolCategory: .read,
+            model: "grok-4.6"
+        )
+        let snapshot = WidgetSnapshotBuilder.build(
+            resolved: resolved(sessions: [claude, cursor], activeCount: 2),
+            allowances: [:],
+            installedProviders: [:],
+            now: now
+        )
+        XCTAssertEqual(snapshot.sessions.count, 1)
+        XCTAssertEqual(snapshot.sessions[0].provider, .cursor)
+        XCTAssertEqual(snapshot.sessions[0].sessionID, sid)
+        XCTAssertNil(snapshot.sessions[0].compactDetail)
+        XCTAssertEqual(snapshot.sessions[0].phase, .usingTool)
+    }
+
     func testAttentionCountStillCountsSessionsNotGroups() {
         let snapshot = WidgetSnapshotBuilder.build(
             resolved: resolved(sessions: [

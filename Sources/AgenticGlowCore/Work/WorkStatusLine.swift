@@ -21,11 +21,13 @@ public enum WorkStatusLine {
         default:
             break
         }
-        let activeCount = group.sessions.filter { $0.phase.isActive || $0.phase == .permission }.count
-        let slugs = sessionSlugs(in: group.sessions)
+        // "N active · slugs" names only the sessions in that count.
+        let active = group.sessions.filter { $0.phase.isActive || $0.phase == .permission }
+        let listed = active.isEmpty ? group.sessions : active
+        let slugs = sessionSlugs(in: listed)
         let slugPart = slugs.joined(separator: ", ")
-        if activeCount > 0 {
-            return slugPart.isEmpty ? "\(activeCount) active" : "\(activeCount) active · \(slugPart)"
+        if !active.isEmpty {
+            return slugPart.isEmpty ? "\(active.count) active" : "\(active.count) active · \(slugPart)"
         }
         return slugPart.isEmpty ? "\(group.sessions.count) sessions" : "\(group.sessions.count) · \(slugPart)"
     }

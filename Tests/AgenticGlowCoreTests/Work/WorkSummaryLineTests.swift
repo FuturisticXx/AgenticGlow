@@ -52,6 +52,20 @@ final class WorkSummaryLineTests: XCTestCase {
         XCTAssertEqual(WorkSummaryLine.popover(resolved: resolved), "Claude and Cursor working")
     }
 
+    func testDuplicateAdapterReportsKeepProviderCopy() {
+        let sid = "sid_dd1e00780b983db555e9b4a776bc48b98ca13eafb30b5dee3c79e004117e541c"
+        let resolved = resolved([
+            session(id: sid, provider: .claude, path: "/tmp/AgenticGlow"),
+            session(
+                id: sid,
+                provider: .cursor,
+                path: "/tmp/AgenticGlow",
+                sourceBundleID: AgentProvider.cursorBundleIdentifier
+            )
+        ], activeProviders: [.cursor, .claude])
+        XCTAssertEqual(WorkSummaryLine.popover(resolved: resolved), "Cursor working")
+    }
+
     func testIdleCountUnchanged() {
         let resolved = resolved([
             session(id: "one", phase: .idle, path: "/tmp/AgenticGlow")
@@ -89,7 +103,8 @@ final class WorkSummaryLineTests: XCTestCase {
         id: String,
         provider: AgentProvider = .cursor,
         phase: SessionPhase = .thinking,
-        path: String
+        path: String,
+        sourceBundleID: String? = nil
     ) -> SessionSnapshot {
         SessionSnapshot(
             provider: provider,
@@ -99,7 +114,7 @@ final class WorkSummaryLineTests: XCTestCase {
             label: "Working",
             projectName: URL(fileURLWithPath: path).lastPathComponent,
             workingDirectory: path,
-            sourceBundleID: nil,
+            sourceBundleID: sourceBundleID,
             elapsedSeconds: 12,
             updatedAt: now
         )

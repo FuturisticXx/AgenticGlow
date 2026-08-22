@@ -105,12 +105,118 @@ final class WorkGroupingTests: XCTestCase {
         XCTAssertEqual(groups.count, 2)
     }
 
+    func testSameSessionIDAndWorkCollapsesCursorAndClaudeHookReports() {
+        let sid = "sid_dd1e00780b983db555e9b4a776bc48b98ca13eafb30b5dee3c79e004117e541c"
+        let path = "/Volumes/Liquid/2DaMax Development/AgenticGlow"
+        let claude = session(
+            id: sid,
+            provider: .claude,
+            phase: .thinking,
+            path: path,
+            model: "grok-4.6"
+        )
+        let cursor = session(
+            id: sid,
+            provider: .cursor,
+            phase: .usingTool,
+            path: path,
+            sourceBundleID: AgentProvider.cursorBundleIdentifier,
+            model: "grok-4.6"
+        )
+        let groups = WorkGrouping.groups(from: [claude, cursor])
+        XCTAssertEqual(groups.count, 1)
+        XCTAssertEqual(groups[0].sessions.count, 1)
+        XCTAssertEqual(groups[0].sessions[0].provider, .cursor)
+        XCTAssertEqual(groups[0].sessions[0].sessionID, sid)
+        XCTAssertEqual(WorkGrouping.orderedSessions(from: [claude, cursor]).count, 1)
+    }
+
+    func testSameModelDifferentSessionIDsRemainSeparate() {
+        let path = "/tmp/AgenticGlow"
+        let groups = WorkGrouping.groups(from: [
+            session(id: "cursor-grok", provider: .cursor, path: path, model: "grok-4.6"),
+            session(id: "claude-grok", provider: .claude, path: path, model: "grok-4.6")
+        ])
+        XCTAssertEqual(groups.count, 1)
+        XCTAssertEqual(groups[0].sessions.count, 2)
+        XCTAssertEqual(Set(groups[0].sessions.map(\.sessionID)), ["cursor-grok", "claude-grok"])
+    }
+
+    func testSameSessionIDDifferentWorkDoesNotCollapse() {
+        let sid = "sid_shared"
+        let groups = WorkGrouping.groups(from: [
+            session(id: sid, provider: .claude, path: "/tmp/Moodpaper", model: "grok-4.6"),
+            session(
+                id: sid,
+                provider: .cursor,
+                path: "/tmp/AgenticGlow",
+                sourceBundleID: AgentProvider.cursorBundleIdentifier,
+                model: "grok-4.6"
+            )
+        ])
+        XCTAssertEqual(groups.count, 2)
+        XCTAssertEqual(groups.map(\.sessions.count), [1, 1])
+        XCTAssertEqual(Set(groups.flatMap { $0.sessions.map(\.provider) }), [.claude, .cursor])
+    }
+
+    func testLiveNativeReportWinsOverStaleCompatibilityReport() {
+        let sid = "sid_dd1e00780b983db555e9b4a776bc48b98ca13eafb30b5dee3c79e004117e541c"
+        let path = "/tmp/AgenticGlow"
+        let groups = WorkGrouping.groups(from: [
+            session(
+                id: sid,
+                provider: .claude,
+                phase: .thinking,
+                path: path,
+                updatedAt: now.addingTimeInterval(-1_200),
+                model: "grok-4.6"
+            ),
+            session(
+                id: sid,
+                provider: .cursor,
+                phase: .usingTool,
+                path: path,
+                sourceBundleID: AgentProvider.cursorBundleIdentifier,
+                updatedAt: now,
+                model: "grok-4.6"
+            )
+        ])
+        let displayed = groups[0].sessions[0]
+        XCTAssertEqual(groups[0].sessions.count, 1)
+        XCTAssertEqual(displayed.provider, .cursor)
+        XCTAssertEqual(displayed.phase, .usingTool)
+        XCTAssertEqual(displayed.sourceBundleID, AgentProvider.cursorBundleIdentifier)
+    }
+
+    func testSourceReportsKeepBothAdaptersForDiagnostics() {
+        let sid = "sid_dd1e00780b983db555e9b4a776bc48b98ca13eafb30b5dee3c79e004117e541c"
+        let path = "/tmp/AgenticGlow"
+        let claude = session(id: sid, provider: .claude, path: path, model: "grok-4.6")
+        let cursor = session(
+            id: sid,
+            provider: .cursor,
+            phase: .usingTool,
+            path: path,
+            sourceBundleID: AgentProvider.cursorBundleIdentifier,
+            model: "grok-4.6"
+        )
+        let group = WorkGrouping.groups(from: [claude, cursor])[0]
+        XCTAssertEqual(group.sessions.count, 1)
+        XCTAssertEqual(group.sessions[0].provider, .cursor)
+        XCTAssertEqual(Set(group.sourceReports.map(\.provider)), [.claude, .cursor])
+        XCTAssertEqual(group.sourceReports.count, 2)
+        XCTAssertEqual(Set(group.sourceReports.map(\.sessionID)), [sid])
+    }
+
     private func session(
         id: String,
         provider: AgentProvider = .cursor,
         phase: SessionPhase = .thinking,
         path: String,
-        projectName: String? = nil
+        projectName: String? = nil,
+        sourceBundleID: String? = nil,
+        updatedAt: Date? = nil,
+        model: String? = nil
     ) -> SessionSnapshot {
         SessionSnapshot(
             provider: provider,
@@ -120,9 +226,10 @@ final class WorkGroupingTests: XCTestCase {
             label: "Working",
             projectName: projectName ?? URL(fileURLWithPath: path).lastPathComponent.ifEmpty("AgenticGlow"),
             workingDirectory: path,
-            sourceBundleID: nil,
+            sourceBundleID: sourceBundleID,
             elapsedSeconds: 12,
-            updatedAt: now
+            updatedAt: updatedAt ?? now,
+            model: model
         )
     }
 }

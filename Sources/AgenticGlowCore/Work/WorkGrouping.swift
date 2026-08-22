@@ -8,7 +8,10 @@ public struct WorkPresentation: Equatable, Sendable {
 public enum WorkGrouping {
     public struct Group: Equatable, Sendable {
         public let presentation: WorkPresentation
+        /// Logical sessions after same-id adapter reports are collapsed.
         public let sessions: [SessionSnapshot]
+        /// Every raw report for this work, including collapsed duplicates.
+        public let sourceReports: [SessionSnapshot]
 
         public var representative: SessionSnapshot {
             sessions[0]
@@ -35,13 +38,14 @@ public enum WorkGrouping {
         }
 
         let groups = order.compactMap { key -> Group? in
-            guard let identity = identities[key], var members = buckets[key], !members.isEmpty else {
+            guard let identity = identities[key], let members = buckets[key], !members.isEmpty else {
                 return nil
             }
-            members.sort(by: attentionSort)
+            let displayed = collapseLogicalSessions(members)
             return Group(
                 presentation: WorkPresentation(identity: identity, displayName: ""),
-                sessions: members
+                sessions: displayed,
+                sourceReports: members
             )
         }
         .sorted(by: groupSort)
@@ -51,6 +55,58 @@ public enum WorkGrouping {
 
     private static func groupSort(_ lhs: Group, _ rhs: Group) -> Bool {
         attentionSort(lhs.representative, rhs.representative)
+    }
+
+    /// Same hashed session id in the same work is one conversation reported
+    /// by more than one hook adapter. Keep every report; show the owner.
+    private static func collapseLogicalSessions(_ members: [SessionSnapshot]) -> [SessionSnapshot] {
+        var order: [String] = []
+        var byID: [String: [SessionSnapshot]] = [:]
+        for session in members {
+            if byID[session.sessionID] == nil {
+                order.append(session.sessionID)
+            }
+            byID[session.sessionID, default: []].append(session)
+        }
+        return order.map { id in
+            byID[id]!.sorted(by: ownershipSort)[0]
+        }
+        .sorted(by: attentionSort)
+    }
+
+    static func ownershipSort(_ lhs: SessionSnapshot, _ rhs: SessionSnapshot) -> Bool {
+        let left = ownershipRank(lhs)
+        let right = ownershipRank(rhs)
+        if left != right { return left < right }
+        return attentionSort(lhs, rhs)
+    }
+
+    /// Lower wins: live process identity, any process identity, native
+    /// adapter, then compatibility/secondary hook adapter.
+    private static func ownershipRank(_ session: SessionSnapshot) -> (Int, Int, Int) {
+        let live = session.sourceBundleID != nil && (session.phase.isActive || session.phase == .permission)
+        let identified = session.sourceBundleID != nil
+        return (
+            live ? 0 : 1,
+            identified ? 0 : 1,
+            isNativeAdapter(session) ? 0 : 1
+        )
+    }
+
+    private static func isNativeAdapter(_ session: SessionSnapshot) -> Bool {
+        if let bundle = session.sourceBundleID, let owner = nativeProvider(for: bundle) {
+            return owner == session.provider
+        }
+        return session.provider != .claude
+    }
+
+    private static func nativeProvider(for bundleID: String) -> AgentProvider? {
+        if bundleID == AgentProvider.cursorBundleIdentifier { return .cursor }
+        if bundleID == "com.anthropic.claudefordesktop" { return .claude }
+        if bundleID == "com.openai.codex" || bundleID == "com.openai.chatgpt" {
+            return .codex
+        }
+        return nil
     }
 
     static func attentionSort(_ lhs: SessionSnapshot, _ rhs: SessionSnapshot) -> Bool {
@@ -97,7 +153,8 @@ public enum WorkDisplayName {
                     identity: group.presentation.identity,
                     displayName: display
                 ),
-                sessions: group.sessions
+                sessions: group.sessions,
+                sourceReports: group.sourceReports
             )
         }
     }

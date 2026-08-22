@@ -1,5 +1,16 @@
 # Got done
 
+## 2026-08-22 - Collapse duplicate adapter reports
+
+- Same hashed session id in the same work is now one logical session
+  for grouping, the widget row, and the popover list. Raw session files
+  stay. `sourceReports` keeps both adapter records for diagnostics.
+- Ownership prefers a live process-backed native report. For
+  `sid_dd1e…`, Cursor wins over the Claude-hook shadow.
+- `N active · slugs` now names only the sessions in that count, so
+  failed siblings no longer look active. The live AgenticGlow overlap
+  line is `1 active · Grok`.
+
 ## 2026-08-22 - Work Awareness Phase 1
 
 - Grouped sessions by exact normalized `workingDirectory`. Same folder
