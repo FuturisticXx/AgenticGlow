@@ -530,6 +530,16 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertEqual(resolved.sessions.first?.turnStartedAt, Date(timeIntervalSince1970: 90))
     }
 
+    func testSnapshotCarriesWorkingDirectoryFromEvent() {
+        let resolved = resolve(
+            event(provider: .cursor, session: "agenticglow", phase: .thinking, updated: 999)
+        )
+        XCTAssertEqual(
+            resolved.sessions.first?.workingDirectory,
+            "/tmp/agenticglow"
+        )
+    }
+
     func testUnknownProcessExpiresAfterFourHours() {
         let event = eventWithoutProcessID(provider: .codex, session: "old", phase: .thinking, updated: 100)
         var memory = ResolutionMemory()

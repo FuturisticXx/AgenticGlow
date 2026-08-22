@@ -12,6 +12,16 @@ public enum NotificationPolicy {
             session.phase == .permission && previousPhases[session.id] != .permission
         }
     }
+
+    /// Sessions that entered the failed phase since the previous refresh.
+    public static func newlyFailed(
+        previousPhases: [String: SessionPhase],
+        sessions: [SessionSnapshot]
+    ) -> [SessionSnapshot] {
+        sessions.filter { session in
+            session.phase == .failed && previousPhases[session.id] != .failed
+        }
+    }
 }
 
 public struct QuotaAlert: Equatable, Sendable {

@@ -122,7 +122,7 @@ struct SessionListView: View {
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
-                    ForEach(model.resolved.sessions) { session in
+                    ForEach(WorkGrouping.orderedSessions(from: model.resolved.sessions)) { session in
                         SessionRowView(
                             session: session,
                             action: { model.activate(session) },
@@ -151,20 +151,7 @@ struct SessionListView: View {
     }
 
     private var summary: String {
-        let resolved = model.resolved
-        if resolved.permissionCount == 1 { return "1 agent needs you" }
-        if resolved.permissionCount > 1 { return "\(resolved.permissionCount) agents need you" }
-        if !resolved.activeProviders.isEmpty {
-            let names = AgentProvider.menuBarTintOrder
-                .filter { resolved.activeProviders.contains($0) }
-                .map(\.displayName)
-            if names.count <= 2 {
-                return "\(names.joined(separator: " and ")) working"
-            }
-            return "\(names.dropLast().joined(separator: ", ")), and \(names.last!) working"
-        }
-        let count = resolved.sessions.count
-        return count == 1 ? "1 session" : "\(count) sessions"
+        WorkSummaryLine.popover(resolved: model.resolved)
     }
 
     private func detail(for provider: AgentProvider) -> String {

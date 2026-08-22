@@ -199,6 +199,65 @@ final class WidgetSnapshotBuilderTests: XCTestCase {
         XCTAssertTrue(WidgetSnapshotBuilder.isMeaningfullyDifferent(b, from: a))
     }
 
+    func testSingleSessionWorkLeavesCompactDetailNil() {
+        let snapshot = WidgetSnapshotBuilder.build(
+            resolved: resolved(sessions: [session(id: "s", phase: .thinking, path: "/tmp/AgenticGlow")], activeCount: 1),
+            allowances: [:], installedProviders: [:], now: now
+        )
+        XCTAssertEqual(snapshot.sessions.count, 1)
+        XCTAssertNil(snapshot.sessions[0].compactDetail)
+        XCTAssertEqual(snapshot.sessions[0].projectName, "AgenticGlow")
+        XCTAssertEqual(WidgetSmallCopy.title(for: snapshot), "1 session")
+        XCTAssertEqual(WidgetSmallCopy.subtitle(for: snapshot), "active")
+    }
+
+    func testSameFolderCompressesToOneRow() {
+        let sessions = [
+            session(id: "g", provider: .cursor, phase: .thinking, path: "/tmp/AgenticGlow", model: "grok-4.6"),
+            session(id: "c", provider: .cursor, phase: .thinking, path: "/tmp/AgenticGlow", model: "claude-sonnet-5-thinking-high"),
+            session(id: "p", provider: .cursor, phase: .thinking, path: "/tmp/AgenticGlow", model: "composer-2.5-fast")
+        ]
+        let snapshot = WidgetSnapshotBuilder.build(
+            resolved: resolved(sessions: sessions, activeCount: 3),
+            allowances: [:], installedProviders: [:], now: now
+        )
+        XCTAssertEqual(snapshot.sessions.count, 1)
+        XCTAssertEqual(snapshot.sessions[0].projectName, "AgenticGlow")
+        XCTAssertEqual(snapshot.sessions[0].compactDetail, "3 active · Claude, Grok, Composer")
+        XCTAssertEqual(snapshot.attentionCount, 0)
+        XCTAssertEqual(snapshot.activeCount, 3)
+        XCTAssertEqual(WidgetSmallCopy.title(for: snapshot), "AgenticGlow")
+        XCTAssertEqual(WidgetSmallCopy.subtitle(for: snapshot), "3 active")
+    }
+
+    func testDifferentFoldersStaySeparateRows() {
+        let snapshot = WidgetSnapshotBuilder.build(
+            resolved: resolved(sessions: [
+                session(id: "a", phase: .thinking, path: "/tmp/AgenticGlow"),
+                session(id: "b", phase: .thinking, path: "/tmp/Moodpaper")
+            ], activeCount: 2),
+            allowances: [:], installedProviders: [:], now: now
+        )
+        XCTAssertEqual(snapshot.sessions.map(\.projectName), ["AgenticGlow", "Moodpaper"])
+        XCTAssertTrue(snapshot.sessions.allSatisfy { $0.compactDetail == nil })
+        XCTAssertEqual(WidgetSmallCopy.title(for: snapshot), "2 sessions")
+        XCTAssertEqual(WidgetSmallCopy.subtitle(for: snapshot), "active")
+    }
+
+    func testAttentionCountStillCountsSessionsNotGroups() {
+        let snapshot = WidgetSnapshotBuilder.build(
+            resolved: resolved(sessions: [
+                session(id: "a", phase: .permission, path: "/tmp/AgenticGlow"),
+                session(id: "b", phase: .permission, path: "/tmp/AgenticGlow")
+            ]),
+            allowances: [:], installedProviders: [:], now: now
+        )
+        XCTAssertEqual(snapshot.sessions.count, 1)
+        XCTAssertEqual(snapshot.attentionCount, 2)
+        XCTAssertEqual(WidgetSmallCopy.title(for: snapshot), "AgenticGlow")
+        XCTAssertEqual(WidgetSmallCopy.subtitle(for: snapshot), "needs you")
+    }
+
     func testInstalledProviderChangeIsMeaningfullyDifferent() {
         let a = WidgetSnapshotBuilder.build(
             resolved: resolved(sessions: []), allowances: [:],
@@ -226,18 +285,27 @@ final class WidgetSnapshotBuilderTests: XCTestCase {
         )
     }
 
-    private func session(id: String, phase: SessionPhase, elapsedSeconds: Int = 12) -> SessionSnapshot {
+    private func session(
+        id: String,
+        provider: AgentProvider = .claude,
+        phase: SessionPhase,
+        elapsedSeconds: Int = 12,
+        path: String = "",
+        model: String? = nil
+    ) -> SessionSnapshot {
         SessionSnapshot(
-            provider: .claude,
+            provider: provider,
             surface: .cli,
             sessionID: id,
             phase: phase,
             label: "Working",
-            projectName: "AgenticGlow",
+            projectName: path.isEmpty ? "AgenticGlow" : URL(fileURLWithPath: path).lastPathComponent,
+            workingDirectory: path,
             sourceBundleID: nil,
             elapsedSeconds: elapsedSeconds,
             updatedAt: now,
-            toolCategory: nil
+            toolCategory: nil,
+            model: model
         )
     }
 

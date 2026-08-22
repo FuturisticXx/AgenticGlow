@@ -154,6 +154,13 @@ final class AppModel {
             if !newlyWaiting.isEmpty {
                 notifier.sessionsNeedPermission(newlyWaiting)
             }
+            let newlyFailed = NotificationPolicy.newlyFailed(
+                previousPhases: previousPhases,
+                sessions: resolved.sessions
+            )
+            if !newlyFailed.isEmpty {
+                notifier.sessionsFailed(newlyFailed)
+            }
         }
         if resolved.sessions.contains(where: { Self.endedThisRefresh($0, previousPhases: previousPhases) }) {
             Task { [weak self] in

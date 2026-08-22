@@ -20,22 +20,25 @@ public enum WidgetSnapshotBuilder {
         installedProviders: [AgentProvider: Bool],
         now: Date
     ) -> WidgetSnapshot {
-        // resolved.sessions is already sorted by SessionResolver's own
-        // priority order (permission > usingTool > thinking > failed >
-        // completed > disconnected > idle); reuse that order as-is rather
-        // than re-deriving it here.
-        let sessions = resolved.sessions.prefix(maximumSessions).map { snapshot in
-            WidgetSessionSummary(
-                provider: snapshot.provider,
-                sessionID: snapshot.sessionID,
-                projectName: snapshot.projectName,
-                phase: snapshot.phase,
-                toolCategory: snapshot.toolCategory,
-                elapsedSeconds: snapshot.elapsedSeconds,
-                updatedAt: snapshot.updatedAt,
-                needsAttention: attentionPhases.contains(snapshot.phase)
-            )
-        }
+        // Group by work identity, then keep SessionResolver's attention
+        // order via WorkGrouping. One row per work; the snapshot cap is
+        // unchanged. attentionCount still counts sessions, not groups.
+        let sessions = WorkGrouping.groups(from: resolved.sessions)
+            .prefix(maximumSessions)
+            .map { group in
+                let snapshot = group.representative
+                return WidgetSessionSummary(
+                    provider: snapshot.provider,
+                    sessionID: snapshot.sessionID,
+                    projectName: group.presentation.displayName,
+                    phase: snapshot.phase,
+                    toolCategory: snapshot.toolCategory,
+                    elapsedSeconds: snapshot.elapsedSeconds,
+                    updatedAt: snapshot.updatedAt,
+                    needsAttention: attentionPhases.contains(snapshot.phase),
+                    compactDetail: group.sessions.count > 1 ? WorkStatusLine.compact(for: group) : nil
+                )
+            }
 
         let allowanceSummaries = AgentProvider.allCases.compactMap { provider -> WidgetAllowanceSummary? in
             guard let allowance = allowances[provider] else { return nil }
@@ -88,6 +91,7 @@ public enum WidgetSnapshotBuilder {
                 && a.phase == b.phase
                 && a.toolCategory == b.toolCategory
                 && a.needsAttention == b.needsAttention
+                && a.compactDetail == b.compactDetail
         }
     }
 

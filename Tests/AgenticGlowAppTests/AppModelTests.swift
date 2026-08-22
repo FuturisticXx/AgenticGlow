@@ -621,6 +621,8 @@ private final class RecordingNotifier: AgentNotifying {
         permissionBatches.append(sessions)
     }
 
+    func sessionsFailed(_ sessions: [SessionSnapshot]) {}
+
     func allowanceUpdated(provider: AgentProvider, allowance: ProviderAllowance) {
         allowanceUpdates.append((provider, allowance))
     }

@@ -38,15 +38,18 @@ struct SessionRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(session.projectName), \(PhaseGlyph.label(for: session.phase))")
+        .accessibilityLabel("\(session.projectName), \(detailText)")
     }
 
     private var detailText: String {
+        if let compactDetail = session.compactDetail {
+            return compactDetail
+        }
         switch style {
         case .compact:
-            PhaseGlyph.label(for: session.phase)
+            return PhaseGlyph.label(for: session.phase)
         case .detailed:
-            "\(PhaseGlyph.label(for: session.phase)) · \(session.provider.displayName)"
+            return "\(PhaseGlyph.label(for: session.phase)) · \(session.provider.displayName)"
         }
     }
 }

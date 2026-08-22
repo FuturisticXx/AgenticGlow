@@ -75,6 +75,18 @@ final class WidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(decoded.schemaVersion, 99)
     }
 
+    func testMissingCompactDetailDecodesAsNil() throws {
+        let json = """
+        {"schemaVersion":1,"generatedAt":\(now.timeIntervalSince1970),
+        "sessions":[{"provider":"claude","sessionID":"abc","projectName":"AgenticGlow",
+        "phase":"thinking","elapsedSeconds":12,"updatedAt":\(now.timeIntervalSince1970),
+        "needsAttention":false}],"allowances":[],"providers":[],"attentionCount":0,"activeCount":1}
+        """
+        let decoded = try JSONDecoder.agenticglow.decode(WidgetSnapshot.self, from: Data(json.utf8))
+        XCTAssertNil(decoded.sessions.first?.compactDetail)
+        XCTAssertEqual(decoded.sessions.first?.projectName, "AgenticGlow")
+    }
+
     func testDecodingCorruptedDataFails() {
         let data = Data("not json".utf8)
         XCTAssertThrowsError(try JSONDecoder.agenticglow.decode(WidgetSnapshot.self, from: data))

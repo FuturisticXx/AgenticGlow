@@ -45,22 +45,22 @@ struct SmallWidgetView: View {
             // substitute custom colors, so a semantic style renders more
             // predictably as well.
             glyph("pause.circle", color: .secondary)
-            Text(snapshot.attentionCount == 1 ? "1 session" : "\(snapshot.attentionCount) sessions")
+            Text(WidgetSmallCopy.title(for: snapshot))
                 .font(.system(size: 28, weight: .medium))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(Self.headlineMinimumScale)
-            Text("needs you")
+            Text(WidgetSmallCopy.subtitle(for: snapshot) ?? "needs you")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
         } else if snapshot.activeCount > 0 {
             glyph("sparkle", color: .accentColor)
-            Text(snapshot.activeCount == 1 ? "1 session" : "\(snapshot.activeCount) sessions")
+            Text(WidgetSmallCopy.title(for: snapshot))
                 .font(.system(size: 28, weight: .medium))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(Self.headlineMinimumScale)
-            Text("active")
+            Text(WidgetSmallCopy.subtitle(for: snapshot) ?? "active")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
         } else if let lowest = lowestWindow {

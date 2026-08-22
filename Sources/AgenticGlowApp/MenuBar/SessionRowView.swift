@@ -1,3 +1,4 @@
+import AppKit
 import AgenticGlowCore
 import SwiftUI
 
@@ -53,9 +54,19 @@ struct SessionRowView: View {
         .accessibilityHint("Activates the source application")
 
         let header = HStack(spacing: 4) {
-            if isRemovable {
+            if hasContextActions {
                 row.contextMenu {
-                    Button("Remove", systemImage: "xmark.circle", role: .destructive, action: onRemove)
+                    if WorkContextCopy.canReveal(session) {
+                        Button("Reveal in Finder", systemImage: "folder") {
+                            revealInFinder()
+                        }
+                        Button("Copy Context", systemImage: "doc.on.doc") {
+                            copyContext()
+                        }
+                    }
+                    if isRemovable {
+                        Button("Remove", systemImage: "xmark.circle", role: .destructive, action: onRemove)
+                    }
                 }
             } else {
                 row
@@ -134,6 +145,20 @@ struct SessionRowView: View {
 
     private var isRemovable: Bool {
         [.idle, .disconnected, .completed, .permission, .failed].contains(session.phase)
+    }
+
+    private var hasContextActions: Bool {
+        isRemovable || WorkContextCopy.canReveal(session)
+    }
+
+    private func revealInFinder() {
+        guard WorkContextCopy.canReveal(session) else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: session.workingDirectory)])
+    }
+
+    private func copyContext() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(WorkContextCopy.text(for: session), forType: .string)
     }
 
     private func updatePulse() {

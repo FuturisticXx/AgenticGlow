@@ -89,6 +89,7 @@ public enum SessionResolver {
                 phase: phase,
                 label: phase == .idle ? "Idle" : phase == .disconnected ? "Disconnected" : event.label,
                 projectName: event.projectName,
+                workingDirectory: event.workingDirectory,
                 sourceBundleID: event.sourceBundleID,
                 elapsedSeconds: event.turnStartedAt.map { max(0, Int(now.timeIntervalSince($0))) },
                 turnStartedAt: event.turnStartedAt,

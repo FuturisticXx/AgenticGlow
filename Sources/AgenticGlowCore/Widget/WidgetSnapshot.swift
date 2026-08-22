@@ -5,7 +5,7 @@ import Foundation
 /// no raw provider responses, no credentials. Written by the main app to the
 /// App Group shared container and read by the widget extension.
 public struct WidgetSnapshot: Codable, Equatable, Sendable {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public let schemaVersion: Int
     public let generatedAt: Date
@@ -67,6 +67,9 @@ public struct WidgetSessionSummary: Codable, Equatable, Sendable, Identifiable {
     public let elapsedSeconds: Int?
     public let updatedAt: Date
     public let needsAttention: Bool
+    /// Set only for a multi-session work group. Nil keeps today's
+    /// phase / phase · provider secondary line.
+    public let compactDetail: String?
 
     public init(
         provider: AgentProvider,
@@ -76,7 +79,8 @@ public struct WidgetSessionSummary: Codable, Equatable, Sendable, Identifiable {
         toolCategory: ToolCategory?,
         elapsedSeconds: Int?,
         updatedAt: Date,
-        needsAttention: Bool
+        needsAttention: Bool,
+        compactDetail: String? = nil
     ) {
         self.provider = provider
         self.sessionID = sessionID
@@ -86,6 +90,7 @@ public struct WidgetSessionSummary: Codable, Equatable, Sendable, Identifiable {
         self.elapsedSeconds = elapsedSeconds
         self.updatedAt = updatedAt
         self.needsAttention = needsAttention
+        self.compactDetail = compactDetail
     }
 }
 

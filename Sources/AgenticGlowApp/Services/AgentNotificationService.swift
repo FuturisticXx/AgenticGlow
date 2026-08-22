@@ -5,6 +5,7 @@ import AgenticGlowCore
 @MainActor
 protocol AgentNotifying: AnyObject {
     func sessionsNeedPermission(_ sessions: [SessionSnapshot])
+    func sessionsFailed(_ sessions: [SessionSnapshot])
     func allowanceUpdated(provider: AgentProvider, allowance: ProviderAllowance)
 }
 
@@ -25,6 +26,7 @@ final class AgentNotificationService: AgentNotifying {
     private let quotaEnabled: () -> Bool
     private let resetTime: (Date) -> String
     private let activate: (String) -> Void
+    private let activateSession: (AgentProvider, String) -> Bool
     private var quotaTracker = QuotaAlertTracker()
     private var pending: Task<Void, Never>?
 
@@ -35,19 +37,27 @@ final class AgentNotificationService: AgentNotifying {
         resetTime: @escaping (Date) -> String = {
             $0.formatted(date: .omitted, time: .shortened)
         },
-        activate: @escaping (String) -> Void
+        activate: @escaping (String) -> Void,
+        activateSession: @escaping (AgentProvider, String) -> Bool = { _, _ in false }
     ) {
         self.scheduler = scheduler
         self.permissionEnabled = permissionEnabled
         self.quotaEnabled = quotaEnabled
         self.resetTime = resetTime
         self.activate = activate
+        self.activateSession = activateSession
     }
 
     /// Call once at launch. Requests authorization up front so the first
     /// alert is never lost behind the system permission prompt.
     func start() {
         scheduler.clickHandler = { [weak self] userInfo in
+            if let raw = userInfo["provider"],
+               let sessionID = userInfo["sessionID"],
+               let provider = AgentProvider(rawValue: raw),
+               self?.activateSession(provider, sessionID) == true {
+                return
+            }
             guard let bundleID = userInfo["sourceBundleID"] else { return }
             self?.activate(bundleID)
         }
@@ -61,16 +71,40 @@ final class AgentNotificationService: AgentNotifying {
     func sessionsNeedPermission(_ sessions: [SessionSnapshot]) {
         guard permissionEnabled() else { return }
         for session in sessions {
-            let userInfo = session.sourceBundleID.map { ["sourceBundleID": $0] } ?? [:]
             enqueue { scheduler in
                 await scheduler.add(
                     id: "permission.\(session.id)",
                     title: "\(session.projectName) needs you",
                     body: "\(session.provider.notificationName) is waiting for permission.",
-                    userInfo: userInfo
+                    userInfo: Self.sessionUserInfo(session)
                 )
             }
         }
+    }
+
+    func sessionsFailed(_ sessions: [SessionSnapshot]) {
+        guard permissionEnabled() else { return }
+        for session in sessions {
+            enqueue { scheduler in
+                await scheduler.add(
+                    id: "failed.\(session.id)",
+                    title: "\(session.projectName) stopped while working",
+                    body: "\(session.provider.notificationName) stopped before finishing.",
+                    userInfo: Self.sessionUserInfo(session)
+                )
+            }
+        }
+    }
+
+    private static func sessionUserInfo(_ session: SessionSnapshot) -> [String: String] {
+        var userInfo = [
+            "provider": session.provider.rawValue,
+            "sessionID": session.sessionID
+        ]
+        if let bundleID = session.sourceBundleID {
+            userInfo["sourceBundleID"] = bundleID
+        }
+        return userInfo
     }
 
     func allowanceUpdated(provider: AgentProvider, allowance: ProviderAllowance) {

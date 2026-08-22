@@ -31,8 +31,24 @@ struct AllowanceSectionView: View {
                         )
                     }
                 }
+                if let continuation = allowanceContinuation {
+                    Text(continuation)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("AgenticGlow.AllowanceContinuation")
+                }
             }
         }
+    }
+
+    private var allowanceContinuation: String? {
+        var allowances: [AgentProvider: ProviderAllowance] = [:]
+        for provider in AgentProvider.allCases {
+            if case let .available(allowance, _) = model.allowanceState(for: provider) {
+                allowances[provider] = allowance
+            }
+        }
+        return AllowanceContinuation.line(allowances: allowances)
     }
 }
 

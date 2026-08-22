@@ -19,6 +19,34 @@ final class AgentNotificationServiceTests: XCTestCase {
             scheduler.added.first?.userInfo["sourceBundleID"],
             "com.anthropic.claudefordesktop"
         )
+        XCTAssertEqual(scheduler.added.first?.userInfo["provider"], "claude")
+        XCTAssertEqual(scheduler.added.first?.userInfo["sessionID"], "s")
+    }
+
+    func testFailedTransitionDeliversOnce() async {
+        let scheduler = FakeScheduler()
+        let service = makeService(scheduler: scheduler)
+        let failed = SessionSnapshot(
+            provider: .cursor,
+            surface: .desktop,
+            sessionID: "dead",
+            phase: .failed,
+            label: "Failed",
+            projectName: "Moodpaper",
+            sourceBundleID: AgentProvider.cursorBundleIdentifier,
+            elapsedSeconds: nil,
+            updatedAt: Date()
+        )
+
+        service.sessionsFailed([failed])
+        await service.drain()
+
+        XCTAssertEqual(scheduler.added.count, 1)
+        XCTAssertEqual(scheduler.added.first?.id, "failed.cursor:dead")
+        XCTAssertEqual(scheduler.added.first?.title, "Moodpaper stopped while working")
+        XCTAssertEqual(scheduler.added.first?.body, "Cursor stopped before finishing.")
+        XCTAssertEqual(scheduler.added.first?.userInfo["provider"], "cursor")
+        XCTAssertEqual(scheduler.added.first?.userInfo["sessionID"], "dead")
     }
 
     func testPermissionToggleOffSuppressesDelivery() async {
@@ -142,6 +170,50 @@ final class AgentNotificationServiceTests: XCTestCase {
         XCTAssertEqual(activated, ["com.apple.Terminal"])
     }
 
+    func testClickActivatesLiveSessionWhenPresent() {
+        let scheduler = FakeScheduler()
+        var activatedBundles: [String] = []
+        var activatedSessions: [(AgentProvider, String)] = []
+        let service = makeService(
+            scheduler: scheduler,
+            activate: { activatedBundles.append($0) },
+            activateSession: { provider, sessionID in
+                activatedSessions.append((provider, sessionID))
+                return true
+            }
+        )
+
+        service.start()
+        scheduler.clickHandler?([
+            "provider": "cursor",
+            "sessionID": "dead",
+            "sourceBundleID": AgentProvider.cursorBundleIdentifier
+        ])
+
+        XCTAssertEqual(activatedSessions.map(\.0), [.cursor])
+        XCTAssertEqual(activatedSessions.map(\.1), ["dead"])
+        XCTAssertEqual(activatedBundles, [])
+    }
+
+    func testClickFallsBackToBundleWhenSessionIsGone() {
+        let scheduler = FakeScheduler()
+        var activatedBundles: [String] = []
+        let service = makeService(
+            scheduler: scheduler,
+            activate: { activatedBundles.append($0) },
+            activateSession: { _, _ in false }
+        )
+
+        service.start()
+        scheduler.clickHandler?([
+            "provider": "cursor",
+            "sessionID": "dead",
+            "sourceBundleID": AgentProvider.cursorBundleIdentifier
+        ])
+
+        XCTAssertEqual(activatedBundles, [AgentProvider.cursorBundleIdentifier])
+    }
+
     func testStartRequestsAuthorizationWhenAnyToggleIsOn() async {
         let scheduler = FakeScheduler()
         let service = makeService(scheduler: scheduler, permissionEnabled: false)
@@ -171,14 +243,16 @@ final class AgentNotificationServiceTests: XCTestCase {
         permissionEnabled: Bool = true,
         quotaEnabled: Bool = true,
         resetTime: @escaping (Date) -> String = { _ in "12:50 AM" },
-        activate: @escaping (String) -> Void = { _ in }
+        activate: @escaping (String) -> Void = { _ in },
+        activateSession: @escaping (AgentProvider, String) -> Bool = { _, _ in false }
     ) -> AgentNotificationService {
         AgentNotificationService(
             scheduler: scheduler,
             permissionEnabled: { permissionEnabled },
             quotaEnabled: { quotaEnabled },
             resetTime: resetTime,
-            activate: activate
+            activate: activate,
+            activateSession: activateSession
         )
     }
 

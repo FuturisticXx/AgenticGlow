@@ -35,6 +35,51 @@ final class NotificationPolicyTests: XCTestCase {
         XCTAssertEqual(fired, [session])
     }
 
+    func testTransitionIntoFailedFires() {
+        let session = snapshot(sessionID: "a", phase: .failed)
+        let fired = NotificationPolicy.newlyFailed(
+            previousPhases: [session.id: .thinking],
+            sessions: [session]
+        )
+        XCTAssertEqual(fired, [session])
+    }
+
+    func testSteadyFailedDoesNotRefire() {
+        let session = snapshot(sessionID: "a", phase: .failed)
+        let fired = NotificationPolicy.newlyFailed(
+            previousPhases: [session.id: .failed],
+            sessions: [session]
+        )
+        XCTAssertEqual(fired, [])
+    }
+
+    func testUnseenFailedSessionFires() {
+        let session = snapshot(sessionID: "a", phase: .failed)
+        let fired = NotificationPolicy.newlyFailed(
+            previousPhases: [:],
+            sessions: [session]
+        )
+        XCTAssertEqual(fired, [session])
+    }
+
+    func testCursorNeverEmitsPermission() {
+        let session = SessionSnapshot(
+            provider: .cursor,
+            surface: .desktop,
+            sessionID: "c",
+            phase: .thinking,
+            label: "Working",
+            projectName: "Example",
+            sourceBundleID: AgentProvider.cursorBundleIdentifier,
+            elapsedSeconds: nil,
+            updatedAt: now
+        )
+        XCTAssertEqual(
+            NotificationPolicy.newlyAwaitingPermission(previousPhases: [:], sessions: [session]),
+            []
+        )
+    }
+
     func testNonPermissionSessionsNeverFire() {
         let fired = NotificationPolicy.newlyAwaitingPermission(
             previousPhases: [:],

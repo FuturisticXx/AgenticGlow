@@ -1,5 +1,38 @@
 # Got done
 
+## 2026-08-22 - Work Awareness Phase 1
+
+- Grouped sessions by exact normalized `workingDirectory`. Same folder
+  is one work, including across harnesses. Worktrees stay separate. No
+  git-root identity, branch awareness, task orchestration, or new
+  providers.
+- Widget rows compress to one `WidgetSessionSummary` per work.
+  `compactDetail` is set only when a group has two or more sessions, so
+  a single-session or all-quiet widget keeps today's copy. Schema is 2.
+- Popover still lists every session, siblings together. Summary names
+  one work only when overlap exists. Context menu can Reveal in Finder
+  and Copy Context. A factual allowance line appears under the bars
+  when a known Claude or Codex window is under 10%. Cursor is never
+  named as available.
+- Failed sessions notify once. A click activates the live session when
+  it is still present, otherwise the source app.
+- Unit tests: Work identity/grouping/copy/summary, allowance
+  continuation, widget snapshot builder/schema, notification policy,
+  and App notification/service tests. 166 App tests also passed after
+  the popover wiring.
+- Live acceptance on 2026-08-21: installed Debug `0.5.13-dev`, widget
+  registration ok, Tinted large widget showed one AgenticGlow row with
+  `2 active · Grok (Cursor), Grok (Clau…` plus ordinary one-session
+  rows. Popover grouped AgenticGlow siblings and showed
+  `Claude weekly 1% left. Codex 41% left.` Copy and Reveal were
+  verified through the same APIs the menu calls.
+- Follow-up QA, not blockers: Full Color, small, and medium live
+  widgets were not on the desktop. All-quiet was not live. Context
+  menu chrome and failed-notification click were not captured because
+  Accessibility was untrusted.
+- Design docs live in `docs/work-awareness/`: evolution review,
+  strategy decision, and the Phase 1 plan.
+
 ## 2026-08-17 - Cursor as a first-class provider
 
 - Added Cursor alongside Codex and Claude using the existing `AgentProvider`

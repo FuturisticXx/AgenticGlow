@@ -130,7 +130,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 scheduler: notificationClient,
                 permissionEnabled: { [weak self] in self?.preferences.notifyPermission ?? false },
                 quotaEnabled: { [weak self] in self?.preferences.notifyQuotaLow ?? false },
-                activate: { activator.activate(bundleIdentifier: $0) }
+                activate: { activator.activate(bundleIdentifier: $0) },
+                activateSession: { [weak self] provider, sessionID in
+                    guard let session = self?.model.resolved.sessions.first(where: {
+                        $0.provider == provider && $0.sessionID == sessionID
+                    }) else { return false }
+                    self?.model.activate(session)
+                    return true
+                }
             )
         }
         let statusMonitor: ProviderStatusMonitor? = switch fixtureName {

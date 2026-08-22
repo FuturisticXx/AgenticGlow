@@ -8,6 +8,9 @@ public struct SessionSnapshot: Identifiable, Equatable, Sendable {
     public let phase: SessionPhase
     public let label: String
     public let projectName: String
+    /// Folder the session reported. Used for work grouping. Empty only in
+    /// fixtures that predate work identity.
+    public let workingDirectory: String
     public let sourceBundleID: String?
     public let elapsedSeconds: Int?
     public let turnStartedAt: Date?
@@ -22,6 +25,7 @@ public struct SessionSnapshot: Identifiable, Equatable, Sendable {
         phase: SessionPhase,
         label: String,
         projectName: String,
+        workingDirectory: String = "",
         sourceBundleID: String?,
         elapsedSeconds: Int?,
         turnStartedAt: Date? = nil,
@@ -35,6 +39,7 @@ public struct SessionSnapshot: Identifiable, Equatable, Sendable {
         self.phase = phase
         self.label = label
         self.projectName = projectName
+        self.workingDirectory = workingDirectory
         self.sourceBundleID = sourceBundleID
         self.elapsedSeconds = elapsedSeconds
         self.turnStartedAt = turnStartedAt
