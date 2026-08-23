@@ -4,8 +4,13 @@ import SwiftUI
 
 struct SessionRowView: View {
     let session: SessionSnapshot
+    var workTitle: String? = nil
     let action: () -> Void
     let onRemove: () -> Void
+
+    private var title: String {
+        workTitle ?? WorkTitle.display(session.projectName)
+    }
 
     @State private var isPulsing = false
     @State private var isExpanded = false
@@ -30,7 +35,7 @@ struct SessionRowView: View {
                         updatePulse()
                     }
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(session.projectName)
+                    Text(title)
                         .font(.body.weight(.medium))
                     Text(detail)
                         .font(.caption)
@@ -48,7 +53,7 @@ struct SessionRowView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("AgenticGlow.Session.\(session.id)")
-        .accessibilityLabel(Self.accessibilityLabel(for: session))
+        .accessibilityLabel(Self.accessibilityLabel(for: session, workTitle: title))
         .accessibilityValue(accessibilityValue ?? "")
         .accessibilityAddTraits(accessibilityValue != nil ? .updatesFrequently : [])
         .accessibilityHint("Activates the source application")
@@ -194,8 +199,9 @@ struct SessionRowView: View {
     /// label, so VoiceOver users can tell a crashed session from one still
     /// working, without losing `session.label`'s last-action text (which
     /// the expanded detail panel also relies on).
-    static func accessibilityLabel(for session: SessionSnapshot) -> String {
-        let base = "\(session.provider.displayName), \(session.projectName), \(session.label), \(session.surface.displayName)"
+    static func accessibilityLabel(for session: SessionSnapshot, workTitle: String? = nil) -> String {
+        let title = workTitle ?? WorkTitle.display(session.projectName)
+        let base = "\(session.provider.displayName), \(title), \(session.label), \(session.surface.displayName)"
         return session.phase == .failed ? "\(base), stopped while working" : base
     }
 

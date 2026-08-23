@@ -135,9 +135,17 @@ public enum WorkDisplayName {
     /// First visible work keeps the folder basename. Later works that
     /// share that basename append the parent folder.
     public static func disambiguate(_ groups: [WorkGrouping.Group]) -> [WorkGrouping.Group] {
+        var stemCounts: [String: Int] = [:]
+        for group in groups {
+            let stem = WorkTitle.stem(rawBaseName(for: group))
+            stemCounts[stem, default: 0] += 1
+        }
+
         var seen: [String: Int] = [:]
         return groups.map { group in
-            let base = baseName(for: group)
+            let raw = rawBaseName(for: group)
+            let keepSuffix = stemCounts[WorkTitle.stem(raw), default: 0] > 1
+            let base = WorkTitle.display(raw, keepGeneratedSuffix: keepSuffix)
             let count = seen[base, default: 0]
             seen[base] = count + 1
             let display: String
@@ -159,7 +167,7 @@ public enum WorkDisplayName {
         }
     }
 
-    private static func baseName(for group: WorkGrouping.Group) -> String {
+    private static func rawBaseName(for group: WorkGrouping.Group) -> String {
         let identity = group.presentation.identity
         guard identity.isPath else {
             return group.representative.projectName

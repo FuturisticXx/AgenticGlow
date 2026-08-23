@@ -122,9 +122,11 @@ struct SessionListView: View {
         } else {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
+                    let groups = WorkGrouping.groups(from: model.resolved.sessions)
                     ForEach(WorkGrouping.orderedSessions(from: model.resolved.sessions)) { session in
                         SessionRowView(
                             session: session,
+                            workTitle: workTitle(for: session, in: groups),
                             action: { model.activate(session) },
                             onRemove: { model.removeSession(session) }
                         )
@@ -152,6 +154,12 @@ struct SessionListView: View {
 
     private var summary: String {
         WorkSummaryLine.popover(resolved: model.resolved)
+    }
+
+    private func workTitle(for session: SessionSnapshot, in groups: [WorkGrouping.Group]) -> String {
+        groups.first { group in
+            group.sessions.contains { $0.id == session.id }
+        }?.presentation.displayName ?? WorkTitle.display(session.projectName)
     }
 
     private func detail(for provider: AgentProvider) -> String {

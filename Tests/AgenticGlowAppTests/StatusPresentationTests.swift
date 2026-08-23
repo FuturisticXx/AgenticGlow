@@ -154,7 +154,7 @@ final class StatusPresentationTests: XCTestCase {
             updatedAt: Date()
         )
         let label = SessionRowView.accessibilityLabel(for: failed)
-        XCTAssertEqual(label, "Claude, weather-widget, Running swift build, CLI, stopped while working")
+        XCTAssertEqual(label, "Claude, Weather Widget, Running swift build, CLI, stopped while working")
     }
 
     @MainActor
@@ -171,7 +171,7 @@ final class StatusPresentationTests: XCTestCase {
             updatedAt: Date()
         )
         let label = SessionRowView.accessibilityLabel(for: completed)
-        XCTAssertEqual(label, "Claude, 2damax-site, Completed, CLI")
+        XCTAssertEqual(label, "Claude, 2damax Site, Completed, CLI")
     }
 
     @MainActor

@@ -244,6 +244,18 @@ final class WidgetSnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(WidgetSmallCopy.subtitle(for: snapshot), "active")
     }
 
+    func testWorktreeSlugBecomesHumanTitleOnWidgetRow() {
+        let path = "/Volumes/Liquid/2DaMax Development/Caliber Wallet/.claude/worktrees/goal-5-5c-execution-04a6d8"
+        let snapshot = WidgetSnapshotBuilder.build(
+            resolved: resolved(sessions: [
+                session(id: "tree", phase: .usingTool, path: path)
+            ], activeCount: 1),
+            allowances: [:], installedProviders: [:], now: now
+        )
+        XCTAssertEqual(snapshot.sessions[0].projectName, "Goal 5 5c Execution")
+        XCTAssertEqual(snapshot.sessions[0].sessionID, "tree")
+    }
+
     func testDuplicateAdapterReportsCompressToOneCursorRow() {
         let sid = "sid_dd1e00780b983db555e9b4a776bc48b98ca13eafb30b5dee3c79e004117e541c"
         let claude = SessionSnapshot(

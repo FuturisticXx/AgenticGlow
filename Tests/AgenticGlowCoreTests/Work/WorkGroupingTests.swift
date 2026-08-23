@@ -35,7 +35,7 @@ final class WorkGroupingTests: XCTestCase {
         ])
         XCTAssertEqual(groups.count, 2)
         XCTAssertEqual(groups[0].presentation.displayName, "Caliber Wallet")
-        XCTAssertEqual(groups[1].presentation.displayName, "caliber-5-5a-composition-d702c0")
+        XCTAssertEqual(groups[1].presentation.displayName, "Caliber 5 5a Composition")
     }
 
     func testMissingAndInvalidPathsAreSingletons() {
