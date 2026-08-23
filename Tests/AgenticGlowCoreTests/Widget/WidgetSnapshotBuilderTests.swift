@@ -223,7 +223,10 @@ final class WidgetSnapshotBuilderTests: XCTestCase {
         )
         XCTAssertEqual(snapshot.sessions.count, 1)
         XCTAssertEqual(snapshot.sessions[0].projectName, "AgenticGlow")
-        XCTAssertEqual(snapshot.sessions[0].compactDetail, "3 active · Claude, Grok, Composer")
+        XCTAssertEqual(
+            snapshot.sessions[0].compactDetail,
+            "3 active · Claude Sonnet 5, Grok 4.6, Composer 2.5 · Cursor"
+        )
         XCTAssertEqual(snapshot.attentionCount, 0)
         XCTAssertEqual(snapshot.activeCount, 3)
         XCTAssertEqual(WidgetSmallCopy.title(for: snapshot), "AgenticGlow")

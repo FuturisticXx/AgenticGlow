@@ -3,12 +3,6 @@ import Foundation
 /// Compact secondary copy for a work group. Single-session work keeps
 /// today's phase words so the widget can leave `compactDetail` nil.
 public enum WorkStatusLine {
-    private static let knownSlugs: [String: String] = [
-        "grok": "Grok",
-        "claude": "Claude",
-        "composer": "Composer"
-    ]
-
     public static func compact(for group: WorkGrouping.Group) -> String {
         if group.sessions.count == 1 {
             return phaseLabel(group.representative.phase)
@@ -21,15 +15,14 @@ public enum WorkStatusLine {
         default:
             break
         }
-        // "N active · slugs" names only the sessions in that count.
+        // "N active · names" names only the sessions in that count.
         let active = group.sessions.filter { $0.phase.isActive || $0.phase == .permission }
         let listed = active.isEmpty ? group.sessions : active
-        let slugs = sessionSlugs(in: listed)
-        let slugPart = slugs.joined(separator: ", ")
+        let namePart = compactNamePart(in: listed)
         if !active.isEmpty {
-            return slugPart.isEmpty ? "\(active.count) active" : "\(active.count) active · \(slugPart)"
+            return namePart.isEmpty ? "\(active.count) active" : "\(active.count) active · \(namePart)"
         }
-        return slugPart.isEmpty ? "\(group.sessions.count) sessions" : "\(group.sessions.count) · \(slugPart)"
+        return namePart.isEmpty ? "\(group.sessions.count) sessions" : "\(group.sessions.count) · \(namePart)"
     }
 
     public static func phaseLabel(_ phase: SessionPhase) -> String {
@@ -45,42 +38,52 @@ public enum WorkStatusLine {
     }
 
     public static func shortModelName(_ model: String?) -> String? {
-        guard let model, !model.isEmpty else { return nil }
-        let token = model.split(separator: "-", maxSplits: 1, omittingEmptySubsequences: true)
-            .first
-            .map { String($0).lowercased() }
-        if let token, let mapped = knownSlugs[token] {
-            return mapped
-        }
-        return model
+        ModelDisplayName.display(model)
     }
 
-    private static func sessionSlugs(in sessions: [SessionSnapshot]) -> [String] {
-        let labeled = sessions.map { session -> (slug: String, provider: AgentProvider, fromModel: Bool) in
-            if let name = shortModelName(session.model) {
-                return (name, session.provider, true)
+    private static func compactNamePart(in sessions: [SessionSnapshot]) -> String {
+        struct Item {
+            let model: String?
+            let harness: String
+        }
+
+        let items = sessions.map { session in
+            Item(
+                model: ModelDisplayName.display(session.model),
+                harness: session.provider.displayName
+            )
+        }
+        let harnesses = Set(items.map(\.harness))
+
+        if harnesses.count == 1, let harness = harnesses.first {
+            var models: [String] = []
+            var seen = Set<String>()
+            for item in items {
+                let name = item.model ?? harness
+                if seen.insert(name).inserted {
+                    models.append(name)
+                }
             }
-            return (session.provider.displayName, session.provider, false)
+            let uniqueModels = models.filter { $0 != harness }
+            if uniqueModels.isEmpty {
+                return harness
+            }
+            return "\(uniqueModels.joined(separator: ", ")) · \(harness)"
         }
 
-        var seenModelOwners: [String: Set<AgentProvider>] = [:]
-        for item in labeled where item.fromModel {
-            seenModelOwners[item.slug, default: []].insert(item.provider)
-        }
-
-        var result: [String] = []
-        var emitted = Set<String>()
-        for item in labeled {
+        var parts: [String] = []
+        var seen = Set<String>()
+        for item in items {
             let text: String
-            if item.fromModel, (seenModelOwners[item.slug]?.count ?? 0) > 1 {
-                text = "\(item.slug) (\(item.provider.displayName))"
+            if let model = item.model, model != item.harness {
+                text = "\(model) (\(item.harness))"
             } else {
-                text = item.slug
+                text = item.harness
             }
-            if emitted.insert(text).inserted {
-                result.append(text)
+            if seen.insert(text).inserted {
+                parts.append(text)
             }
         }
-        return result
+        return parts.joined(separator: ", ")
     }
 }
