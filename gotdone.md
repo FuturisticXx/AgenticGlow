@@ -1,5 +1,15 @@
 # Got done
 
+## 2026-08-22 - Friendly model and harness names
+
+- Widget and popover compact copy now uses human-readable model and
+  harness names. Live AgenticGlow row is `1 active · Grok 4.6 · Cursor`
+  instead of `cursor-grok-4.6-high`. Identical models collapse; mixed
+  models in one harness share one harness suffix.
+- Display-only: `ModelDisplayName.swift` plus `WorkStatusLine`. Raw
+  slugs stay on sessions, grouping, and Copy Context. Pushed as
+  `8c965ae`.
+
 ## 2026-08-22 - Human-readable work titles
 
 - Widget and popover now show title-cased folder names instead of
