@@ -1,5 +1,17 @@
 # Got done
 
+## 2026-08-22 - Human-readable work titles
+
+- Widget and popover now show title-cased folder names instead of
+  machine slugs like `goal-5-5c-execution-04a6d8`. Live verified:
+  first row is `Goal 5 5c Execution`. `AgenticGlow` and
+  `Caliber Wallet` are unchanged.
+- A trailing 6-char hex uniqueness token is hidden only when it is
+  deterministic and not ambiguous. Grouping keys, session IDs, and
+  stored `projectName` stay raw.
+- Display-only: `WorkTitle.swift` plus popover/widget wiring. Pushed
+  as `bd3b2a0`.
+
 ## 2026-08-22 - Collapse duplicate adapter reports
 
 - Same hashed session id in the same work is now one logical session
