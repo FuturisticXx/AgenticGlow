@@ -9,6 +9,15 @@ final class WidgetSnapshotFormattingTests: XCTestCase {
         return calendar
     }
 
+    /// Expectations render in the same zone the calendar pins, because
+    /// that is what the label promises. Comparing against the process's
+    /// zone instead only agreed by luck on a machine already running in
+    /// UTC, and hid the label formatting in one zone while deciding
+    /// "today" in another.
+    private var pinnedStyle: Date.FormatStyle {
+        Date.FormatStyle(timeZone: calendar.timeZone)
+    }
+
     // MARK: - Percent
 
     func testPercentLeftLabelRoundsToInt() {
@@ -78,7 +87,7 @@ final class WidgetSnapshotFormattingTests: XCTestCase {
         let resetAt = date(2026, 7, 20, 15, 30)
         XCTAssertEqual(
             WidgetSnapshotFormatting.absoluteResetLabel(resetAt, now: now, calendar: calendar),
-            resetAt.formatted(.dateTime.hour().minute())
+            resetAt.formatted(pinnedStyle.hour().minute())
         )
     }
 
@@ -88,7 +97,9 @@ final class WidgetSnapshotFormattingTests: XCTestCase {
         let label = WidgetSnapshotFormatting.absoluteResetLabel(resetAt, now: now, calendar: calendar)
         XCTAssertEqual(
             label,
-            resetAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute())
+            resetAt.formatted(
+                pinnedStyle.weekday(.abbreviated).month(.abbreviated).day().hour().minute()
+            )
         )
     }
 

@@ -55,9 +55,14 @@ public enum WidgetSnapshotFormatting {
 
     public static func absoluteResetLabel(_ resetAt: Date?, now: Date, calendar: Calendar = .current) -> String? {
         guard let resetAt else { return nil }
-        let style: Date.FormatStyle = calendar.isDate(resetAt, inSameDayAs: now)
-            ? .dateTime.hour().minute()
-            : .dateTime.weekday(.abbreviated).month(.abbreviated).day().hour().minute()
+        // Same rule as `compactAbsoluteResetLabel`: the calendar decides
+        // whether this counts as today, so it has to decide the clock too.
+        // Otherwise the two can disagree and the label names a day the
+        // same-day check just ruled out.
+        let base = Date.FormatStyle(timeZone: calendar.timeZone)
+        let style = calendar.isDate(resetAt, inSameDayAs: now)
+            ? base.hour().minute()
+            : base.weekday(.abbreviated).month(.abbreviated).day().hour().minute()
         return resetAt.formatted(style)
     }
 
