@@ -322,7 +322,7 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertEqual(resolved.activeProviders, [.cursor])
     }
 
-    func testStuckThinkingWithLiveProcessBecomesIdleAfterStaleActiveDuration() {
+    func testStuckThinkingWithLiveProcessIsHiddenAtStaleActiveDuration() {
         let event = event(provider: .codex, session: "stuck", phase: .thinking, updated: 100)
         var memory = ResolutionMemory()
 
@@ -333,6 +333,7 @@ final class SessionResolverTests: XCTestCase {
             isProcessAlive: { _, _ in true }
         )
         XCTAssertEqual(stillThinking.sessions.first?.phase, .thinking)
+        XCTAssertEqual(stillThinking.activeCount, 1)
 
         let atCutoff = SessionResolver.resolve(
             events: [event],
@@ -340,7 +341,8 @@ final class SessionResolverTests: XCTestCase {
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
-        XCTAssertEqual(atCutoff.sessions.first?.phase, .thinking)
+        XCTAssertTrue(atCutoff.sessions.isEmpty)
+        XCTAssertEqual(atCutoff.activeCount, 0)
 
         let resolved = SessionResolver.resolve(
             events: [event],
@@ -348,11 +350,10 @@ final class SessionResolverTests: XCTestCase {
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
-        XCTAssertEqual(resolved.sessions.first?.phase, .idle)
-        XCTAssertEqual(resolved.sessions.first?.label, "Idle")
+        XCTAssertTrue(resolved.sessions.isEmpty)
     }
 
-    func testStuckUsingToolWithLiveProcessBecomesIdleAfterStaleActiveDuration() {
+    func testStuckUsingToolWithLiveProcessIsHiddenAfterStaleActiveDuration() {
         let event = event(provider: .codex, session: "stuck-tool", phase: .usingTool, updated: 100)
         var memory = ResolutionMemory()
 
@@ -362,7 +363,8 @@ final class SessionResolverTests: XCTestCase {
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
-        XCTAssertEqual(resolved.sessions.first?.phase, .idle)
+        XCTAssertTrue(resolved.sessions.isEmpty)
+        XCTAssertEqual(resolved.activeProviders, [])
     }
 
     func testThinkingWithoutProcessRemainsActiveUntilStaleActiveDuration() {
@@ -388,10 +390,10 @@ final class SessionResolverTests: XCTestCase {
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
-        XCTAssertEqual(resolved.sessions.first?.phase, .idle)
+        XCTAssertTrue(resolved.sessions.isEmpty)
     }
 
-    func testUsingToolWithoutProcessBecomesIdleAfterStaleActiveDuration() {
+    func testUsingToolWithoutProcessIsHiddenAfterStaleActiveDuration() {
         let event = eventWithoutProcessID(
             provider: .claude,
             session: "buzz-tool",
@@ -406,7 +408,7 @@ final class SessionResolverTests: XCTestCase {
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
-        XCTAssertEqual(resolved.sessions.first?.phase, .idle)
+        XCTAssertTrue(resolved.sessions.isEmpty)
     }
 
     func testPendingPermissionWithLiveProcessNeverGoesStale() {
@@ -543,14 +545,6 @@ final class SessionResolverTests: XCTestCase {
     func testUnknownProcessExpiresAfterFourHours() {
         let event = eventWithoutProcessID(provider: .codex, session: "old", phase: .thinking, updated: 100)
         var memory = ResolutionMemory()
-
-        let retained = SessionResolver.resolve(
-            events: [event],
-            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 1),
-            memory: &memory,
-            isProcessAlive: { _, _ in true }
-        )
-        XCTAssertEqual(retained.sessions.first?.phase, .idle)
 
         let resolved = SessionResolver.resolve(
             events: [event],

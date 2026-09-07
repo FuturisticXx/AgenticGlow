@@ -4,7 +4,11 @@ public enum SessionResolver {
     public static let completionDisplayDuration: TimeInterval = 8
     public static let disconnectedDisplayDuration: TimeInterval = 15
     public static let unknownProcessExpiration: TimeInterval = 4 * 60 * 60
-    public static let staleActiveDuration: TimeInterval = 30 * 60
+    /// A session that has sent no event for this long is no longer treated
+    /// as working. Shares `SessionVisibilityPolicy.idleVisibilityWindow` so
+    /// the moment a session stops counting as active is the moment it stops
+    /// being shown.
+    public static let staleActiveDuration: TimeInterval = SessionVisibilityPolicy.idleVisibilityWindow
     public static let fileRetention: TimeInterval = 24 * 60 * 60
 
     public static func resolve(
@@ -35,6 +39,11 @@ public enum SessionResolver {
             }
 
             let phase: SessionPhase
+            // The newest genuine signal for this session. Defaults to the
+            // event's own timestamp; the dead-process branch replaces it with
+            // the moment that death was observed, which is a real state
+            // change rather than a poll.
+            var lastMeaningfulActivityAt = event.updatedAt
             if let pid = event.sourceProcessID {
                 if !isProcessAlive(pid, event.sourceProcessStartedAt) {
                     let key = SessionKey(event)
@@ -52,6 +61,7 @@ public enum SessionResolver {
                     guard now.timeIntervalSince(record.detectedAt) <= disconnectedDisplayDuration else {
                         return nil
                     }
+                    lastMeaningfulActivityAt = max(lastMeaningfulActivityAt, record.detectedAt)
                     // A process that dies mid-task (never reaching .completed)
                     // reads as a failure; one that dies from idle/completed/
                     // permission is a clean exit.
@@ -59,7 +69,7 @@ public enum SessionResolver {
                 } else if event.phase == .completed && age > completionDisplayDuration {
                     memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
                     phase = .idle
-                } else if event.phase.isActive && age > staleActiveDuration {
+                } else if event.phase.isActive && age >= staleActiveDuration {
                     // A single long-lived provider process (e.g. Codex's shared
                     // app-server) backs many independent sessions, so "process is
                     // alive" cannot detect a session whose turn finished without
@@ -75,12 +85,18 @@ public enum SessionResolver {
                 guard age <= unknownProcessExpiration else { return nil }
                 if event.phase == .completed && age > completionDisplayDuration {
                     phase = .idle
-                } else if event.phase.isActive && age > staleActiveDuration {
+                } else if event.phase.isActive && age >= staleActiveDuration {
                     phase = .idle
                 } else {
                     phase = event.phase
                 }
             }
+
+            guard SessionVisibilityPolicy.isVisible(
+                phase: phase,
+                lastMeaningfulActivityAt: lastMeaningfulActivityAt,
+                now: now
+            ) else { return nil }
 
             return SessionSnapshot(
                 provider: event.provider,

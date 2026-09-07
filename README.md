@@ -1,6 +1,6 @@
 # AgenticGlow
 
-AgenticGlow is a local macOS menu bar app that shows the status of your AI coding agent sessions. It notifies you when an agent needs your permission, warns once when a usage window runs low, alerts once when the window is exhausted, hints low allowance on the menu bar icon, and can optionally show provider service incidents.
+AgenticGlow is a local macOS menu bar app that shows the status of your AI coding agent sessions. It shows what is happening now: a session with no activity for 10 minutes leaves the list and returns on its own when it next reports, while a session waiting on your permission stays however long it waits. It notifies you when an agent needs your permission, warns once when a usage window runs low, alerts once when the window is exhausted, hints low allowance on the menu bar icon, and can optionally show provider service incidents.
 
 ## Requirements
 

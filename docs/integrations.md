@@ -91,10 +91,21 @@ The same `app-server` process reports `sourceProcessID` for every Codex
 conversation you have open or have had open that day; it does not exit between
 tasks. This means "the source process is alive" cannot detect a single session
 whose turn finished without its `stop` event reaching AgenticGlow. `SessionResolver`
-falls back to a 30-minute staleness cutoff for `thinking`/`usingTool` sessions
-(`SessionResolver.staleActiveDuration`) so an orphaned turn rolls over to Idle
-instead of displaying as active indefinitely. Pending permission prompts are
-exempt, since those can legitimately wait a long time for you.
+falls back to a staleness cutoff for `thinking`/`usingTool` sessions
+(`SessionResolver.staleActiveDuration`, 10 minutes) so an orphaned turn stops
+displaying as active instead of doing so indefinitely.
+
+That cutoff is shared with `SessionVisibilityPolicy.idleVisibilityWindow`, so
+the moment a session stops counting as active is also the moment it leaves the
+surfaces that mean "active right now": the menu bar count, the popover rows,
+work groups, model summaries, and the widget. Hiding is not cleanup. The
+session file is untouched, the session is still merged, deduplicated, and
+ownership-ranked, and the row returns on its own the moment a newer event
+arrives.
+
+Pending permission prompts are exempt and stay visible however old they are,
+since a session waiting on you consumes no tokens and runs no tools, so age is
+not evidence that it stopped needing an answer.
 
 ## Helper Installation
 
