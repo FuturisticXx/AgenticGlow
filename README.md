@@ -21,6 +21,11 @@ AgenticGlow once, then right-click the desktop, choose **Edit Widgets**, search
 for **AgenticGlow**, and add the size you want. See
 [docs/widget.md](docs/widget.md) for architecture and current limitations.
 
+The widget's allowance section shows Codex and Claude. When Cursor usage is
+enabled, a small chevron appears at the bottom of the large and medium widgets;
+clicking it shows Cursor's two pools for about 12 seconds before the overview
+returns on its own.
+
 ## Installation
 
 The latest signed and notarized public release is
@@ -56,10 +61,25 @@ Anthropic does not publish a supported usage API:
 4. Copy the complete `Cookie` request header value.
 5. Paste it into AgenticGlow's Claude session cookie field.
 
-AgenticGlow stores the Claude cookie only in macOS Keychain. Disabling Claude
-usage deletes it. If Claude reports that the cookie expired, repeat these steps.
-Cursor does not expose a documented local usage API, so AgenticGlow does not
-show Cursor allowance.
+Cursor works the same way, and for the same reason: Cursor publishes no
+individual usage API, so AgenticGlow reads the same private endpoint the
+cursor.com dashboard uses.
+
+1. Open `cursor.com` and sign in.
+2. Open the browser developer tools and refresh the page.
+3. Select any request to `cursor.com`.
+4. Copy the complete `Cookie` request header value.
+5. Paste it into AgenticGlow's Cursor session cookie field.
+
+AgenticGlow stores each cookie only in macOS Keychain, under a separate entry
+per provider. Disabling a provider's usage deletes its cookie. If a provider
+reports that its cookie expired, repeat that provider's steps. AgenticGlow
+never reads these cookies from the provider's own app or from any browser
+cookie database: you paste them or there are none.
+
+Cursor's plans meter two separate allowances, **Cursor Models** and **Other
+Models**, against different denominators. AgenticGlow shows them separately and
+never combines them into one Cursor figure.
 
 ### Jumping to a Codex session
 
@@ -73,7 +93,7 @@ that exact window. Claude and Cursor sessions are unaffected either way.
 
 ## Privacy
 
-AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps, and optional model slug) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks, explicit provider-specific subscription allowance access, and optional provider status checks. Usage access is off by default. Codex allowance uses the installed local Codex app-server, which manages its own sign-in. Optional Claude allowance uses an explicitly disclosed private `claude.ai` endpoint and a user-supplied session cookie stored only in macOS Keychain. Cursor does not expose a documented local usage API. Optional provider incident display (off by default) fetches only the public, unauthenticated Anthropic, OpenAI, and Cursor status pages. See [docs/privacy.md](docs/privacy.md) for the complete privacy contract.
+AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps, and optional model slug) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks, explicit provider-specific subscription allowance access, and optional provider status checks. Usage access is off by default. Codex allowance uses the installed local Codex app-server, which manages its own sign-in. Optional Claude and Cursor allowance use explicitly disclosed private `claude.ai` and `cursor.com` endpoints with user-supplied session cookies, each stored only in macOS Keychain and never read from the provider's own app or a browser cookie store. Optional provider incident display (off by default) fetches only the public, unauthenticated Anthropic, OpenAI, and Cursor status pages. See [docs/privacy.md](docs/privacy.md) for the complete privacy contract.
 
 ## Building
 

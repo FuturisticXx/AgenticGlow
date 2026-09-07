@@ -2,6 +2,79 @@
 
 Rules learned from real mistakes in this project. Read in full at session start. Add a new entry after any correction from John.
 
+## App-hosted unit tests must never touch the login Keychain (2026-09-06)
+
+**What happened:** John got repeated Keychain password prompts while I was
+running the test suite. Cause: app-hosted unit tests launch the real app,
+the app reads its stored session cookie at startup, and every locally
+re-signed build is a new code identity, so macOS re-prompts on every run.
+The existing rule in this file covered visual QA and UI tests; plain
+app-hosted unit tests were not covered and had been prompting all along.
+
+**Rules:**
+- The credential store must be swapped for an in-memory one whenever the
+  process is a test run, not only when a UI-test fixture is present. See
+  `TestExecutionEnvironment`.
+- Detect a test run with two independent signals: `XCTestCase` being
+  loadable proves the XCTest runtime is in *this* process and cannot be
+  faked by an environment variable, but it is nil early in launch;
+  `XCTestConfigurationFilePath` covers that window and must be required to
+  name a file that actually exists, so a stale or inherited value does not
+  qualify.
+- Stop the run the moment a Keychain prompt appears and fix the cause.
+  Never ask John to click through them.
+
+## Widget layout: measure the installed widget, and measure the right thing (2026-09-06)
+
+**What happened:** Four separate layout defects shipped past previews and
+unit tests, and were only visible on the real desktop widget: content
+overflowing with three providers, the session budget ignoring the cost of
+the `+ N more` line it causes, a top inset 8pt tighter than Apple's own
+widgets, and a reset caption truncating beside the warning icon. Then,
+chasing a fifth, I burned three build-install cycles on alignment fixes
+that could not work, because I was comparing two screenshots with a
+contrast detector that latched onto different features on each page and
+reported a 24pt difference that did not exist.
+
+**Rules:**
+- A fixed, non-scrolling canvas needs a vertical budget in points, not in
+  rows. Two things the session area draws cost different amounts, and an
+  overflowing list draws a summary line the row count does not include.
+  Keep the budget in Core (`LargeWidgetSessionBudget`) so it is testable
+  without rendering.
+- Any inset added to a full canvas must be spent from that budget, never
+  added on top of it, or it reintroduces the clipping it was meant to fix.
+- `.frame(maxHeight: .infinity, alignment: .top)` does not reliably hold
+  widget content to the top: the container centers a page whose content
+  does not fill the canvas. A `GeometryReader` claims the whole proposal
+  and places content at topLeading by construction. Verified on the
+  installed widget; the alignment attempts were not.
+- Put a temporary visible marker in the view and screenshot it before
+  theorizing about where space is going. One build answered what three
+  builds of reasoning had not. Colored markers do not survive `.vibrant`
+  rendering, so detect the marker by luminance, not by hue.
+- Do not detect widget state changes by comparing PNG file sizes. Vibrant
+  frames compress almost identically regardless of content; hash a fixed
+  crop of a region that actually differs.
+- Anything at both the trailing and bottom extremes lands inside the card's
+  rounded corner, and the last child of the stack is the first thing an
+  overflow clips. Overlay such a control instead of stacking it, so it
+  costs no layout height.
+
+## Verification scaffolding does not ship (2026-09-06)
+
+**What happened:** To drive the installed widget I added three launch
+arguments to the app (force the Cursor detail page, publish fixture data
+to the real App Group container, auto-present Usage Access) and a marker
+rectangle to a view. Two of them reached a local commit before John caught
+them in a diff audit and asked for their removal.
+
+**Rule:** Verification affordances added to get a screenshot are temporary
+by default. Remove them before proposing a commit, and if one seems worth
+keeping, say so explicitly and justify the durable value rather than
+letting it ship because it was useful once. Amending an unpushed commit is
+better than shipping the scaffolding and removing it in a follow-up.
+
 ## Blend modes don't survive Tinted/Monochrome widget rendering (2026-07-25)
 
 **What happened:** Restoring the percent pill to the widget allowance bars

@@ -101,7 +101,7 @@ constants in `WidgetColorPalette.swift`.
 ## Snapshot schema
 
 `WidgetSnapshot` (`Sources/AgenticGlowCore/Widget/WidgetSnapshot.swift`),
-versioned via `schemaVersion` (currently `1`):
+versioned via `schemaVersion` (currently `2`):
 
 - `generatedAt`: when the app built this snapshot.
 - `sessions`: up to `WidgetSnapshotBuilder.maximumSessions` (8), already in
@@ -109,7 +109,12 @@ versioned via `schemaVersion` (currently `1`):
   thinking > failed > completed > disconnected > idle). Each entry carries
   provider, project name, phase, tool category, elapsed seconds, last
   updated time, and a `needsAttention` flag (`.permission` or `.failed`).
-- `allowances`: one entry per enabled provider with usage data.
+- `allowances`: one entry per enabled provider with usage data. A
+  window-based provider (Codex, Claude) carries its current and weekly
+  fields; a pool-based provider (Cursor) instead carries `pools`, each
+  with a stable id, display name, percent left, and reset. `pools` is
+  absent from snapshots written before it existed and decodes as empty,
+  so an older snapshot renders exactly as it did.
 - `providers`: one entry per known provider with an `installed` flag (hook
   integration configured or not).
 - `attentionCount`: computed over the full session set, not just the
@@ -121,6 +126,12 @@ Only fields already covered by the existing privacy contract
 (`docs/privacy.md`) are included. No prompts, no raw provider responses, no
 credentials. `projectName` is the only free-text field, and it is already
 shown today in the main popover.
+
+The widget's temporary page state lives in a separate file,
+`WidgetDetailState.json`, written by the widget's own intents. Keeping it
+out of the snapshot means a page request can never corrupt or race the
+usage data the app publishes, and every failure to read it resolves to
+the default page.
 
 Schema changes: bump `WidgetSnapshot.currentSchemaVersion` and keep
 decoding permissive (the widget must never crash on an unknown or older
@@ -181,7 +192,8 @@ gap doesn't falsely read as stale.
   Tinted/Monochrome styles, which substitute custom colors.
 - **Medium**: up to 2 sessions (`+ N more` if truncated) and one status
   bar for whichever individual allowance window (current or weekly, any
-  provider) is lowest.
+  window-based provider) is lowest. When a pool-based provider has data,
+  a chevron opens its detail page (see below).
 - **Large**: a per-provider allowance block showing every window the
   provider reports (current, and weekly when the provider has one) using
   the menu-bar-style status bar, plus sessions and provider setup notices.
@@ -190,8 +202,11 @@ gap doesn't falsely read as stale.
   the bottom of the real fixed-height canvas, confirmed on an installed
   desktop widget, and neither carried information the widget's context
   (the desktop, right next to the app) doesn't already make obvious.
-  Content is pinned to the top of the canvas so that any overflow falls
-  off the bottom, costing a reset caption rather than the first session.
+  Content is pinned to the top of the canvas with a `GeometryReader`,
+  which claims the whole proposal and places content at its top leading
+  corner. A fill-and-align frame is not enough: the container centers a
+  page whose content does not fill the canvas, which left the shorter
+  detail page starting lower than the default one.
 
 Small keeps attention at the top of its priority ladder while medium and
 large carry **no attention banner**. Prompting the user about
@@ -215,9 +230,46 @@ reporting a separate weekly percentage alongside its current window, a
 fourth bar appears automatically.
 
 Medium and small pick the single lowest window with
-`snapshot.allowances.flatMap(\.windows).min(by: percentLeft)`, so a
-provider's weekly percentage can win even when its own (or another
+`snapshot.overviewAllowances.flatMap(\.windows).min(by: percentLeft)`, so
+a provider's weekly percentage can win even when its own (or another
 provider's) current window is numerically higher.
+
+### Allowance pools and the detail page
+
+A provider whose plan splits into several concurrently active allowances
+(Cursor: Cursor Models and Other Models) carries them as
+`WidgetAllowanceSummary.pools`, and `windows` projects those instead of
+the current/weekly pair. `WidgetSnapshot.overviewAllowances` and
+`poolAllowances` split the two kinds apart.
+
+Pool providers are deliberately absent from the default page. Three
+providers means six bars and three headings, which alone exceed the large
+canvas; enabling one must not cost the Codex and Claude layout its
+breathing room. Instead they get a temporary page of their own:
+
+- `AllowanceDetailControl` is a provider-neutral chevron, overlaid at the
+  bottom trailing corner rather than stacked as a row. As the last child
+  of the stack it was the first thing pushed past the bottom edge when
+  content ran long, and it rendered sliced by the card's rounded corner.
+  Overlaid it costs no layout height.
+- `ShowCursorUsageIntent` (a real `Button(intent:)`, supported from macOS
+  14, which is this project's deployment target) writes one expiry date to
+  `WidgetDetailState.json` in the App Group container and returns.
+  WidgetKit reloads the timeline itself.
+- The provider emits two entries: the detail page now, and the overview at
+  the expiry. The return is WidgetKit drawing a scheduled entry, so it
+  needs no timer, no polling, and no wake-up.
+- `WidgetDetailPresentation.page` resolves anything that is not an
+  unexpired request with pool data behind it to the overview, so the page
+  cannot stick, cannot outlive its 12 second expiry, and cannot survive
+  the provider being switched off.
+- The page state is presentation only: one date, never a credential, an
+  account identity, or a usage value.
+
+Small stays non-interactive. Its canvas is a single headline, and a
+control there would compete with the tap that opens the app, so pool
+providers are excluded from its lowest-window selection rather than shown
+without room for their pool names.
 
 The status bar itself (`WidgetAllowanceBar.swift`) is a widget-local port
 of the menu bar's `AllowanceBar` (`AllowanceSectionView.swift`, frozen,
@@ -234,11 +286,21 @@ red warning triangle and provider-colored caption text; a `nil` percentage
 renders as an "Unavailable" line with no bar, never an empty (0%-looking)
 one.
 
-Large's displayed-session cap scales down as allowance windows take more
-of the fixed, non-scrolling canvas: 4 sessions at 0-2 windows, 3 at exactly
-3, 2 at 4 or more (`LargeWidgetView.displayedSessionLimit`). Medium's cap
-stays fixed at 2. A `Text("+ N more")` line is intentional and honest
-either way, not a bug.
+Large's session area is bounded by `LargeWidgetSessionBudget`
+(`AgenticGlowCore`), measured in points rather than rows because the two
+things the session area draws cost different amounts. Counting rows alone
+is what pushed the first row off the canvas: a list that overflows also
+draws a `+ N more` line, so it costs more than a list of the same visible
+length that does not. The budget falls as the allowance section grows
+(160pt at 0-2 windows, 90 at 3, 52 at 4, 18 at 5, none at 6+), and the
+layout drops a row at a time until what would actually be drawn fits. The
+four Codex and Claude windows are never traded away for a session row.
+
+The 52pt figure at four windows is calibrated against the installed
+widget, and it is why raising the top content inset to 24pt cost the
+second session row: two bare rows no longer fit beside four windows.
+Medium's cap stays fixed at 2. A `Text("+ N more")` line is intentional
+and honest either way, not a bug.
 
 ### Typography
 
