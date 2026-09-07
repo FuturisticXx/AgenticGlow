@@ -91,12 +91,17 @@ public enum WidgetSnapshotFormatting {
         calendar: Calendar = .current
     ) -> String? {
         guard let resetAt else { return nil }
+        // Formatted in the given calendar's zone, not the process's. The
+        // calendar already decides whether this counts as today, so
+        // letting the clock come from somewhere else can name a different
+        // day than the same-day check just agreed on.
+        let time = Date.FormatStyle(timeZone: calendar.timeZone).hour().minute()
         if calendar.isDate(resetAt, inSameDayAs: now) {
-            return resetAt.formatted(.dateTime.hour().minute())
+            return resetAt.formatted(time)
         }
-        let day = resetAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
-        let time = resetAt.formatted(.dateTime.hour().minute())
-        return "\(day) · \(time)"
+        let day = Date.FormatStyle(timeZone: calendar.timeZone)
+            .weekday(.abbreviated).month(.abbreviated).day()
+        return "\(resetAt.formatted(day)) · \(resetAt.formatted(time))"
     }
 
     /// `relativeResetLabel` without its trailing "left", for phrasings
