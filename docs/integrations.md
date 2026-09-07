@@ -179,8 +179,9 @@ check Cursor Settings → Hooks and confirm the workspace is trusted.
 - Cursor CLI hook coverage is partial. Some CLI turns may only report a subset
   of events.
 - Cursor does not document a local programmatic allowance, plan-usage, or
-  spend API. AgenticGlow does not scrape the Cursor dashboard and does not
-  show Cursor usage bars.
+  spend API. Cursor allowance is therefore opt-in and authenticated by a
+  cookie you paste into Usage Access; AgenticGlow never takes that cookie
+  from Cursor or a browser. See `docs/provider-allowance-feasibility.md`.
 - Tab completion hooks are not installed. They are too frequent and are not
   agent sessions.
 - Subagent start/stop hooks are not installed, so Task subagents stay folded

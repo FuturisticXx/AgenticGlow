@@ -238,6 +238,89 @@ final class AgentNotificationServiceTests: XCTestCase {
         XCTAssertEqual(scheduler.authorizationRequests, 0)
     }
 
+    // MARK: - Pool providers
+
+    func testLowPoolNotificationNamesThePoolNotJustTheProvider() async {
+        let scheduler = FakeScheduler()
+        let service = makeService(scheduler: scheduler)
+
+        service.allowanceUpdated(
+            provider: .cursor,
+            allowance: cursorAllowance(cursorModelsUsed: 26, otherModelsUsed: 94)
+        )
+        await service.drain()
+
+        XCTAssertEqual(scheduler.added.count, 1, "Only the constrained pool announces")
+        XCTAssertEqual(scheduler.added.first?.id, "quota.cursor.Other Models")
+        XCTAssertEqual(scheduler.added.first?.title, "Cursor · Other Models usage running low")
+        XCTAssertEqual(
+            scheduler.added.first?.body,
+            "Other Models: 6% left. Resets at 12:50 AM."
+        )
+    }
+
+    func testExhaustedPoolNotificationNamesThePool() async {
+        let scheduler = FakeScheduler()
+        let service = makeService(scheduler: scheduler)
+
+        service.allowanceUpdated(
+            provider: .cursor,
+            allowance: cursorAllowance(cursorModelsUsed: 10, otherModelsUsed: 100)
+        )
+        await service.drain()
+
+        XCTAssertEqual(scheduler.added.first?.title, "Cursor · Other Models usage exhausted")
+    }
+
+    func testEachPoolTracksItsOwnAlertStateWithoutSilencingTheOther() async {
+        let scheduler = FakeScheduler()
+        let service = makeService(scheduler: scheduler)
+
+        service.allowanceUpdated(
+            provider: .cursor,
+            allowance: cursorAllowance(cursorModelsUsed: 26, otherModelsUsed: 94)
+        )
+        await service.drain()
+        service.allowanceUpdated(
+            provider: .cursor,
+            allowance: cursorAllowance(cursorModelsUsed: 95, otherModelsUsed: 94)
+        )
+        await service.drain()
+
+        XCTAssertEqual(scheduler.added.count, 2)
+        XCTAssertEqual(scheduler.added.last?.title, "Cursor · Cursor Models usage running low")
+    }
+
+    private func cursorAllowance(
+        cursorModelsUsed: Double?,
+        otherModelsUsed: Double?
+    ) -> ProviderAllowance {
+        let reset = Date(timeIntervalSince1970: 1_783_101_600)
+        return ProviderAllowance(
+            provider: .cursor,
+            currentWindowLabel: "Billing cycle",
+            currentPercentUsed: nil,
+            currentResetAt: nil,
+            weeklyPercentUsed: nil,
+            weeklyResetAt: nil,
+            pools: [
+                AllowancePool(
+                    id: "cursorModels",
+                    label: "Cursor Models",
+                    percentUsed: cursorModelsUsed,
+                    resetAt: reset
+                ),
+                AllowancePool(
+                    id: "otherModels",
+                    label: "Other Models",
+                    percentUsed: otherModelsUsed,
+                    resetAt: reset
+                )
+            ],
+            fetchedAt: Date(timeIntervalSince1970: 1_783_099_000)
+        )
+    }
+
     private func makeService(
         scheduler: FakeScheduler,
         permissionEnabled: Bool = true,

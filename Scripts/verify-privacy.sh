@@ -24,19 +24,48 @@ fi
 
 grep -q 'No usage requests are being made' Sources/AgenticGlowApp/MenuBar/AllowanceSectionView.swift
 grep -Fq 'cache.remove(provider)' Sources/AgenticGlowCore/Allowance/AllowanceRefreshCoordinator.swift
-grep -q 'kSecClassGenericPassword' Sources/AgenticGlowApp/Settings/ClaudeSessionCredentialStore.swift
-grep -q 'kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly' Sources/AgenticGlowApp/Settings/ClaudeSessionCredentialStore.swift
-grep -q 'Unofficial Claude connection' Sources/AgenticGlowApp/MenuBar/UsageConsentView.swift
+credential_store="Sources/AgenticGlowApp/Settings/SessionCredentialStore.swift"
+grep -q 'kSecClassGenericPassword' "$credential_store"
+grep -q 'kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly' "$credential_store"
+grep -q 'Unofficial provider connections' Sources/AgenticGlowApp/MenuBar/UsageConsentView.swift
+
+# Each provider's credential lives under its own Keychain service, so one
+# provider's Usage Access can never read or delete another's.
+grep -q 'com.twodamax.agenticglow.claude-session.v1' "$credential_store"
+grep -q 'com.twodamax.agenticglow.cursor-session.v1' "$credential_store"
+
+# Cursor allowance must stay a user-pasted credential. AgenticGlow must never
+# read Cursor's own session storage or any browser cookie database.
+#
+# Defense in depth, not the boundary itself. The boundary is structural: the
+# Cursor adapter receives its cookie through an injected closure and has no
+# storage access of its own, so there is no code path from the adapter to any
+# credential store other than the app's own Keychain entry. These greps only
+# catch a future edit that reaches for the well-known extraction sources.
+if grep -rniE 'state\.vscdb|cursorAuth|WorkosCursorSessionToken|Cookies\.binarycookies|cookies\.sqlite' \
+  Sources/AgenticGlowCore Sources/AgenticGlowApp; then
+  echo "Cursor credential extraction path found; the cookie must be user-supplied" >&2
+  exit 1
+fi
+
+# The structural half of the same guarantee: the Cursor adapter reads no
+# storage, so it cannot acquire a credential on its own.
+cursor_adapter="Sources/AgenticGlowCore/Allowance/CursorAllowanceAdapter.swift"
+if grep -nE '^import (Security|SQLite3)|FileManager|SecItem' "$cursor_adapter"; then
+  echo "Cursor adapter must not read local storage; its cookie is injected" >&2
+  exit 1
+fi
 
 if grep -nE 'sessionCookie|cookie|credential|authorization' \
   Sources/AgenticGlowCore/Allowance/ProviderAllowance.swift \
+  Sources/AgenticGlowCore/Allowance/AllowancePool.swift \
   Sources/AgenticGlowCore/Allowance/FileAllowanceCache.swift; then
   echo "Credential field found in normalized allowance cache model" >&2
   exit 1
 fi
 
-if grep -n 'UserDefaults' Sources/AgenticGlowApp/Settings/ClaudeSessionCredentialStore.swift; then
-  echo "Claude credential storage must not use UserDefaults" >&2
+if grep -n 'UserDefaults' "$credential_store"; then
+  echo "Session credential storage must not use UserDefaults" >&2
   exit 1
 fi
 

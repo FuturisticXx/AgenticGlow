@@ -27,13 +27,50 @@ final class AllowanceContinuationTests: XCTestCase {
         XCTAssertEqual(line, "Claude weekly 1% left")
     }
 
-    func testNeverMentionsCursor() {
+    /// With Cursor usage access off there is no Cursor allowance to
+    /// report, so the line cannot name it. This replaces the older
+    /// blanket "never mentions Cursor" rule, which existed only because
+    /// Cursor had no usage source at all.
+    func testCursorIsUnnamedWithoutUsageAccess() {
         let line = AllowanceContinuation.line(allowances: [
-            .claude: allowance(provider: .claude, currentLabel: "5h", currentLeft: 43, weeklyLeft: 1),
-            .cursor: allowance(provider: .cursor, currentLabel: "unknown", currentLeft: 99, weeklyLeft: 99)
+            .claude: allowance(provider: .claude, currentLabel: "5h", currentLeft: 43, weeklyLeft: 1)
         ])
+
         XCTAssertEqual(line, "Claude weekly 1% left")
         XCTAssertFalse(line?.contains("Cursor") == true)
+    }
+
+    /// With usage access on, a constrained Cursor pool is named
+    /// specifically, so "Cursor" alone never stands for one of its two
+    /// separate allowances.
+    func testConstrainedCursorPoolIsNamedSpecifically() {
+        let line = AllowanceContinuation.line(allowances: [
+            .cursor: ProviderAllowance(
+                provider: .cursor,
+                currentWindowLabel: "Billing cycle",
+                currentPercentUsed: nil,
+                currentResetAt: nil,
+                weeklyPercentUsed: nil,
+                weeklyResetAt: nil,
+                pools: [
+                    AllowancePool(
+                        id: "cursorModels",
+                        label: "Cursor Models",
+                        percentUsed: 26,
+                        resetAt: now
+                    ),
+                    AllowancePool(
+                        id: "otherModels",
+                        label: "Other Models",
+                        percentUsed: 96,
+                        resetAt: now
+                    )
+                ],
+                fetchedAt: now
+            )
+        ])
+
+        XCTAssertEqual(line, "Cursor · Other Models 4% left")
     }
 
     func testZeroPercentIsConstrained() {

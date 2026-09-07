@@ -15,8 +15,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var preferences = PreferencesStore()
     private var updateViewModel = UpdateViewModel()
     private let launchAtLogin = LaunchAtLoginService()
-    private var claudeCredentialStore: any ClaudeSessionCredentialStoring =
-        ClaudeSessionCredentialStore()
+    private var claudeCredentialStore: any SessionCredentialStoring =
+        SessionCredentialStore.claude()
+    private var cursorCredentialStore: any SessionCredentialStoring =
+        SessionCredentialStore.cursor()
+
+    private static var isRunningUnderXCTest: Bool {
+        TestExecutionEnvironment.isRunningTests()
+    }
+
     private var notificationService: AgentNotificationService?
     private let notificationClient = UserNotificationCenterClient()
     private var hotKeyRef: EventHotKeyRef?
@@ -109,8 +116,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let fixtureName = visualQA == nil
             ? UITestFixtureFactory.name(arguments: CommandLine.arguments)
             : "empty"
-        if fixtureName != nil {
-            claudeCredentialStore = InMemoryClaudeSessionCredentialStore()
+        // Test runs never touch the login Keychain. Each locally re-signed
+        // build is a new code identity, so an app-hosted test that reads a
+        // stored cookie re-prompts for the Keychain password on every run
+        // (tasks/lessons.md, 2026-07-10). Fixtures already used an
+        // in-memory store; plain app-hosted unit tests did not. See
+        // TestExecutionEnvironment for why this cannot fire in a normal
+        // launch, and why a false positive would be harmless if it did.
+        if fixtureName != nil || Self.isRunningUnderXCTest {
+            claudeCredentialStore = InMemorySessionCredentialStore()
+            cursorCredentialStore = InMemorySessionCredentialStore()
         }
 
         // Check for UI test fixtures
@@ -229,6 +244,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             if fixtureName == "signals" {
                 defaults.set(true, forKey: "codexUsageEnabled")
+                defaults.set(true, forKey: "cursorUsageEnabled")
                 defaults.set(true, forKey: "serviceStatusEnabled")
             }
             configurePreferences(defaults: defaults)
@@ -240,6 +256,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             model: model,
             preferences: preferences,
             claudeCredentialStore: claudeCredentialStore,
+            cursorCredentialStore: cursorCredentialStore,
             openIntegrations: { [weak self] in self?.showSetupWindow() }
         )
         reduceMotionObserver = ReduceMotionObserver(
@@ -263,6 +280,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             await model.setUsageEnabled(preferences.codexUsageEnabled, provider: .codex)
             await model.setUsageEnabled(preferences.claudeUsageEnabled, provider: .claude)
+            await model.setUsageEnabled(preferences.cursorUsageEnabled, provider: .cursor)
             await model.setServiceStatusEnabled(preferences.serviceStatusEnabled)
         }
 
@@ -432,6 +450,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 preferences: preferences,
                 popoverState: PopoverState(),
                 claudeCredentialStore: claudeCredentialStore,
+                cursorCredentialStore: cursorCredentialStore,
                 openIntegrations: { [weak self] in self?.showSetupWindow() }
             )
         )
@@ -631,8 +650,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let claudeAdapter = ClaudeAllowanceAdapter(
             sessionCookie: { try claudeCredentialStore.load() ?? "" }
         )
+        let cursorCredentialStore = self.cursorCredentialStore
+        let cursorAdapter: any AllowanceProviding
+        if fixtureName == "signals" {
+            cursorAdapter = UITestCursorPoolAllowanceAdapter()
+        } else if fixtureName != nil {
+            cursorAdapter = UnavailableAllowanceAdapter(
+                provider: .cursor,
+                reason: "Disabled in UI tests."
+            )
+        } else {
+            cursorAdapter = CursorAllowanceAdapter(
+                sessionCookie: { try cursorCredentialStore.load() ?? "" }
+            )
+        }
         return AllowanceRefreshCoordinator(
-            adapters: [codexAdapter, claudeAdapter],
+            adapters: [codexAdapter, claudeAdapter, cursorAdapter],
             cache: FileAllowanceCache(directory: directory)
         )
     }

@@ -43,7 +43,7 @@ automatic update check explicitly enabled by the user, requests only the latest
 release metadata from GitHub's public Releases API.
 
 Subscription allowance access is also off by default and separately controlled
-for Codex and Claude. After Codex opt-in, AgenticGlow asks the installed local
+for Codex, Claude, and Cursor. After Codex opt-in, AgenticGlow asks the installed local
 `codex app-server` for the current five-hour and weekly rate-limit windows.
 Codex manages its own existing sign-in. AgenticGlow never reads, copies, logs,
 or stores Codex credentials or authorization headers.
@@ -56,6 +56,18 @@ requests the private `claude.ai` organization usage endpoint. The connection may
 stop working if Anthropic changes its web API. AgenticGlow never writes the
 cookie to UserDefaults, logs, session files, allowance cache files, or source.
 Disabling Claude deletes both its normalized cache and Keychain cookie.
+
+Cursor likewise documents no individual usage API. If the user explicitly
+enables the unofficial Cursor connection and pastes their full `cursor.com`
+Cookie request header, AgenticGlow stores that cookie only as a generic
+password in macOS Keychain, under a Keychain service separate from Claude's. It
+makes one read-only `GET https://cursor.com/api/usage-summary` request and keeps
+only two percentages (Cursor Models and Other Models), one billing-cycle reset
+date, and a fetch time. It does not keep the raw response, account email,
+account ID, or spend figures. AgenticGlow never reads this cookie from Cursor,
+from Cursor's application storage, or from any browser cookie database: the
+user provides it or there is none. Disabling Cursor deletes both its normalized
+cache and Keychain cookie.
 
 ## Provider service status (optional)
 
@@ -106,8 +118,8 @@ For each enabled provider, AgenticGlow stores only the latest normalized value:
 
 Disabling a provider immediately deletes its cached allowance. AgenticGlow does
 not store raw provider responses, usage history, token history, cost history,
-credentials, cookies, or authorization headers. The optional Claude session
-cookie is stored separately in macOS Keychain and is never part of allowance
+credentials, cookies, or authorization headers. The optional Claude and Cursor
+session cookies are stored separately in macOS Keychain and are never part of allowance
 cache data.
 
 ## Desktop widget and shared App Group

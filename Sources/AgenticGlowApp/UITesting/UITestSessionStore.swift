@@ -299,6 +299,41 @@ struct UITestAllowanceAdapter: AllowanceProviding {
     }
 }
 
+/// Canned two-pool Cursor allowance for the "signals" fixture: a healthy
+/// Cursor Models pool beside a constrained Other Models pool, which is
+/// the case the separate-pool display exists for. No credential and no
+/// network request are involved.
+struct UITestCursorPoolAllowanceAdapter: AllowanceProviding {
+    let provider = AgentProvider.cursor
+
+    func fetch() async throws -> ProviderAllowance {
+        let reset = Date().addingTimeInterval(11 * 86_400)
+        return ProviderAllowance(
+            provider: .cursor,
+            currentWindowLabel: "Billing cycle",
+            currentPercentUsed: nil,
+            currentResetAt: nil,
+            weeklyPercentUsed: nil,
+            weeklyResetAt: nil,
+            pools: [
+                AllowancePool(
+                    id: CursorAllowanceNormalizer.cursorModelsPoolID,
+                    label: "Cursor Models",
+                    percentUsed: 26,
+                    resetAt: reset
+                ),
+                AllowancePool(
+                    id: CursorAllowanceNormalizer.otherModelsPoolID,
+                    label: "Other Models",
+                    percentUsed: 94,
+                    resetAt: reset
+                )
+            ],
+            fetchedAt: Date()
+        )
+    }
+}
+
 /// Canned status payloads for the "signals" fixture: Claude reports an
 /// incident, Codex reports operational.
 struct UITestStatusRequester: ProviderStatusRequesting {

@@ -42,6 +42,19 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         activeCount: 0
     )
 
+    /// Allowances on the widget's default page: providers that report
+    /// time windows. A provider with sub-pools is shown on its own page
+    /// instead, so enabling it never costs the overview its breathing
+    /// room.
+    public var overviewAllowances: [WidgetAllowanceSummary] {
+        allowances.filter { $0.pools.isEmpty }
+    }
+
+    /// Allowances that have their own page, in snapshot order.
+    public var poolAllowances: [WidgetAllowanceSummary] {
+        allowances.filter { !$0.pools.isEmpty }
+    }
+
     /// Providers with genuinely no signal: no sessions, no allowance data,
     /// and no hook integration installed. `providers[].installed` alone
     /// isn't enough to call a provider "not set up" — Codex sessions and
@@ -101,6 +114,11 @@ public struct WidgetAllowanceSummary: Codable, Equatable, Sendable {
     public let currentResetAt: Date?
     public let weeklyPercentLeft: Double?
     public let weeklyResetAt: Date?
+    /// Named sub-pools for a provider that reports several concurrently
+    /// active allowances (Cursor). Empty for window-based providers, and
+    /// absent from snapshots written before pools existed, which decode
+    /// as empty and render exactly as they did.
+    public let pools: [WidgetAllowancePool]
     public let fetchedAt: Date
 
     public init(
@@ -110,6 +128,7 @@ public struct WidgetAllowanceSummary: Codable, Equatable, Sendable {
         currentResetAt: Date?,
         weeklyPercentLeft: Double?,
         weeklyResetAt: Date?,
+        pools: [WidgetAllowancePool] = [],
         fetchedAt: Date
     ) {
         self.provider = provider
@@ -118,7 +137,38 @@ public struct WidgetAllowanceSummary: Codable, Equatable, Sendable {
         self.currentResetAt = currentResetAt
         self.weeklyPercentLeft = weeklyPercentLeft
         self.weeklyResetAt = weeklyResetAt
+        self.pools = pools
         self.fetchedAt = fetchedAt
+    }
+
+    /// Hand-written for the same reason as `ProviderAllowance`'s: a
+    /// snapshot written by an older app build has no `pools` key, and the
+    /// widget must render it rather than fail the whole decode and drop
+    /// to its "no data yet" state.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        provider = try container.decode(AgentProvider.self, forKey: .provider)
+        currentWindowLabel = try container.decode(String.self, forKey: .currentWindowLabel)
+        currentPercentLeft = try container.decodeIfPresent(Double.self, forKey: .currentPercentLeft)
+        currentResetAt = try container.decodeIfPresent(Date.self, forKey: .currentResetAt)
+        weeklyPercentLeft = try container.decodeIfPresent(Double.self, forKey: .weeklyPercentLeft)
+        weeklyResetAt = try container.decodeIfPresent(Date.self, forKey: .weeklyResetAt)
+        pools = try container.decodeIfPresent([WidgetAllowancePool].self, forKey: .pools) ?? []
+        fetchedAt = try container.decode(Date.self, forKey: .fetchedAt)
+    }
+
+    /// The one reset every pool shares, when they genuinely share one.
+    /// Cursor meters both pools against a single billing cycle, so
+    /// repeating the same date under each bar would spend a line of a
+    /// fixed canvas saying it twice. Nil whenever the resets differ, are
+    /// missing, or there is only one pool, so a difference is never
+    /// collapsed away. Lives here rather than in the widget view so the
+    /// rule is testable and shared.
+    public var sharedPoolResetAt: Date? {
+        guard pools.count > 1 else { return nil }
+        let resets = pools.compactMap(\.resetAt)
+        guard resets.count == pools.count, let first = resets.first else { return nil }
+        return resets.allSatisfy { $0 == first } ? first : nil
     }
 
     /// Individual allowance windows to display, derived from the stored
@@ -129,6 +179,17 @@ public struct WidgetAllowanceSummary: Codable, Equatable, Sendable {
     /// display-layer projection over already-serialized fields, so it
     /// doesn't need Codable or a schema version bump.
     public var windows: [WidgetAllowanceWindow] {
+        guard pools.isEmpty else {
+            return pools.map { pool in
+                WidgetAllowanceWindow(
+                    provider: provider,
+                    kind: .pool(pool.id),
+                    label: pool.label,
+                    percentLeft: pool.percentLeft,
+                    resetAt: pool.resetAt
+                )
+            }
+        }
         var result = [
             WidgetAllowanceWindow(
                 provider: provider,
@@ -157,10 +218,37 @@ public struct WidgetAllowanceSummary: Codable, Equatable, Sendable {
 /// one label. Not Codable: it's a computed presentation over
 /// `WidgetAllowanceSummary`'s stored fields, not part of the shared
 /// snapshot's serialized schema.
+/// One named sub-pool as carried in the shared snapshot. Normalized
+/// display data only: no credential, no account identity, no raw response.
+public struct WidgetAllowancePool: Codable, Equatable, Sendable {
+    public let id: String
+    public let label: String
+    public let percentLeft: Double?
+    public let resetAt: Date?
+
+    public init(id: String, label: String, percentLeft: Double?, resetAt: Date?) {
+        self.id = id
+        self.label = label
+        self.percentLeft = percentLeft
+        self.resetAt = resetAt
+    }
+}
+
 public struct WidgetAllowanceWindow: Equatable, Sendable, Identifiable {
-    public enum Kind: String, Sendable {
+    public enum Kind: Equatable, Sendable {
         case current
         case weekly
+        /// Carries the pool's stable id so several pools from one
+        /// provider stay individually identifiable in a ForEach.
+        case pool(String)
+
+        public var rawValue: String {
+            switch self {
+            case .current: "current"
+            case .weekly: "weekly"
+            case let .pool(id): id
+            }
+        }
     }
 
     public let provider: AgentProvider

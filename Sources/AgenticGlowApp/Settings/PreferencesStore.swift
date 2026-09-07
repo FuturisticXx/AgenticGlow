@@ -60,6 +60,9 @@ final class PreferencesStore {
     var claudeUsageEnabled: Bool {
         didSet { defaults.set(claudeUsageEnabled, forKey: "claudeUsageEnabled") }
     }
+    var cursorUsageEnabled: Bool {
+        didSet { defaults.set(cursorUsageEnabled, forKey: "cursorUsageEnabled") }
+    }
     var notifyPermission: Bool {
         didSet { defaults.set(notifyPermission, forKey: "notifyPermission") }
     }
@@ -97,6 +100,10 @@ final class PreferencesStore {
         self.diagnosticsEnabled = defaults.bool(forKey: "diagnosticsEnabled")
         self.codexUsageEnabled = defaults.bool(forKey: "codexUsageEnabled")
         self.claudeUsageEnabled = defaults.bool(forKey: "claudeUsageEnabled")
+        // Off unless the user turns it on, so an upgrade keeps today's
+        // behavior: no Cursor request is made and no Cursor allowance
+        // appears anywhere.
+        self.cursorUsageEnabled = defaults.bool(forKey: "cursorUsageEnabled")
         // Notification toggles default on; absence of a stored value means true.
         self.notifyPermission = defaults.object(forKey: "notifyPermission") as? Bool ?? true
         self.notifyQuotaLow = defaults.object(forKey: "notifyQuotaLow") as? Bool ?? true
@@ -118,6 +125,7 @@ final class PreferencesStore {
         let diagnosticsEnabled = defaults.bool(forKey: "diagnosticsEnabled")
         let codexUsageEnabled = defaults.bool(forKey: "codexUsageEnabled")
         let claudeUsageEnabled = defaults.bool(forKey: "claudeUsageEnabled")
+        let cursorUsageEnabled = defaults.bool(forKey: "cursorUsageEnabled")
         let notifyPermission = defaults.object(forKey: "notifyPermission") as? Bool ?? true
         let notifyQuotaLow = defaults.object(forKey: "notifyQuotaLow") as? Bool ?? true
         let serviceStatusEnabled = defaults.bool(forKey: "serviceStatusEnabled")
@@ -136,6 +144,7 @@ final class PreferencesStore {
         self.diagnosticsEnabled = diagnosticsEnabled
         self.codexUsageEnabled = codexUsageEnabled
         self.claudeUsageEnabled = claudeUsageEnabled
+        self.cursorUsageEnabled = cursorUsageEnabled
         self.notifyPermission = notifyPermission
         self.notifyQuotaLow = notifyQuotaLow
         self.serviceStatusEnabled = serviceStatusEnabled

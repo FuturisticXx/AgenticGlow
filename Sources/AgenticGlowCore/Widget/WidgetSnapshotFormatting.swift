@@ -61,6 +61,52 @@ public enum WidgetSnapshotFormatting {
         return resetAt.formatted(style)
     }
 
+    /// The reset detail a widget caption shows, composed to stay on one
+    /// line beside a low-allowance warning icon.
+    ///
+    /// Two words are dropped against the longer phrasing the popover
+    /// uses, and both were redundant rather than informative: "in 3h 27m
+    /// left" said the same thing twice, and "Sep 7 at 12:16 AM" spends a
+    /// word where a separator reads the same. Nothing semantic goes: the
+    /// countdown, the weekday, the date, and the exact time all survive.
+    /// Written for the case that truncated on a real desktop widget,
+    /// "5h resets in 3h 27m left (Mon, Sep 7 at 12:16 A...".
+    public static func captionResetDetail(
+        _ resetAt: Date?,
+        now: Date,
+        calendar: Calendar = .current
+    ) -> String? {
+        guard let resetAt else { return nil }
+        let absolute = compactAbsoluteResetLabel(resetAt, now: now, calendar: calendar)
+        guard showsCountdown(resetAt, now: now) else { return absolute }
+        guard let countdown = countdownLabel(resetAt, now: now) else { return absolute }
+        return absolute.map { "in \(countdown) (\($0))" } ?? "in \(countdown)"
+    }
+
+    /// Same information as `absoluteResetLabel`, with the separator doing
+    /// the work "at" was doing.
+    public static func compactAbsoluteResetLabel(
+        _ resetAt: Date?,
+        now: Date,
+        calendar: Calendar = .current
+    ) -> String? {
+        guard let resetAt else { return nil }
+        if calendar.isDate(resetAt, inSameDayAs: now) {
+            return resetAt.formatted(.dateTime.hour().minute())
+        }
+        let day = resetAt.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+        let time = resetAt.formatted(.dateTime.hour().minute())
+        return "\(day) · \(time)"
+    }
+
+    /// `relativeResetLabel` without its trailing "left", for phrasings
+    /// that already supply the preposition.
+    public static func countdownLabel(_ resetAt: Date?, now: Date) -> String? {
+        guard let label = relativeResetLabel(resetAt, now: now) else { return nil }
+        guard label.hasSuffix(" left") else { return label }
+        return String(label.dropLast(" left".count))
+    }
+
     public static func lastUpdatedLabel(_ date: Date, now: Date) -> String {
         let interval = max(0, now.timeIntervalSince(date))
         if interval < 60 { return "Just now" }

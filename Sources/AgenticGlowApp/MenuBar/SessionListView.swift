@@ -7,7 +7,8 @@ struct SessionListView: View {
     @Bindable var model: AppModel
     @Bindable var preferences: PreferencesStore
     @Bindable var popoverState: PopoverState
-    let claudeCredentialStore: any ClaudeSessionCredentialStoring
+    let claudeCredentialStore: any SessionCredentialStoring
+    let cursorCredentialStore: any SessionCredentialStoring
     let openIntegrations: () -> Void
     var settingsPresentationChanged: (Bool) -> Void = { _ in }
     @State private var showingUsageConsent = false
@@ -76,7 +77,9 @@ struct SessionListView: View {
             UsageConsentView(
                 codexEnabled: preferences.codexUsageEnabled,
                 claudeEnabled: preferences.claudeUsageEnabled,
+                cursorEnabled: preferences.cursorUsageEnabled,
                 claudeCredentialConfigured: (try? claudeCredentialStore.load()) != nil,
+                cursorCredentialConfigured: (try? cursorCredentialStore.load()) != nil,
                 apply: applyUsageConsent
             )
         }
@@ -146,10 +149,15 @@ struct SessionListView: View {
         if preferences.claudeUsageEnabled {
             Text("Claude: \(detail(for: .claude))")
         }
+        if preferences.cursorUsageEnabled {
+            Text("Cursor: \(detail(for: .cursor))")
+        }
     }
 
     private var usageEnabled: Bool {
-        preferences.codexUsageEnabled || preferences.claudeUsageEnabled
+        preferences.codexUsageEnabled
+            || preferences.claudeUsageEnabled
+            || preferences.cursorUsageEnabled
     }
 
     private var summary: String {
@@ -172,21 +180,46 @@ struct SessionListView: View {
         }
     }
 
-    private func applyUsageConsent(codex: Bool, claude: Bool, cookie: String) throws {
-        if claude {
-            if !cookie.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                try claudeCredentialStore.save(cookie)
-            } else if try claudeCredentialStore.load() == nil {
-                throw ClaudeCredentialError(message: "Paste the full Claude session cookie.")
-            }
-        } else {
-            try claudeCredentialStore.delete()
-        }
-        preferences.codexUsageEnabled = codex
-        preferences.claudeUsageEnabled = claude
+    private func applyUsageConsent(_ selection: UsageConsentSelection) throws {
+        try store(
+            cookie: selection.claudeCookie,
+            enabled: selection.claude,
+            in: claudeCredentialStore,
+            missingMessage: "Paste the full Claude session cookie."
+        )
+        try store(
+            cookie: selection.cursorCookie,
+            enabled: selection.cursor,
+            in: cursorCredentialStore,
+            missingMessage: "Paste the full Cursor session cookie."
+        )
+        preferences.codexUsageEnabled = selection.codex
+        preferences.claudeUsageEnabled = selection.claude
+        preferences.cursorUsageEnabled = selection.cursor
         Task {
-            await model.setUsageEnabled(codex, provider: .codex)
-            await model.setUsageEnabled(claude, provider: .claude)
+            await model.setUsageEnabled(selection.codex, provider: .codex)
+            await model.setUsageEnabled(selection.claude, provider: .claude)
+            await model.setUsageEnabled(selection.cursor, provider: .cursor)
+        }
+    }
+
+    /// Turning a provider off removes its cookie rather than leaving it
+    /// in the Keychain unused. A newly pasted cookie replaces whatever is
+    /// stored; an empty field keeps the existing one.
+    private func store(
+        cookie: String,
+        enabled: Bool,
+        in credentialStore: any SessionCredentialStoring,
+        missingMessage: String
+    ) throws {
+        guard enabled else {
+            try credentialStore.delete()
+            return
+        }
+        if !cookie.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            try credentialStore.save(cookie)
+        } else if try credentialStore.load() == nil {
+            throw SessionCredentialError(message: missingMessage)
         }
     }
 }

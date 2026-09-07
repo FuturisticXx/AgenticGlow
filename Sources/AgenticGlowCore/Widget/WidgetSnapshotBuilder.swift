@@ -49,6 +49,14 @@ public enum WidgetSnapshotBuilder {
                 currentResetAt: allowance.currentResetAt,
                 weeklyPercentLeft: allowance.weeklyPercentLeft,
                 weeklyResetAt: allowance.weeklyResetAt,
+                pools: allowance.pools.map { pool in
+                    WidgetAllowancePool(
+                        id: pool.id,
+                        label: pool.label,
+                        percentLeft: pool.percentLeft,
+                        resetAt: pool.resetAt
+                    )
+                },
                 fetchedAt: allowance.fetchedAt
             )
         }
@@ -104,6 +112,7 @@ public enum WidgetSnapshotBuilder {
                 && a.currentResetAt == b.currentResetAt
                 && a.weeklyPercentLeft == b.weeklyPercentLeft
                 && a.weeklyResetAt == b.weeklyResetAt
+                && a.pools == b.pools
         }
     }
 }

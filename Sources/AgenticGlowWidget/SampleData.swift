@@ -42,6 +42,24 @@ enum SampleData {
         weeklyPercentLeft: 12, weeklyResetAt: now.addingTimeInterval(2 * 86_400), fetchedAt: now
     )
 
+    /// Cursor's two pools: healthy Cursor Models beside a constrained
+    /// Other Models, both metered against one billing cycle.
+    static let cursorAllowance = WidgetAllowanceSummary(
+        provider: .cursor, currentWindowLabel: "Billing cycle", currentPercentLeft: nil,
+        currentResetAt: nil, weeklyPercentLeft: nil, weeklyResetAt: nil,
+        pools: [
+            WidgetAllowancePool(
+                id: "cursorModels", label: "Cursor Models", percentLeft: 74,
+                resetAt: now.addingTimeInterval(11 * 86_400)
+            ),
+            WidgetAllowancePool(
+                id: "otherModels", label: "Other Models", percentLeft: 6,
+                resetAt: now.addingTimeInterval(11 * 86_400)
+            )
+        ],
+        fetchedAt: now
+    )
+
     /// Matches the real allowance-window parity case: Codex currently
     /// reports only a single window (labeled "Weekly", no separate current
     /// value), while Claude reports both a 5h and a weekly window. Combined
@@ -133,6 +151,29 @@ enum SampleData {
 
     /// The three-window parity case this widget pass targets: Codex Weekly,
     /// Claude 5h, and Claude Weekly, each with a visibly different fill.
+    /// Cursor pools with nothing active, so small's allowance headline
+    /// is reached and must name the constrained pool rather than just
+    /// "Cursor".
+    static let cursorPoolsIdleSnapshot = WidgetSnapshot(
+        generatedAt: now,
+        sessions: [],
+        allowances: [cursorAllowance],
+        providers: bothProvidersInstalled,
+        attentionCount: 0,
+        activeCount: 0
+    )
+
+    /// Cursor with Usage Access on: one provider, two pools, one shared
+    /// reset stated once.
+    static let cursorPoolsSnapshot = WidgetSnapshot(
+        generatedAt: now,
+        sessions: [workingSession],
+        allowances: [cursorAllowance],
+        providers: bothProvidersInstalled,
+        attentionCount: 0,
+        activeCount: 1
+    )
+
     static let allowanceParitySnapshot = WidgetSnapshot(
         generatedAt: now,
         sessions: [editingSession, workingSession],

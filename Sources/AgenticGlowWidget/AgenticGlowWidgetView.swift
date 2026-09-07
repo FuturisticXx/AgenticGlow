@@ -17,8 +17,13 @@ struct AgenticGlowWidgetView: View {
     private var content: some View {
         switch entry.state {
         case .placeholder:
-            LoadedContentView(snapshot: SampleData.busySnapshot, family: family, now: SampleData.now)
-                .redacted(reason: .placeholder)
+            LoadedContentView(
+                snapshot: SampleData.busySnapshot,
+                family: family,
+                now: SampleData.now,
+                page: .overview
+            )
+            .redacted(reason: .placeholder)
         case .result(.notConfigured):
             EmptyStateView(
                 systemImage: "gearshape",
@@ -38,7 +43,7 @@ struct AgenticGlowWidgetView: View {
                 message: "AgenticGlow's status could not be read. Open the app to refresh."
             )
         case let .result(.loaded(snapshot)):
-            LoadedContentView(snapshot: snapshot, family: family, now: entry.date)
+            LoadedContentView(snapshot: snapshot, family: family, now: entry.date, page: entry.page)
         }
     }
 }
@@ -47,15 +52,19 @@ private struct LoadedContentView: View {
     let snapshot: WidgetSnapshot
     let family: WidgetFamily
     let now: Date
+    let page: WidgetAllowancePage
 
     var body: some View {
         switch family {
         case .systemSmall:
+            // Small stays on one number and stays non-interactive: its
+            // whole canvas is a single headline, and a control there
+            // would compete with the tap that opens the app.
             SmallWidgetView(snapshot: snapshot, now: now)
         case .systemMedium:
-            MediumWidgetView(snapshot: snapshot, now: now)
+            MediumWidgetView(snapshot: snapshot, now: now, page: page)
         default:
-            LargeWidgetView(snapshot: snapshot, now: now)
+            LargeWidgetView(snapshot: snapshot, now: now, page: page)
         }
     }
 }

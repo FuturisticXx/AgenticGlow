@@ -32,9 +32,13 @@ struct AllowanceSectionView: View {
                     }
                 }
                 if let continuation = allowanceContinuation {
+                    // Wraps rather than truncates: a third provider can
+                    // push this past one line, and a clipped clause is
+                    // exactly the fact the line exists to deliver.
                     Text(continuation)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("AgenticGlow.AllowanceContinuation")
                 }
             }
@@ -88,6 +92,60 @@ private struct ProviderAllowanceRow: View {
         _ allowance: ProviderAllowance,
         freshness: AllowanceFreshness
     ) -> some View {
+        if allowance.pools.isEmpty {
+            windowContent(allowance, freshness: freshness)
+        } else {
+            poolContent(allowance, freshness: freshness)
+        }
+    }
+
+    /// Pools use the same bar, the same caption styling, and the same
+    /// low-allowance treatment as the window rows above, so Cursor sits
+    /// beside Codex and Claude as one provider with two allowances
+    /// rather than as a second provider card. A shared reset is stated
+    /// once under both bars instead of repeated on each.
+    @ViewBuilder
+    private func poolContent(
+        _ allowance: ProviderAllowance,
+        freshness: AllowanceFreshness
+    ) -> some View {
+        let presentation = AllowancePoolPresentation(allowance: allowance, now: Date())
+        ForEach(presentation.pools, id: \.id) { pool in
+            if let leftPercent = pool.leftPercent {
+                AllowanceBar(
+                    value: pool.progress,
+                    label: leftPercent,
+                    tint: tint
+                )
+                .accessibilityLabel(pool.accessibility)
+                allowanceCaption(poolCaption(pool), isLow: pool.isLow)
+            } else {
+                Text("\(pool.label) · Unavailable")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(pool.accessibility)
+            }
+        }
+        if let sharedResetValue = presentation.sharedResetValue {
+            Text("Resets \(sharedResetValue)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        freshnessCaption(allowance, freshness: freshness)
+    }
+
+    /// Only when the pools reset at different times does each caption
+    /// carry its own reset; otherwise the shared line below says it once.
+    private func poolCaption(_ pool: AllowancePoolPresentation.Pool) -> String {
+        guard let resetValue = pool.resetValue else { return pool.label }
+        return "\(pool.label) · resets \(resetValue)"
+    }
+
+    @ViewBuilder
+    private func windowContent(
+        _ allowance: ProviderAllowance,
+        freshness: AllowanceFreshness
+    ) -> some View {
         let presentation = AllowancePresentation(allowance: allowance, now: Date())
         AllowanceBar(
             value: presentation.currentProgress,
@@ -105,6 +163,14 @@ private struct ProviderAllowanceRow: View {
             .accessibilityLabel(presentation.accessibilityWeekly ?? "Weekly allowance")
             allowanceCaption(weeklyCaption(presentation), isLow: presentation.weeklyIsLow)
         }
+        freshnessCaption(allowance, freshness: freshness)
+    }
+
+    @ViewBuilder
+    private func freshnessCaption(
+        _ allowance: ProviderAllowance,
+        freshness: AllowanceFreshness
+    ) -> some View {
         if freshness == .stale {
             Text("Updated \(allowance.fetchedAt.formatted(.relative(presentation: .named)))")
                 .font(.caption2)

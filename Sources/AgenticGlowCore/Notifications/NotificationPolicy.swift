@@ -67,21 +67,6 @@ public struct QuotaAlertTracker: Sendable {
     }
 
     private func observations(in allowance: ProviderAllowance) -> [AllowanceWarning.Window] {
-        var windows: [AllowanceWarning.Window] = []
-        if let left = allowance.currentPercentLeft {
-            windows.append(AllowanceWarning.Window(
-                label: allowance.currentWindowLabel,
-                percentLeft: left,
-                resetAt: allowance.currentResetAt
-            ))
-        }
-        if let left = allowance.weeklyPercentLeft {
-            windows.append(AllowanceWarning.Window(
-                label: "week",
-                percentLeft: left,
-                resetAt: allowance.weeklyResetAt
-            ))
-        }
-        return windows
+        AllowanceWarning.windows(in: allowance)
     }
 }

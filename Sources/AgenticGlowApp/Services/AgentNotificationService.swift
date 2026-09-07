@@ -111,18 +111,31 @@ final class AgentNotificationService: AgentNotifying {
         guard quotaEnabled() else { return }
         for alert in quotaTracker.newAlerts(provider: provider, allowance: allowance) {
             let window = alert.window
-            let windowName = window.label == "week" ? "Weekly" : "5-hour"
             let id = "quota.\(provider.rawValue).\(window.label)"
             let title: String
             let body: String
+            // A pool provider names the constrained pool instead of a
+            // window: "Cursor usage running low" alone would imply the
+            // whole provider is constrained when only one of its
+            // allowances is.
+            let isPool = !allowance.pools.isEmpty
+            let windowName = window.label == "week" ? "Weekly" : "5-hour"
+            let subject = isPool
+                ? "\(provider.notificationName) · \(window.label)"
+                : provider.notificationName
             switch alert.level {
             case .low:
-                title = "\(provider.notificationName) usage running low"
+                title = "\(subject) usage running low"
                 let reset = window.resetAt.map { " Resets at \(resetTime($0))." } ?? ""
-                body = "\(windowName) window: \(Int(window.percentLeft.rounded()))% left.\(reset)"
+                let scope = isPool ? window.label : "\(windowName) window"
+                body = "\(scope): \(Int(window.percentLeft.rounded()))% left.\(reset)"
             case .exhausted:
-                let titleWindow = windowName == "Weekly" ? "weekly" : "5-hour"
-                title = "\(provider.notificationName) \(titleWindow) usage exhausted"
+                if isPool {
+                    title = "\(subject) usage exhausted"
+                } else {
+                    let titleWindow = windowName == "Weekly" ? "weekly" : "5-hour"
+                    title = "\(provider.notificationName) \(titleWindow) usage exhausted"
+                }
                 body = window.resetAt.map { "Available again at \(resetTime($0))." }
                     ?? "No usage remaining in this window."
             }

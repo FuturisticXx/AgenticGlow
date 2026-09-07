@@ -94,8 +94,12 @@ struct SmallWidgetView: View {
     /// Lowest individual window across every provider and window kind, not
     /// just each provider's current window: a provider can report a lower
     /// weekly percentage than its own (or another provider's) current one.
+    /// Cursor's pools are not eligible here. Small shows one number, and
+    /// a pool percentage without room for its pool name would be the one
+    /// thing this family must never show: a Cursor figure that does not
+    /// say which allowance it belongs to.
     private var lowestWindow: WidgetAllowanceWindow? {
-        snapshot.allowances
+        snapshot.overviewAllowances
             .flatMap(\.windows)
             .compactMap { window in
                 window.percentLeft.map { (window, $0) }
@@ -139,6 +143,15 @@ struct SmallWidgetView: View {
     SessionAllowanceWidget()
 } timeline: {
     AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.loaded(SampleData.allowanceParitySnapshot)))
+}
+
+#Preview("Cursor pools (identifies Other Models)", as: .systemSmall) {
+    SessionAllowanceWidget()
+} timeline: {
+    AgenticGlowWidgetEntry(
+        date: SampleData.now,
+        state: .result(.loaded(SampleData.cursorPoolsIdleSnapshot))
+    )
 }
 
 #Preview("All quiet", as: .systemSmall) {

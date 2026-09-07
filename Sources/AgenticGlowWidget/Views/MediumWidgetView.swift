@@ -15,8 +15,15 @@ struct MediumWidgetView: View {
     /// unreachable (widgets don't scroll).
     private static let maximumDisplayedSessions = 2
 
+    /// The Cursor page needs two bars where the overview needs one, so
+    /// the session list gives up a row for as long as it is showing.
+    private var displayedSessionLimit: Int {
+        page == .cursorDetail ? 1 : Self.maximumDisplayedSessions
+    }
+
     let snapshot: WidgetSnapshot
     let now: Date
+    var page: WidgetAllowancePage = .overview
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -25,22 +32,27 @@ struct MediumWidgetView: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(snapshot.sessions.prefix(Self.maximumDisplayedSessions)) { session in
+                ForEach(snapshot.sessions.prefix(displayedSessionLimit)) { session in
                     SessionRow(session: session, now: now, style: .compact)
                 }
-                if snapshot.sessions.count > Self.maximumDisplayedSessions {
-                    Text("+ \(snapshot.sessions.count - Self.maximumDisplayedSessions) more")
+                if snapshot.sessions.count > displayedSessionLimit {
+                    Text("+ \(snapshot.sessions.count - displayedSessionLimit) more")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
             }
             Spacer(minLength: 0)
-            if let lowest = lowestWindow {
+            if page == .cursorDetail, let pooled = snapshot.poolAllowances.first {
+                CursorDetailView(allowance: pooled, now: now, showsHeader: false)
+            } else if let lowest = lowestWindow {
                 AllowanceWindowRow(
                     window: lowest,
                     captionLabel: "\(lowest.provider.displayName) · \(lowest.label)",
                     now: now
                 )
+                if !snapshot.poolAllowances.isEmpty {
+                    AllowanceDetailControl()
+                }
             }
         }
         .padding()
@@ -49,8 +61,11 @@ struct MediumWidgetView: View {
     /// Lowest individual window across every provider and window kind, not
     /// just each provider's current window: a provider can report a lower
     /// weekly percentage than its own (or another provider's) current one.
+    /// Cursor is excluded here for the same reason it is on large: its
+    /// pools belong to their own page, not to the one line the medium
+    /// canvas can spare.
     private var lowestWindow: WidgetAllowanceWindow? {
-        snapshot.allowances
+        snapshot.overviewAllowances
             .flatMap(\.windows)
             .compactMap { window in
                 window.percentLeft.map { (window, $0) }
@@ -70,6 +85,12 @@ struct MediumWidgetView: View {
     SessionAllowanceWidget()
 } timeline: {
     AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.loaded(SampleData.allowanceParitySnapshot)))
+}
+
+#Preview("Cursor pools (picks Other Models, 6%)", as: .systemMedium) {
+    SessionAllowanceWidget()
+} timeline: {
+    AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.loaded(SampleData.cursorPoolsSnapshot)))
 }
 
 #Preview("Attention only", as: .systemMedium) {

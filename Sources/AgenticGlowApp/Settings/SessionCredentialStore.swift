@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-protocol ClaudeSessionCredentialStoring: Sendable {
+protocol SessionCredentialStoring: Sendable {
     func load() throws -> String?
     func save(_ credential: String) throws
     func delete() throws
@@ -13,27 +13,66 @@ protocol KeychainAccessing: Sendable {
     func delete(service: String, account: String) throws
 }
 
-struct ClaudeCredentialError: LocalizedError {
+struct SessionCredentialError: LocalizedError {
     let message: String
     var errorDescription: String? { message }
 }
 
-final class ClaudeSessionCredentialStore: ClaudeSessionCredentialStoring, @unchecked Sendable {
-    private static let service = "com.twodamax.agenticglow.claude-session.v1"
-    private static let account = "claude.ai"
+/// A single provider's usage-access credential, held only in the login
+/// Keychain. Never written to preferences, the widget snapshot, or
+/// diagnostics, and never read back out of the provider's own app or any
+/// browser: the user pastes it in Usage Access or there is none.
+final class SessionCredentialStore: SessionCredentialStoring, @unchecked Sendable {
+    static func claude(keychain: any KeychainAccessing = SystemKeychainAccess()) -> SessionCredentialStore {
+        SessionCredentialStore(
+            service: "com.twodamax.agenticglow.claude-session.v1",
+            account: "claude.ai",
+            providerName: "Claude",
+            emptyMessage: "Paste the full Claude session cookie.",
+            keychain: keychain
+        )
+    }
+
+    /// A separate Keychain service from Claude's, so one provider's
+    /// credential can never be read, overwritten, or deleted through the
+    /// other's Usage Access toggle.
+    static func cursor(keychain: any KeychainAccessing = SystemKeychainAccess()) -> SessionCredentialStore {
+        SessionCredentialStore(
+            service: "com.twodamax.agenticglow.cursor-session.v1",
+            account: "cursor.com",
+            providerName: "Cursor",
+            emptyMessage: "Paste the full Cursor session cookie.",
+            keychain: keychain
+        )
+    }
+
+    private let service: String
+    private let account: String
+    private let providerName: String
+    private let emptyMessage: String
     private let keychain: any KeychainAccessing
 
-    init(keychain: any KeychainAccessing = SystemKeychainAccess()) {
+    init(
+        service: String,
+        account: String,
+        providerName: String,
+        emptyMessage: String,
+        keychain: any KeychainAccessing = SystemKeychainAccess()
+    ) {
+        self.service = service
+        self.account = account
+        self.providerName = providerName
+        self.emptyMessage = emptyMessage
         self.keychain = keychain
     }
 
     func load() throws -> String? {
         guard let data = try keychain.read(
-            service: Self.service,
-            account: Self.account
+            service: service,
+            account: account
         ) else { return nil }
         guard let value = String(data: data, encoding: .utf8) else {
-            throw ClaudeCredentialError(message: "Claude credential could not be read.")
+            throw SessionCredentialError(message: "\(providerName) credential could not be read.")
         }
         return value
     }
@@ -41,21 +80,21 @@ final class ClaudeSessionCredentialStore: ClaudeSessionCredentialStoring, @unche
     func save(_ credential: String) throws {
         let value = credential.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else {
-            throw ClaudeCredentialError(message: "Paste the full Claude session cookie.")
+            throw SessionCredentialError(message: emptyMessage)
         }
         try keychain.save(
             Data(value.utf8),
-            service: Self.service,
-            account: Self.account
+            service: service,
+            account: account
         )
     }
 
     func delete() throws {
-        try keychain.delete(service: Self.service, account: Self.account)
+        try keychain.delete(service: service, account: account)
     }
 }
 
-final class InMemoryClaudeSessionCredentialStore: ClaudeSessionCredentialStoring, @unchecked Sendable {
+final class InMemorySessionCredentialStore: SessionCredentialStoring, @unchecked Sendable {
     private let lock = NSLock()
     private var credential: String?
 
@@ -110,11 +149,11 @@ final class SystemKeychainAccess: KeychainAccessing, @unchecked Sendable {
         ]
     }
 
-    private func keychainError(_ status: OSStatus) -> ClaudeCredentialError {
+    private func keychainError(_ status: OSStatus) -> SessionCredentialError {
         let detail = SecCopyErrorMessageString(status, nil) as String?
-        return ClaudeCredentialError(
-            message: detail.map { "Claude credential could not be saved: \($0)" }
-                ?? "Claude credential could not be saved."
+        return SessionCredentialError(
+            message: detail.map { "Credential could not be saved: \($0)" }
+                ?? "Credential could not be saved."
         )
     }
 }

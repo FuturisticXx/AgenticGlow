@@ -52,7 +52,8 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     init(
         model: AppModel,
         preferences: PreferencesStore,
-        claudeCredentialStore: any ClaudeSessionCredentialStoring,
+        claudeCredentialStore: any SessionCredentialStoring,
+        cursorCredentialStore: any SessionCredentialStoring,
         openIntegrations: @escaping () -> Void
     ) {
         self.model = model
@@ -68,6 +69,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
                 preferences: preferences,
                 popoverState: popoverState,
                 claudeCredentialStore: claudeCredentialStore,
+                cursorCredentialStore: cursorCredentialStore,
                 openIntegrations: openIntegrations,
                 settingsPresentationChanged: { [weak self] isPresented in
                     self?.setSettingsPresented(isPresented)
