@@ -6,6 +6,8 @@ public enum EventValidationError: Error, Equatable {
     case invalidTurnID
     case invalidProjectName
     case invalidWorkingDirectory
+    case invalidLabel
+    case invalidModel
 }
 
 public struct NormalizedEvent: Codable, Equatable, Sendable {
@@ -79,16 +81,44 @@ public struct NormalizedEvent: Codable, Equatable, Sendable {
         }
 
         guard !projectName.isEmpty,
-              projectName.count <= 128,
-              !projectName.contains("\n") else {
+              Self.isSafeDisplayText(projectName, maxLength: 128) else {
             throw EventValidationError.invalidProjectName
         }
 
+        guard Self.isSafeDisplayText(label, maxLength: 256) else {
+            throw EventValidationError.invalidLabel
+        }
+
+        if let model, !Self.isSafeDisplayText(model, maxLength: 64) {
+            throw EventValidationError.invalidModel
+        }
+
         guard workingDirectory.hasPrefix("/"),
+              workingDirectory.count <= 4096,
               !workingDirectory.contains("\0") else {
             throw EventValidationError.invalidWorkingDirectory
         }
     }
+
+    /// Text that reaches single-line popover and widget copy straight from an
+    /// external hook process. Bounded in length, and free of control and
+    /// format characters: newlines and carriage returns break the one-line
+    /// layout, and a bidi override such as U+202E can silently reverse how a
+    /// name renders.
+    private static func isSafeDisplayText(_ value: String, maxLength: Int) -> Bool {
+        guard value.count <= maxLength else { return false }
+        return !value.unicodeScalars.contains { scalar in
+            CharacterSet.controlCharacters.contains(scalar)
+                || bidiControls.contains(scalar.value)
+        }
+    }
+
+    /// Explicit bidi overrides and isolates. Listed rather than inferred so
+    /// the set does not drift with Foundation's character-set definitions.
+    private static let bidiControls: Set<UInt32> = [
+        0x200E, 0x200F, 0x202A, 0x202B, 0x202C, 0x202D, 0x202E,
+        0x2066, 0x2067, 0x2068, 0x2069
+    ]
 
     private static func isSafeIdentifier(_ value: String) -> Bool {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "._-"))

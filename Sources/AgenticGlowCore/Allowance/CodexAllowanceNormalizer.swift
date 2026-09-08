@@ -14,6 +14,21 @@ public enum CodexAllowanceNormalizer {
         }
     }
 
+    /// A reset further out than this is a unit slip or a garbage value, not
+    /// a real window. Codex windows are hours to a week, so a year is
+    /// generous while still rejecting values the date formatters would
+    /// otherwise render as a date centuries away.
+    static let maximumResetHorizon: TimeInterval = 365 * 24 * 60 * 60
+
+    /// Drops the reset rather than the whole allowance: the percentages are
+    /// still worth showing when only the timestamp is unusable.
+    static func resetDate(_ seconds: TimeInterval, fetchedAt: Date) -> Date? {
+        guard seconds.isFinite else { return nil }
+        let date = Date(timeIntervalSince1970: seconds)
+        guard abs(date.timeIntervalSince(fetchedAt)) <= maximumResetHorizon else { return nil }
+        return date
+    }
+
     public static func normalize(_ data: Data, fetchedAt: Date) throws -> ProviderAllowance {
         let response = try JSONDecoder().decode(Response.self, from: data)
         let limits = response.result.rateLimits
@@ -21,9 +36,9 @@ public enum CodexAllowanceNormalizer {
             provider: .codex,
             currentWindowLabel: Self.label(forMinutes: limits.primary.windowDurationMins),
             currentPercentUsed: limits.primary.usedPercent,
-            currentResetAt: Date(timeIntervalSince1970: limits.primary.resetsAt),
+            currentResetAt: Self.resetDate(limits.primary.resetsAt, fetchedAt: fetchedAt),
             weeklyPercentUsed: limits.secondary?.usedPercent,
-            weeklyResetAt: limits.secondary.map { Date(timeIntervalSince1970: $0.resetsAt) },
+            weeklyResetAt: limits.secondary.flatMap { Self.resetDate($0.resetsAt, fetchedAt: fetchedAt) },
             fetchedAt: fetchedAt
         )
     }

@@ -36,7 +36,30 @@ public enum ModelDisplayName {
                 .filter { !harnessPrefixes.contains($0) && !routingSuffixes.contains($0) }
         }
         guard !tokens.isEmpty else { return raw }
-        return tokens.map(displayToken).joined(separator: " ")
+        return joinVersionTokens(tokens).joined(separator: " ")
+    }
+
+    /// Anthropic slugs carry the minor version as its own hyphen segment,
+    /// so `claude-opus-4-5` tokenizes to "4" and "5" and would read as two
+    /// separate words. Rejoin a short number that follows another number
+    /// into one dotted version. Long runs of digits are left alone, because
+    /// a build stamp like `20251101` is not a minor version.
+    private static func joinVersionTokens(_ tokens: [String]) -> [String] {
+        var display: [String] = []
+        for token in tokens {
+            if isVersionComponent(token),
+               let previous = display.last,
+               previous.last?.isNumber == true {
+                display[display.count - 1] = previous + "." + token
+            } else {
+                display.append(displayToken(token))
+            }
+        }
+        return display
+    }
+
+    private static func isVersionComponent(_ token: String) -> Bool {
+        token.count <= 2 && !token.isEmpty && token.allSatisfy(\.isNumber)
     }
 
     private static func isMachineSlug(_ raw: String) -> Bool {

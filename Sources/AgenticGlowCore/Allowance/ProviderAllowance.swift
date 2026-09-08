@@ -46,18 +46,20 @@ public struct ProviderAllowance: Codable, Equatable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         provider = try container.decode(AgentProvider.self, forKey: .provider)
         currentWindowLabel = try container.decode(String.self, forKey: .currentWindowLabel)
-        currentPercentUsed = try container.decodeIfPresent(Double.self, forKey: .currentPercentUsed)
-        currentPercentLeft = try container.decodeIfPresent(Double.self, forKey: .currentPercentLeft)
+        // Clamped here as well as in the designated initializer: a cache
+        // file is untrusted input, and decoding bypasses that initializer.
+        currentPercentUsed = Self.clamp(try container.decodeIfPresent(Double.self, forKey: .currentPercentUsed))
+        currentPercentLeft = Self.clamp(try container.decodeIfPresent(Double.self, forKey: .currentPercentLeft))
         currentResetAt = try container.decodeIfPresent(Date.self, forKey: .currentResetAt)
-        weeklyPercentUsed = try container.decodeIfPresent(Double.self, forKey: .weeklyPercentUsed)
-        weeklyPercentLeft = try container.decodeIfPresent(Double.self, forKey: .weeklyPercentLeft)
+        weeklyPercentUsed = Self.clamp(try container.decodeIfPresent(Double.self, forKey: .weeklyPercentUsed))
+        weeklyPercentLeft = Self.clamp(try container.decodeIfPresent(Double.self, forKey: .weeklyPercentLeft))
         weeklyResetAt = try container.decodeIfPresent(Date.self, forKey: .weeklyResetAt)
         pools = try container.decodeIfPresent([AllowancePool].self, forKey: .pools) ?? []
         fetchedAt = try container.decode(Date.self, forKey: .fetchedAt)
     }
 
     private static func clamp(_ value: Double?) -> Double? {
-        value.map { min(100, max(0, $0)) }
+        value.map { $0.isFinite ? min(100, max(0, $0)) : 0 }
     }
 
     private static func remaining(from used: Double?) -> Double? {

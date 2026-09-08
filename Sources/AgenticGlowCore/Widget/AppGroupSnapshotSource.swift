@@ -49,6 +49,14 @@ public struct AppGroupSnapshotSource: WidgetSnapshotLoading {
         guard let snapshot = try? JSONDecoder.agenticglow.decode(WidgetSnapshot.self, from: data) else {
             return .corrupted
         }
+        // Decoding proves the shape, not the meaning. A snapshot written by
+        // a different schema, or carrying counts that cannot exist, is not
+        // data this build knows how to render.
+        guard snapshot.schemaVersion == WidgetSnapshot.currentSchemaVersion,
+              snapshot.attentionCount >= 0,
+              snapshot.activeCount >= 0 else {
+            return .corrupted
+        }
         return .loaded(snapshot)
     }
 }

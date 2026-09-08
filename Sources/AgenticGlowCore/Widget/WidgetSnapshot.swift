@@ -309,7 +309,13 @@ public struct WidgetAllowanceWindow: Equatable, Sendable, Identifiable {
     }
 
     public var normalizedProgress: Double? {
-        percentLeft.map { min(max($0 / 100, 0), 1) }
+        percentLeft.map { value in
+            // A non-finite percentage would propagate through the division
+            // and reach a SwiftUI frame as NaN, which breaks layout rather
+            // than drawing a wrong bar. Treat it as empty.
+            guard value.isFinite else { return 0 }
+            return min(max(value / 100, 0), 1)
+        }
     }
 }
 

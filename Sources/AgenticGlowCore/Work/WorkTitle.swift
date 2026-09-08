@@ -17,6 +17,10 @@ public enum WorkTitle {
         if keepGeneratedSuffix, let suffix {
             return (titled + [suffix]).joined(separator: " ")
         }
+        // A name made only of separators, or only of a generated suffix,
+        // leaves nothing to title. Show the raw folder name rather than a
+        // blank popover row.
+        guard !titled.isEmpty else { return raw }
         return titled.joined(separator: " ")
     }
 
@@ -27,6 +31,7 @@ public enum WorkTitle {
         if let last = tokens.last, isGeneratedHexSuffix(last) {
             tokens.removeLast()
         }
+        guard !tokens.isEmpty else { return raw }
         return tokens.joined(separator: "-")
     }
 
