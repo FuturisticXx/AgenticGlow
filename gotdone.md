@@ -1,5 +1,31 @@
 # Got done
 
+## 2026-09-07 - Rotate widget tasks on natural refreshes
+
+- The large widget's single session row no longer sits on the first task
+  forever. It now shows a different eligible task each time the widget
+  naturally refreshes, so all three live tasks surface over time without
+  the layout growing. Compact layout is unchanged: one row, a stable
+  `+ N more`, a stationary divider, and the four Codex and Claude windows.
+- Selection reads a new `revision` counter on the snapshot, which the app
+  advances only when it already writes a snapshot. Presentation is a pure
+  function of that snapshot, so nothing time-based drives it.
+- Cost is at or below baseline. The timeline provider is byte-identical to
+  the previous commit: no rotation timeline entries, no timers, no polling,
+  no extra reloads, no extra provider requests, and no extra App Group
+  writes. Measured on the installed signed Release: 1.07s of extension CPU
+  over 480s against 0.49s over 150s for the previous build.
+- A first attempt using pre-baked timeline entries at a 10 second cadence
+  was measured and rejected: 91 entries per timeline cost 64 percent of a
+  core sustained. WidgetKit re-renders a whole timeline far more often than
+  its "render once, swap in silently" model suggests.
+- Observed natural cadence on the desktop widget was 15 refreshes in 8
+  minutes, mean gap 32s, range 5s to 62s. The strict A to B to C cycle
+  holds for a stable session list; live, the list itself reorders as
+  sessions start and go idle, so the row moves through the eligible set
+  rather than walking a fixed cycle.
+- Committed locally as `062bd3c`. Not pushed.
+
 ## 2026-08-22 - Friendly model and harness names
 
 - Widget and popover compact copy now uses human-readable model and
