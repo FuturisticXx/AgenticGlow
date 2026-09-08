@@ -4,12 +4,20 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MASTER="$ROOT/Design/AgenticGlowIcon-1024.png"
+LIGHT_MASTER="$ROOT/Design/AgenticGlowIcon-Light-1024.png"
 ASSETS="$ROOT/Sources/AgenticGlowApp/Resources/Assets.xcassets/AppIcon.appiconset"
-REJECTED_HASH="f3d4900ce6aa4d8b7444ca3e4407ad0371ac42e6643e6731299503922247c111"
+EXPECTED_DARK_HASH="58c6c9fbeadd183fac53d8f66155c24994ccb49aed19ae331790517503bd8c0f"
+EXPECTED_LIGHT_HASH="3aff401d9475c63b8b20ee37c3291daa608c48e42af13e19cbbbbc26fb8f2dd9"
 
 actual_hash="$(shasum -a 256 "$MASTER" | awk '{print $1}')"
-if [[ "$actual_hash" == "$REJECTED_HASH" ]]; then
-    echo "Rejected AgenticGlow icon is still installed." >&2
+if [[ "$actual_hash" != "$EXPECTED_DARK_HASH" ]]; then
+    echo "Approved Glow Mark Dark master hash mismatch." >&2
+    exit 1
+fi
+
+light_hash="$(shasum -a 256 "$LIGHT_MASTER" | awk '{print $1}')"
+if [[ "$light_hash" != "$EXPECTED_LIGHT_HASH" ]]; then
+    echo "Approved Glow Mark Light master hash mismatch." >&2
     exit 1
 fi
 
