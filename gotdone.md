@@ -1,5 +1,28 @@
 # Got done
 
+## 2026-09-07 - New glow mark app icon
+
+- Adopted the approved glowing "A" mark. Dark and light 1024px masters
+  live in `Design/`, and all ten `AppIcon.appiconset` sizes are
+  regenerated from them.
+- `generate-app-icon.swift` no longer draws the mark in AppKit. It
+  resamples the approved master and fails loudly when the master is
+  missing, which drops 132 lines of hardcoded geometry and colour.
+- `verify-app-icon.sh` flipped from blacklisting one rejected hash to
+  whitelisting the two approved master hashes, so an unapproved master
+  cannot pass by simply being different from the old bad one.
+- The Icon Composer source is tracked under `Design/IconComposer/` but is
+  deliberately not an app resource. It does not drive the icon:
+  `CFBundleIconName` is the `AppIcon` asset catalog entry, whose
+  `Assets.car` carries every size up to 1024px. Listing it under
+  `resources:` shipped 1.7MB of design source into every build with no
+  effect on the rendered icon, so that line is gone and `project.yml` is
+  back to its committed state.
+- Verified on a rebuild: `Assets.car` still 3.1MB, the largest icon
+  representation still matches the approved master, no `.icon` in the
+  built product, and the icon gate passes.
+- Committed locally as `f47f9fb`. Not pushed.
+
 ## 2026-09-07 - Rotate widget tasks on natural refreshes
 
 - The large widget's single session row no longer sits on the first task
