@@ -29,6 +29,12 @@ final class AppModel {
     private var allowanceStates: [AgentProvider: AllowanceAvailability] = [:]
     private var serviceStatuses: [AgentProvider: ProviderServiceStatus] = [:]
     private var lastWidgetSnapshot: WidgetSnapshot?
+    /// Snapshots published this launch. Advances only when a snapshot is
+    /// actually written, so it counts real data changes rather than
+    /// attempts. In memory only: nothing new is stored on disk for it, and
+    /// starting over at zero after a relaunch simply shows the first
+    /// session again.
+    private var widgetSnapshotRevision = 0
     private var cachedInstalledProviders: [AgentProvider: Bool] = [:]
     private var installedProvidersCheckedAt: Date?
 
@@ -305,8 +311,12 @@ final class AppModel {
             resolved: resolved,
             allowances: allowances,
             installedProviders: refreshedInstalledProviders(),
-            now: now()
+            now: now(),
+            revision: widgetSnapshotRevision + 1
         )
+        // The revision is deliberately absent from this comparison: a
+        // snapshot must never become worth writing merely because the
+        // counter moved, or the widget would reload on every tick.
         if let last = lastWidgetSnapshot, !WidgetSnapshotBuilder.isMeaningfullyDifferent(snapshot, from: last) {
             return
         }
@@ -315,6 +325,7 @@ final class AppModel {
         } catch {
             return
         }
+        widgetSnapshotRevision = snapshot.revision
         lastWidgetSnapshot = snapshot
         widgetTimelineReloader?.reloadAll()
     }

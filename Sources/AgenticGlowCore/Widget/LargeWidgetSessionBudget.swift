@@ -52,6 +52,38 @@ public enum LargeWidgetSessionBudget {
         }
     }
 
+    /// What the allowance section below the divider costs on `page`,
+    /// expressed in the window count this budget is calibrated in.
+    /// Measured per page rather than assumed, so the detail page gets a
+    /// budget matching the two bars it actually draws instead of the four
+    /// the overview draws.
+    public static func allowanceWindowCount(
+        snapshot: WidgetSnapshot,
+        page: WidgetAllowancePage
+    ) -> Int {
+        switch page {
+        case .overview:
+            return snapshot.overviewAllowances.flatMap(\.windows).count
+        case .cursorDetail:
+            // Two pool bars plus the page's own header row, which costs
+            // about what one more window does.
+            return (snapshot.poolAllowances.first?.windows.count ?? 0) + 1
+        }
+    }
+
+    /// The session area's layout for a snapshot on a given page. Here
+    /// rather than in the view so the rule stays testable without
+    /// rendering anything.
+    public static func layout(
+        snapshot: WidgetSnapshot,
+        page: WidgetAllowancePage
+    ) -> LargeWidgetSessionLayout {
+        layout(
+            sessionCount: snapshot.sessions.count,
+            allowanceWindowCount: allowanceWindowCount(snapshot: snapshot, page: page)
+        )
+    }
+
     public static func layout(
         sessionCount: Int,
         allowanceWindowCount: Int
@@ -68,5 +100,52 @@ public enum LargeWidgetSessionBudget {
         }
         // Not even the summary fits, so the session area yields entirely.
         return LargeWidgetSessionLayout(rows: 0, hiddenCount: 0)
+    }
+}
+
+/// Which of the eligible sessions the large widget's session area shows.
+///
+/// The large canvas has room for fewer session rows than there are
+/// sessions to report (one row plus "+ N more" in the shipping four-window
+/// configuration), so the rows that do fit take turns instead of the first
+/// session owning them forever.
+///
+/// Selection is presentation only, and it is deliberately not a function
+/// of time. It reads the snapshot's own `revision`, so the row advances
+/// exactly when the widget naturally receives new data and never in
+/// between. That is what keeps this free: it adds no timeline entry, no
+/// reload, no timer, and no read of anything the widget was not already
+/// holding. It also means the row cannot change without new data, which
+/// is why no extra refresh mechanism is needed to drive it.
+///
+/// It operates on the session list the snapshot already carries, which has
+/// been through the app's grouping, deduplication and visibility rules, so
+/// a session those rules excluded can never appear here.
+public enum LargeWidgetSessionRotation {
+    /// Whether taking turns is meaningful at all. A session area showing
+    /// every session it has, or showing none, has nothing to rotate.
+    public static func rotates(layout: LargeWidgetSessionLayout) -> Bool {
+        layout.rows > 0 && layout.hiddenCount > 0
+    }
+
+    /// The sessions to draw, in snapshot order, starting at the offset the
+    /// snapshot's revision selects and wrapping around the end.
+    ///
+    /// Ordering is the snapshot's own: the offset changes where a cycle
+    /// starts, never the sequence. Any offset is accepted, including one
+    /// carried over from a snapshot that had more sessions than this one,
+    /// because it is reduced modulo what is actually here. That is what
+    /// makes a session list changing underneath a cycle safe rather than
+    /// an out-of-range read.
+    public static func visibleSessions<Session>(
+        _ sessions: [Session],
+        offset: Int,
+        layout: LargeWidgetSessionLayout
+    ) -> [Session] {
+        guard layout.rows > 0, !sessions.isEmpty else { return [] }
+        let rows = min(layout.rows, sessions.count)
+        guard rotates(layout: layout) else { return Array(sessions.prefix(rows)) }
+        let start = ((offset % sessions.count) + sessions.count) % sessions.count
+        return (0..<rows).map { sessions[(start + $0) % sessions.count] }
     }
 }

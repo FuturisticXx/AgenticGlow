@@ -14,6 +14,20 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
     public let providers: [WidgetProviderSummary]
     public let attentionCount: Int
     public let activeCount: Int
+    /// How many snapshots the app has published this launch.
+    ///
+    /// Advances by one each time AgenticGlow actually writes a snapshot,
+    /// which it already does only when something worth showing changed.
+    /// It costs no write of its own: it rides inside the write that was
+    /// happening anyway, and nothing reads or stores it outside this file.
+    ///
+    /// The large widget uses it to give its single session row a different
+    /// session each time the widget naturally refreshes, so the row is a
+    /// window onto every eligible session rather than being stuck on the
+    /// first one. A counter rather than a clock, because the row has to
+    /// advance with the data, and because a value derived from the time
+    /// would jump around the list instead of walking it in order.
+    public let revision: Int
 
     public init(
         schemaVersion: Int = WidgetSnapshot.currentSchemaVersion,
@@ -22,7 +36,8 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         allowances: [WidgetAllowanceSummary],
         providers: [WidgetProviderSummary],
         attentionCount: Int,
-        activeCount: Int
+        activeCount: Int,
+        revision: Int = 0
     ) {
         self.schemaVersion = schemaVersion
         self.generatedAt = generatedAt
@@ -31,6 +46,24 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         self.providers = providers
         self.attentionCount = attentionCount
         self.activeCount = activeCount
+        self.revision = revision
+    }
+
+    /// Hand-written for the same reason as `WidgetAllowanceSummary`'s: a
+    /// snapshot written by an older app build has no `revision` key, and
+    /// the widget must render it rather than fail the whole decode and
+    /// drop to its "unavailable" state. A missing revision reads as 0,
+    /// which shows the first session, exactly as before rotation existed.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        generatedAt = try container.decode(Date.self, forKey: .generatedAt)
+        sessions = try container.decode([WidgetSessionSummary].self, forKey: .sessions)
+        allowances = try container.decode([WidgetAllowanceSummary].self, forKey: .allowances)
+        providers = try container.decode([WidgetProviderSummary].self, forKey: .providers)
+        attentionCount = try container.decode(Int.self, forKey: .attentionCount)
+        activeCount = try container.decode(Int.self, forKey: .activeCount)
+        revision = try container.decodeIfPresent(Int.self, forKey: .revision) ?? 0
     }
 
     public static let empty = WidgetSnapshot(

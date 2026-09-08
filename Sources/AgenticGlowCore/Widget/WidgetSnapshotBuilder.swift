@@ -18,7 +18,8 @@ public enum WidgetSnapshotBuilder {
         resolved: ResolvedSessions,
         allowances: [AgentProvider: ProviderAllowance],
         installedProviders: [AgentProvider: Bool],
-        now: Date
+        now: Date,
+        revision: Int = 0
     ) -> WidgetSnapshot {
         // Group by work identity, then keep SessionResolver's attention
         // order via WorkGrouping. One row per work; the snapshot cap is
@@ -71,7 +72,8 @@ public enum WidgetSnapshotBuilder {
             allowances: allowanceSummaries,
             providers: providerSummaries,
             attentionCount: resolved.sessions.filter { attentionPhases.contains($0.phase) }.count,
-            activeCount: resolved.activeCount
+            activeCount: resolved.activeCount,
+            revision: revision
         )
     }
 

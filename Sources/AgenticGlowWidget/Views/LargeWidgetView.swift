@@ -60,9 +60,15 @@ struct LargeWidgetView: View {
                         .foregroundStyle(.secondary)
                 }
             } else {
-                ForEach(snapshot.sessions.prefix(sessionLayout.rows)) { session in
+                // Identified by slot rather than by session: the row is a
+                // fixed place in the layout whose occupant changes, so
+                // nothing is inserted or removed and the divider below it
+                // cannot be displaced.
+                ForEach(Array(visibleSessions.enumerated()), id: \.offset) { _, session in
                     SessionRow(session: session, now: now, style: .detailed)
                 }
+                // Total eligible sessions minus the rows on screen, so it
+                // stays put while the visible session changes.
                 if sessionLayout.hiddenCount > 0 {
                     Text("+ \(sessionLayout.hiddenCount) more")
                         .font(.system(size: 11, weight: .medium))
@@ -130,6 +136,18 @@ struct LargeWidgetView: View {
         overviewAllowances.flatMap(\.windows).count
     }
 
+    /// The sessions the rows on screen are showing. Which ones depends on
+    /// the snapshot's revision, so the row advances only when the widget
+    /// naturally receives new data. Selection lives in Core so the rule is
+    /// testable without rendering.
+    private var visibleSessions: [WidgetSessionSummary] {
+        LargeWidgetSessionRotation.visibleSessions(
+            snapshot.sessions,
+            offset: snapshot.revision,
+            layout: sessionLayout
+        )
+    }
+
     /// The session area's whole vertical budget, including whether the
     /// "+ N more" line is being shown. Owned by Core so the rule is
     /// testable without rendering anything.
@@ -140,26 +158,16 @@ struct LargeWidgetView: View {
         )
     }
 
-    /// What the allowance section below the divider costs, expressed in
-    /// the window count the budget is calibrated in. Measured per page
-    /// rather than assumed, so the detail page gets a budget matching
-    /// the two bars it actually draws instead of the four the overview
-    /// draws.
     /// Only on the overview, and only when a provider with pools has
     /// data to show.
     private var showsDetailControl: Bool {
         page == .overview && !snapshot.poolAllowances.isEmpty
     }
 
+    /// What the allowance section below the divider costs, expressed in
+    /// the window count the budget is calibrated in.
     private var allowanceCost: Int {
-        switch page {
-        case .overview:
-            return windowCount
-        case .cursorDetail:
-            // Two pool bars plus the page's own header row, which costs
-            // about what one more window does.
-            return (snapshot.poolAllowances.first?.windows.count ?? 0) + 1
-        }
+        LargeWidgetSessionBudget.allowanceWindowCount(snapshot: snapshot, page: page)
     }
 
 }
