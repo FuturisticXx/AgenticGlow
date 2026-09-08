@@ -108,11 +108,57 @@ public enum HookNormalizer {
     /// basename, so fall back to the provider name instead of surfacing "/"
     /// as the session's project.
     private static func projectName(for cwd: String, provider: AgentProvider) -> String {
+        if let repository = repositoryOwningWorktree(at: cwd) {
+            return repository
+        }
         let name = PosixPath.lastComponent(cwd) ?? ""
         if name.isEmpty || name == "/" || name == "." {
             return provider.displayName
         }
         return name
+    }
+
+    /// An agent working in a git worktree under `<repo>/.claude/worktrees/<name>`
+    /// would otherwise report the generated worktree directory, which reads
+    /// nothing like the project. Lead with the repository the worktree belongs
+    /// to and keep the worktree's own name after it, so two agents in two
+    /// worktrees of one repository stay distinguishable.
+    private static func repositoryOwningWorktree(at cwd: String) -> String? {
+        let components = PosixPath.components(cwd)
+        guard let marker = components.firstIndex(of: ".claude"),
+              marker > 0,
+              components.indices.contains(marker + 1),
+              components[marker + 1] == "worktrees",
+              components.indices.contains(marker + 2) else {
+            return nil
+        }
+        let repository = components[marker - 1]
+        let branch = worktreeLabel(components[marker + 2], repository: repository)
+        return branch.isEmpty ? repository : "\(repository) · \(branch)"
+    }
+
+    /// Reduces `agenticglow-version-check-eaec6d` to `version-check`: the
+    /// generated worktree directory repeats the repository slug and ends in a
+    /// short hexadecimal id, and neither half carries meaning next to the
+    /// repository name that already leads the label. A trailing segment is
+    /// only treated as an id when it is hexadecimal and at least six
+    /// characters, so a hand-made worktree name survives intact.
+    private static func worktreeLabel(_ name: String, repository: String) -> String {
+        var segments = name.split(separator: "-", omittingEmptySubsequences: false)
+        if let last = segments.last,
+           last.count >= 6,
+           last.allSatisfy({ $0.isHexDigit && !$0.isUppercase }),
+           segments.count > 1 {
+            segments.removeLast()
+        }
+        var label = segments.joined(separator: "-")
+        let prefix = repository.lowercased() + "-"
+        if label.lowercased().hasPrefix(prefix) {
+            label = String(label.dropFirst(prefix.count))
+        } else if label.lowercased() == repository.lowercased() {
+            label = ""
+        }
+        return label
     }
 
     /// Keep only a short model slug. Cursor's hook payload also includes

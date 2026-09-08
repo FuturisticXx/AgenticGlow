@@ -339,6 +339,122 @@ final class HookNormalizerTests: XCTestCase {
         XCTAssertThrowsError(try event.validate())
     }
 
+    func testWorktreeSessionLeadsWithTheRepositoryThenTheWorktree() throws {
+        for cwd in [
+            "/Volumes/Liquid/AgenticGlow/.claude/worktrees/agenticglow-version-check-eaec6d",
+            "/Volumes/Liquid/AgenticGlow/.claude/worktrees/agenticglow-version-check-eaec6d/Sources"
+        ] {
+            let event = try XCTUnwrap(HookNormalizer.normalize(
+                provider: .claude,
+                event: .userPromptSubmit,
+                payload: ["session_id": "abc", "cwd": cwd],
+                environment: [:],
+                processIdentity: .fixture,
+                previous: nil,
+                now: Date(timeIntervalSince1970: 500)
+            ))
+            XCTAssertEqual(event.projectName, "AgenticGlow · version-check")
+            XCTAssertEqual(event.workingDirectory, cwd, "the real path must still be recorded")
+        }
+    }
+
+    func testWorktreeNamedOnlyForItsRepositoryDropsTheTrailingLabel() throws {
+        let event = try XCTUnwrap(HookNormalizer.normalize(
+            provider: .claude,
+            event: .userPromptSubmit,
+            payload: [
+                "session_id": "abc",
+                "cwd": "/Volumes/Liquid/AgenticGlow/.claude/worktrees/agenticglow-eaec6d"
+            ],
+            environment: [:],
+            processIdentity: .fixture,
+            previous: nil,
+            now: Date(timeIntervalSince1970: 500)
+        ))
+        XCTAssertEqual(event.projectName, "AgenticGlow")
+    }
+
+    func testHandMadeWorktreeNameSurvivesIntact() throws {
+        let event = try XCTUnwrap(HookNormalizer.normalize(
+            provider: .codex,
+            event: .userPromptSubmit,
+            payload: [
+                "session_id": "abc",
+                "cwd": "/Volumes/Liquid/AgenticGlow/.claude/worktrees/spike"
+            ],
+            environment: [:],
+            processIdentity: .fixture,
+            previous: nil,
+            now: Date(timeIntervalSince1970: 500)
+        ))
+        XCTAssertEqual(event.projectName, "AgenticGlow · spike")
+    }
+
+    func testOrdinaryDotClaudeDirectoryKeepsItsOwnBasename() throws {
+        // Only the worktrees layout is special-cased; a session working inside
+        // a plain `.claude` directory still reports where it actually is.
+        let event = try XCTUnwrap(HookNormalizer.normalize(
+            provider: .claude,
+            event: .userPromptSubmit,
+            payload: ["session_id": "abc", "cwd": "/Volumes/Liquid/AgenticGlow/.claude/skills"],
+            environment: [:],
+            processIdentity: .fixture,
+            previous: nil,
+            now: Date(timeIntervalSince1970: 500)
+        ))
+        XCTAssertEqual(event.projectName, "skills")
+    }
+
+    func testWorktreeWithNoOwningRepositoryKeepsItsOwnName() throws {
+        let event = try XCTUnwrap(HookNormalizer.normalize(
+            provider: .cursor,
+            event: .userPromptSubmit,
+            payload: ["session_id": "abc", "cwd": "/.claude/worktrees/stray"],
+            environment: [:],
+            processIdentity: .fixture,
+            previous: nil,
+            now: Date(timeIntervalSince1970: 500)
+        ))
+        XCTAssertEqual(event.projectName, "stray")
+    }
+
+    func testCursorPayloadHashesToOneIdentifierDownBothProviderPaths() throws {
+        // Cursor's own hooks pass `cursor`; the Claude Code hooks Cursor also
+        // runs pass `claude` with a Claude-shaped payload. Both describe one
+        // conversation, so both must produce the same session identifier for
+        // `SessionResolver` to recognise the duplicate.
+        let native = try XCTUnwrap(HookNormalizer.normalize(
+            provider: .cursor,
+            event: .userPromptSubmit,
+            payload: CursorHookPayload.normalized([
+                "conversation_id": "conv-1",
+                "workspace_roots": ["/tmp/AgenticGlow"],
+                "model": "grok-4.6"
+            ]),
+            environment: [:],
+            processIdentity: .fixture,
+            previous: nil,
+            now: Date(timeIntervalSince1970: 500)
+        ))
+
+        let shadow = try XCTUnwrap(HookNormalizer.normalize(
+            provider: .claude,
+            event: .userPromptSubmit,
+            payload: [
+                "session_id": "conv-1",
+                "cwd": "/tmp/AgenticGlow",
+                "model": "grok-4.6"
+            ],
+            environment: [:],
+            processIdentity: .fixture,
+            previous: nil,
+            now: Date(timeIntervalSince1970: 500)
+        ))
+
+        XCTAssertEqual(native.sessionID, shadow.sessionID)
+        XCTAssertNotEqual(native.provider, shadow.provider)
+    }
+
     func testCursorStopErrorBecomesFailedWithoutPersistingErrorMessage() throws {
         let payload: [String: Any] = [
             "session_id": "cursor-session",

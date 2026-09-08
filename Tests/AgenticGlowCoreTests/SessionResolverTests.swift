@@ -511,6 +511,39 @@ final class SessionResolverTests: XCTestCase {
         XCTAssertEqual(revealed.sessions.first?.phase, .thinking)
     }
 
+    func testCursorConversationShadowedByClaudeHooksResolvesToOneSession() {
+        // Cursor fires the Claude Code hooks for its own turns, so the same
+        // conversation arrives twice under two providers with one identifier.
+        let resolved = resolve(
+            event(provider: .cursor, session: "conv-1", phase: .usingTool, updated: 999),
+            event(provider: .claude, session: "conv-1", phase: .thinking, updated: 999)
+        )
+
+        XCTAssertEqual(resolved.sessions.count, 1)
+        XCTAssertEqual(resolved.sessions.first?.provider, .cursor)
+        XCTAssertEqual(resolved.sessions.first?.phase, .usingTool)
+        XCTAssertEqual(resolved.activeProviders, [.cursor])
+    }
+
+    func testShadowedClaudeRecordIsDroppedEvenWhenItIsFresher() {
+        let resolved = resolve(
+            event(provider: .cursor, session: "conv-1", phase: .thinking, updated: 900),
+            event(provider: .claude, session: "conv-1", phase: .usingTool, updated: 999)
+        )
+
+        XCTAssertEqual(resolved.sessions.map(\.provider), [.cursor])
+    }
+
+    func testUnrelatedClaudeSessionSurvivesAlongsideACursorSession() {
+        let resolved = resolve(
+            event(provider: .cursor, session: "conv-1", phase: .thinking, updated: 999),
+            event(provider: .claude, session: "claude-1", phase: .thinking, updated: 998)
+        )
+
+        XCTAssertEqual(resolved.sessions.count, 2)
+        XCTAssertEqual(Set(resolved.sessions.map(\.provider)), [.cursor, .claude])
+    }
+
     func testResolvedSnapshotCarriesToolCategoryFromEvent() {
         let resolved = resolve(
             event(provider: .codex, session: "editing", phase: .usingTool, updated: 999)

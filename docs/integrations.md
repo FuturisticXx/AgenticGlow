@@ -197,9 +197,16 @@ check Cursor Settings → Hooks and confirm the workspace is trusted.
   agent sessions.
 - Subagent start/stop hooks are not installed, so Task subagents stay folded
   into the parent conversation rather than appearing as extra sessions.
-- Enabling Cursor's "third-party skills" can also load Claude Code hooks.
-  AgenticGlow still attributes Cursor sessions as Cursor because it installs
-  native `~/.cursor/hooks.json` entries that pass `cursor` to the helper.
+- Cursor also runs the Claude Code hooks in `~/.claude/settings.json` for its
+  own agent turns, so one Cursor conversation reports itself twice: once as
+  `cursor` through `~/.cursor/hooks.json`, and once as `claude`. Both records
+  carry the same hashed session identifier, because Cursor sends the same
+  conversation id down both paths. `SessionResolver` drops the `claude` shadow
+  whenever a `cursor` record exists for that identifier, so the conversation
+  appears once, attributed to Cursor. Confirmed against Cursor 3.16.17, where
+  the shadow record arrived labelled Claude while reporting `grok-4.6` as its
+  model. Real Claude Code sessions are unaffected: they never share an
+  identifier with a Cursor conversation.
 
 ### Backup
 On first modification, AgenticGlow creates a backup at:

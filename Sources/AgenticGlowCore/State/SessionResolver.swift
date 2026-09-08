@@ -19,7 +19,8 @@ public enum SessionResolver {
         memory: inout ResolutionMemory,
         isProcessAlive: (Int32, Date?) -> Bool
     ) -> ResolvedSessions {
-        let retainedKeys = Set(events.compactMap { event in
+        let reportedEvents = shadowedDuplicatesRemoved(from: events)
+        let retainedKeys = Set(reportedEvents.compactMap { event in
             now.timeIntervalSince(event.updatedAt) <= fileRetention ? SessionKey(event) : nil
         })
         memory.disconnectedRecords = memory.disconnectedRecords.filter {
@@ -29,7 +30,7 @@ public enum SessionResolver {
             retainedKeys.contains($0.key)
         }
 
-        let snapshots = events.compactMap { event -> SessionSnapshot? in
+        let snapshots = reportedEvents.compactMap { event -> SessionSnapshot? in
             let age = now.timeIntervalSince(event.updatedAt)
             if age > fileRetention { return nil }
 
@@ -133,6 +134,26 @@ public enum SessionResolver {
                     .map(\.provider)
             )
         )
+    }
+
+    /// Cursor runs the Claude Code hooks in `~/.claude/settings.json` for its
+    /// own agent turns, so one Cursor conversation reports itself twice: once
+    /// through `~/.cursor/hooks.json` as `cursor`, and once as `claude`. Both
+    /// records carry the same session identifier, because `HookNormalizer`
+    /// hashes whatever identifier the hook reports and Cursor sends the same
+    /// `conversation_id` down both paths. The record from Cursor's own hooks
+    /// is the accurate one, so the shadow is dropped rather than shown as a
+    /// second session under the wrong provider.
+    private static func shadowedDuplicatesRemoved(
+        from events: [NormalizedEvent]
+    ) -> [NormalizedEvent] {
+        let cursorSessionIDs = Set(
+            events.lazy.filter { $0.provider == .cursor }.map(\.sessionID)
+        )
+        guard !cursorSessionIDs.isEmpty else { return events }
+        return events.filter { event in
+            event.provider == .cursor || !cursorSessionIDs.contains(event.sessionID)
+        }
     }
 
     private static func sort(_ lhs: SessionSnapshot, _ rhs: SessionSnapshot) -> Bool {
