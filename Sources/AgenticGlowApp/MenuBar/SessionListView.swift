@@ -29,6 +29,7 @@ struct SessionListView: View {
             AllowanceSectionView(
                 model: model,
                 usageEnabled: usageEnabled,
+                isPopoverPresented: popoverState.isPresented,
                 enable: { showingUsageConsent = true }
             )
 

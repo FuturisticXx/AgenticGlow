@@ -4,7 +4,12 @@ import SwiftUI
 struct AllowanceSectionView: View {
     @Bindable var model: AppModel
     let usageEnabled: Bool
+    /// Mirrors the popover's presentation so a freshly opened popover
+    /// always starts collapsed. The hosting controller is reused between
+    /// showings, so SwiftUI state would otherwise survive a close.
+    var isPopoverPresented: Bool = false
     let enable: () -> Void
+    @State private var isAdditionalUsageExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -23,36 +28,54 @@ struct AllowanceSectionView: View {
                         .accessibilityLabel("Enable usage access")
                 }
             } else {
-                ForEach(AgentProvider.allCases, id: \.rawValue) { provider in
-                    if model.allowanceState(for: provider) != .off {
-                        ProviderAllowanceRow(
-                            provider: provider,
-                            state: model.allowanceState(for: provider)
-                        )
+                let disclosure = AdditionalUsageDisclosure { provider in
+                    model.allowanceState(for: provider) != .off
+                }
+                ForEach(disclosure.primary, id: \.rawValue) { provider in
+                    ProviderAllowanceRow(
+                        provider: provider,
+                        state: model.allowanceState(for: provider)
+                    )
+                }
+                if disclosure.hasAdditionalUsage {
+                    additionalUsageToggle
+                    if isAdditionalUsageExpanded {
+                        ForEach(disclosure.additional, id: \.rawValue) { provider in
+                            ProviderAllowanceRow(
+                                provider: provider,
+                                state: model.allowanceState(for: provider)
+                            )
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
-                if let continuation = allowanceContinuation {
-                    // Wraps rather than truncates: a third provider can
-                    // push this past one line, and a clipped clause is
-                    // exactly the fact the line exists to deliver.
-                    Text(continuation)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("AgenticGlow.AllowanceContinuation")
-                }
             }
+        }
+        .onChange(of: isPopoverPresented) { _, isPresented in
+            if !isPresented { isAdditionalUsageExpanded = false }
         }
     }
 
-    private var allowanceContinuation: String? {
-        var allowances: [AgentProvider: ProviderAllowance] = [:]
-        for provider in AgentProvider.allCases {
-            if case let .available(allowance, _) = model.allowanceState(for: provider) {
-                allowances[provider] = allowance
+    /// Provider-neutral disclosure: no provider name sits beside it, because
+    /// more than Cursor may end up behind it. Presentation only, so the tap
+    /// triggers no fetch, refresh, or widget reload.
+    private var additionalUsageToggle: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isAdditionalUsageExpanded.toggle()
             }
+        } label: {
+            Image(systemName: AdditionalUsageDisclosure.symbolName(expanded: isAdditionalUsageExpanded))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, minHeight: 22)
+                .contentShape(Rectangle())
         }
-        return AllowanceContinuation.line(allowances: allowances)
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            AdditionalUsageDisclosure.accessibilityLabel(expanded: isAdditionalUsageExpanded)
+        )
+        .accessibilityIdentifier("AgenticGlow.AdditionalUsageDisclosure")
     }
 }
 
