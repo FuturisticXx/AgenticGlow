@@ -172,7 +172,7 @@ public enum WorkDisplayName {
         guard identity.isPath else {
             return group.representative.projectName
         }
-        let name = URL(fileURLWithPath: identity.value).lastPathComponent
+        let name = pathComponents(identity.value).last ?? ""
         if name.isEmpty || name == "/" || name == "." {
             return group.representative.projectName
         }
@@ -181,8 +181,18 @@ public enum WorkDisplayName {
 
     private static func parentName(for identity: WorkIdentity) -> String? {
         guard identity.isPath else { return nil }
-        let parent = URL(fileURLWithPath: identity.value).deletingLastPathComponent().lastPathComponent
+        let components = pathComponents(identity.value)
+        guard components.count >= 2 else { return nil }
+        let parent = components[components.count - 2]
         if parent.isEmpty || parent == "/" { return nil }
         return parent
+    }
+
+    /// Split on "/" rather than going through URL. `URL(fileURLWithPath:)`
+    /// truncates at PATH_MAX on some Foundation versions, so the same path
+    /// yielded a different last component on CI than locally. Splitting is
+    /// deterministic and has no length ceiling.
+    private static func pathComponents(_ path: String) -> [String] {
+        path.split(separator: "/").map(String.init)
     }
 }
