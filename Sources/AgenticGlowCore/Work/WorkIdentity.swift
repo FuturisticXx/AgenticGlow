@@ -16,11 +16,7 @@ public struct WorkIdentity: Hashable, Sendable, Equatable {
         guard !path.isEmpty, path.hasPrefix("/"), !path.contains("\u{0}") else {
             return nil
         }
-        var normalized = URL(fileURLWithPath: path).standardizedFileURL.path
-        if normalized.count > 1, normalized.hasSuffix("/") {
-            normalized.removeLast()
-        }
-        return WorkIdentity(rawPath: path, value: normalized)
+        return WorkIdentity(rawPath: path, value: PosixPath.standardized(path))
     }
 
     public static func singleton(for session: SessionSnapshot) -> WorkIdentity {

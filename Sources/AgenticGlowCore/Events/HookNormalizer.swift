@@ -108,7 +108,7 @@ public enum HookNormalizer {
     /// basename, so fall back to the provider name instead of surfacing "/"
     /// as the session's project.
     private static func projectName(for cwd: String, provider: AgentProvider) -> String {
-        let name = URL(fileURLWithPath: cwd).lastPathComponent
+        let name = PosixPath.lastComponent(cwd) ?? ""
         if name.isEmpty || name == "/" || name == "." {
             return provider.displayName
         }
