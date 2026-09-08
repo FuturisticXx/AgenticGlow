@@ -4,11 +4,13 @@ public enum SessionResolver {
     public static let completionDisplayDuration: TimeInterval = 8
     public static let disconnectedDisplayDuration: TimeInterval = 15
     public static let unknownProcessExpiration: TimeInterval = 4 * 60 * 60
-    /// A session that has sent no event for this long is no longer treated
-    /// as working. Shares `SessionVisibilityPolicy.idleVisibilityWindow` so
-    /// the moment a session stops counting as active is the moment it stops
-    /// being shown.
-    public static let staleActiveDuration: TimeInterval = SessionVisibilityPolicy.idleVisibilityWindow
+    /// How long a session reporting `phase` may go without a new event
+    /// before it is no longer treated as working. Delegates to
+    /// `SessionVisibilityPolicy` so the moment a session stops counting as
+    /// active is the moment it stops being shown.
+    public static func staleActiveDuration(for phase: SessionPhase) -> TimeInterval {
+        SessionVisibilityPolicy.activityWindow(for: phase)
+    }
     public static let fileRetention: TimeInterval = 24 * 60 * 60
 
     public static func resolve(
@@ -69,7 +71,7 @@ public enum SessionResolver {
                 } else if event.phase == .completed && age > completionDisplayDuration {
                     memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
                     phase = .idle
-                } else if event.phase.isActive && age >= staleActiveDuration {
+                } else if event.phase.isActive && age >= staleActiveDuration(for: event.phase) {
                     // A single long-lived provider process (e.g. Codex's shared
                     // app-server) backs many independent sessions, so "process is
                     // alive" cannot detect a session whose turn finished without
@@ -85,7 +87,7 @@ public enum SessionResolver {
                 guard age <= unknownProcessExpiration else { return nil }
                 if event.phase == .completed && age > completionDisplayDuration {
                     phase = .idle
-                } else if event.phase.isActive && age >= staleActiveDuration {
+                } else if event.phase.isActive && age >= staleActiveDuration(for: event.phase) {
                     phase = .idle
                 } else {
                     phase = event.phase

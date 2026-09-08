@@ -328,7 +328,7 @@ final class SessionResolverTests: XCTestCase {
 
         let stillThinking = SessionResolver.resolve(
             events: [event],
-            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration - 1),
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration(for: .thinking) - 1),
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
@@ -337,7 +337,7 @@ final class SessionResolverTests: XCTestCase {
 
         let atCutoff = SessionResolver.resolve(
             events: [event],
-            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration),
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration(for: .thinking)),
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
@@ -346,7 +346,7 @@ final class SessionResolverTests: XCTestCase {
 
         let resolved = SessionResolver.resolve(
             events: [event],
-            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 1),
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration(for: .thinking) + 1),
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
@@ -359,7 +359,7 @@ final class SessionResolverTests: XCTestCase {
 
         let resolved = SessionResolver.resolve(
             events: [event],
-            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 1),
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration(for: .usingTool) + 1),
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
@@ -378,7 +378,7 @@ final class SessionResolverTests: XCTestCase {
 
         let stillThinking = SessionResolver.resolve(
             events: [event],
-            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration - 1),
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration(for: .thinking) - 1),
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
@@ -386,7 +386,7 @@ final class SessionResolverTests: XCTestCase {
 
         let resolved = SessionResolver.resolve(
             events: [event],
-            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 1),
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration(for: .thinking) + 1),
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
@@ -404,7 +404,7 @@ final class SessionResolverTests: XCTestCase {
 
         let resolved = SessionResolver.resolve(
             events: [event],
-            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 1),
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration(for: .usingTool) + 1),
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )
@@ -417,7 +417,7 @@ final class SessionResolverTests: XCTestCase {
 
         let resolved = SessionResolver.resolve(
             events: [event],
-            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration + 3_600),
+            now: Date(timeIntervalSince1970: 100 + SessionResolver.staleActiveDuration(for: .thinking) + 3_600),
             memory: &memory,
             isProcessAlive: { _, _ in true }
         )

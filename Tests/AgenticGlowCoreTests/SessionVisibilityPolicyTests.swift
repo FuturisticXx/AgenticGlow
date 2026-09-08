@@ -11,6 +11,75 @@ final class SessionVisibilityPolicyTests: XCTestCase {
         XCTAssertEqual(SessionVisibilityPolicy.idleVisibilityWindow, 600)
     }
 
+    func testToolWindowIsOneHour() {
+        XCTAssertEqual(SessionVisibilityPolicy.toolVisibilityWindow, 3_600)
+    }
+
+    func testOnlyToolUseGetsTheLongerWindow() {
+        XCTAssertEqual(SessionVisibilityPolicy.activityWindow(for: .usingTool), 3_600)
+        for phase in [SessionPhase.idle, .thinking, .permission, .completed, .failed, .disconnected] {
+            XCTAssertEqual(
+                SessionVisibilityPolicy.activityWindow(for: phase),
+                600,
+                "\(phase) should use the idle window"
+            )
+        }
+    }
+
+    // MARK: A long-running tool is not a dead session
+
+    /// A build or test run that outlasts the idle window emits PreToolUse and
+    /// then nothing until it finishes. That is evidence of work in progress,
+    /// not silence after work stopped, so the row must stay put.
+    func testLongRunningToolStaysVisiblePastTheIdleWindow() {
+        for minutes in [11, 20, 45, 59] {
+            let resolved = resolve(
+                event(session: "long-build", phase: .usingTool, updated: 1_000),
+                now: 1_000 + TimeInterval(minutes * 60)
+            )
+            XCTAssertEqual(
+                resolved.sessions.first?.phase,
+                .usingTool,
+                "hidden after \(minutes) minutes of one tool call"
+            )
+            XCTAssertEqual(resolved.activeCount, 1)
+        }
+    }
+
+    func testToolUseExpiresAtTheToolWindow() {
+        let justUnder = resolve(
+            event(session: "long-build", phase: .usingTool, updated: 1_000),
+            now: 1_000 + SessionVisibilityPolicy.toolVisibilityWindow - 1
+        )
+        XCTAssertEqual(justUnder.sessions.first?.phase, .usingTool)
+
+        let atCutoff = resolve(
+            event(session: "long-build", phase: .usingTool, updated: 1_000),
+            now: 1_000 + SessionVisibilityPolicy.toolVisibilityWindow
+        )
+        XCTAssertTrue(atCutoff.sessions.isEmpty)
+    }
+
+    /// The longer window is scoped to the tool phase alone: a session that
+    /// stopped after its tool finished still expires at ten minutes.
+    func testThinkingDoesNotInheritTheToolWindow() {
+        let resolved = resolve(
+            event(session: "stalled", phase: .thinking, updated: 1_000),
+            now: 1_000 + window + 1
+        )
+        XCTAssertTrue(resolved.sessions.isEmpty)
+    }
+
+    /// The real stale row in the wild: a session that died holding
+    /// usingTool. Twelve hours later it must still be gone.
+    func testToolSessionAbandonedForHoursIsHidden() {
+        let resolved = resolve(
+            event(session: "abandoned", phase: .usingTool, updated: 1_000),
+            now: 1_000 + 12 * 60 * 60
+        )
+        XCTAssertTrue(resolved.sessions.isEmpty)
+    }
+
     // MARK: Lifecycle
 
     func testContinuouslyActiveSessionStaysVisible() {
