@@ -409,3 +409,32 @@ John approved the redesigned session-card mockup (failure state, per-row live in
 **What happened:** Needed a screenshot of a SwiftUI row to verify an icon change, but the real popover window would not reliably appear via menu-bar-click automation in this environment (same flakiness as the earlier Codex-activation problem, this time affecting our own app's window). Tried rendering the full `SessionListView` via `ImageRenderer` as a workaround — it produced an image with the header text but a blank body where the session rows should have been, because the view's row list is a `List`/`ScrollView`, and `ImageRenderer` does not lay out that content without a real attached window.
 
 **Rule:** When `ImageRenderer` output is missing List/ScrollView content, render the specific row/component view directly (e.g. `SessionRowView` in a plain `VStack`, not the whole scrollable container) instead of trying to force the full screen to render. This sidesteps window-visibility automation entirely and is more reliable than screenshotting a live window when menu-bar-click automation is flaky. Any such debug scaffolding added to `AppDelegate.swift` for this purpose must be reverted (`git checkout`) immediately after capturing, since it is not part of the shipped feature.
+
+## The unit suites run locally through `script/test.sh`, not `xcodebuild test` (2026-09-08)
+
+**What happened:** For months `AgenticGlowCoreTests` failed to load on this
+machine, reported as an environment defect and worked around by running only
+the app suite. 530 core tests were never run locally. Two separate causes, both
+the exFAT volume this repository lives on:
+
+1. Build products cannot live on exFAT. The bundle builds correctly and the
+   runner still fails with "the bundle's executable couldn't be located", with
+   the executable present, correctly named in `Info.plist`, universal, and
+   signed. Moving only the derived data to the internal disk fixes it.
+2. xcodebuild's test runner has no access to this removable volume. Any test
+   reading a fixture or a script out of the source tree through `#filePath`
+   then fails with "Operation not permitted": 13 in `HookNormalizerTests`, 2 in
+   `ReleasePackagingScriptTests`. Launching the built bundle directly with
+   `xcrun xctest` keeps the invoking shell's access, and they pass.
+
+The same class of mistake had already been recorded for UI tests, where
+`CODE_SIGNING_ALLOWED=NO` strips the app's automation identity and the runner
+hangs before connecting. That one had been in this file since 2026-07-10 and was
+still being rediscovered.
+
+**Rule:** Run the unit suites with `script/test.sh` (add `--ui` for the UI
+target, which uses the real signing identity). Do not conclude that a suite is
+unrunnable from a bare `xcodebuild test` failure on this machine: the failure is
+almost always the volume, the derived data location, or the signing identity,
+and each has a known workaround. A claim that the environment is broken needs an
+attempt at the documented workaround behind it.
