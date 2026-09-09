@@ -99,4 +99,27 @@ final class AgenticGlowUITests: XCTestCase {
             app.buttons["AgenticGlow.GlobalShortcut"].waitForExistence(timeout: 3)
         )
     }
+
+    func testEachDisclosureChangesPopoverHeightIndependently() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-test-fixture", "permission", "--ui-test-open-popover"]
+        app.launch()
+
+        let window = app.windows["AgenticGlow"]
+        XCTAssertTrue(window.waitForExistence(timeout: 3))
+        let withSessions = window.frame.height
+
+        // Sessions are open by default, so the first click collapses them and
+        // the popover gives that height back rather than leaving dead space.
+        let sessions = app.buttons["AgenticGlow.SessionsDisclosure"]
+        XCTAssertTrue(sessions.waitForExistence(timeout: 3))
+        XCTAssertEqual(sessions.label, "Hide sessions")
+        sessions.click()
+        let compact = window.frame.height
+        XCTAssertLessThan(compact, withSessions)
+        XCTAssertEqual(sessions.label, "Show sessions")
+
+        sessions.click()
+        XCTAssertEqual(window.frame.height, withSessions, accuracy: 1)
+    }
 }

@@ -12,20 +12,34 @@ struct SessionListView: View {
     let openIntegrations: () -> Void
     var settingsPresentationChanged: (Bool) -> Void = { _ in }
     @State private var showingUsageConsent = false
+    /// Independent of the allowance section's own disclosure state. Neither
+    /// control reads or writes the other's flag.
+    @State private var isSessionsExpanded = SessionsDisclosure.defaultExpanded
+    /// Measured height of the session rows, so the list neither reserves
+    /// empty space nor grows without bound.
+    @State private var sessionRowsHeight: CGFloat = 0
+    private let singleRowHeight: CGFloat = 44
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(summary)
-                .font(.headline)
-                .accessibilityLabel(summary)
-                .accessibilityValue(summary)
-                .accessibilityIdentifier("AgenticGlow.SessionSummary")
-
+            // Service incidents stay visible in either state: they explain a
+            // stalled agent and belong with the providers, not the session list.
             incidentContent
 
-            sessionContent
+            if SessionsDisclosure.showsSessions(expanded: isSessionsExpanded) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(summary)
+                        .font(.headline)
+                        .accessibilityLabel(summary)
+                        .accessibilityValue(summary)
+                        .accessibilityIdentifier("AgenticGlow.SessionSummary")
 
-            Divider()
+                    sessionContent
+                }
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+
+            sessionsBoundary
             AllowanceSectionView(
                 model: model,
                 usageEnabled: usageEnabled,
@@ -74,6 +88,9 @@ struct SessionListView: View {
         .overlay {
             PopoverAura(active: popoverState.isPresented)
         }
+        .onChange(of: popoverState.isPresented) { _, isPresented in
+            if !isPresented { isSessionsExpanded = SessionsDisclosure.defaultExpanded }
+        }
         .sheet(isPresented: $showingUsageConsent) {
             UsageConsentView(
                 codexEnabled: preferences.codexUsageEnabled,
@@ -83,6 +100,33 @@ struct SessionListView: View {
                 cursorCredentialConfigured: (try? cursorCredentialStore.load()) != nil,
                 apply: applyUsageConsent
             )
+        }
+    }
+
+    /// The Sessions/Allowance boundary: the chevron sits on the divider it
+    /// shares with the allowance section, so collapsing leaves one clean line
+    /// with a small affordance above it rather than a gap between two rules.
+    /// Presentation only, so the click triggers no scan, fetch, or reload.
+    private var sessionsBoundary: some View {
+        VStack(spacing: 2) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isSessionsExpanded.toggle()
+                }
+            } label: {
+                Image(systemName: SessionsDisclosure.symbolName(expanded: isSessionsExpanded))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(
+                SessionsDisclosure.accessibilityLabel(expanded: isSessionsExpanded)
+            )
+            .accessibilityIdentifier("AgenticGlow.SessionsDisclosure")
+
+            Divider()
         }
     }
 
@@ -124,21 +168,40 @@ struct SessionListView: View {
                 description: Text("Start Codex, Claude, or Cursor to see live status.")
             )
         } else {
+            // The scroll view reports no height of its own, so the list is
+            // sized from its measured rows and capped: a short list leaves no
+            // empty band above the boundary chevron, a long one still scrolls.
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 8) {
-                    let groups = WorkGrouping.groups(from: model.resolved.sessions)
-                    ForEach(WorkGrouping.orderedSessions(from: model.resolved.sessions)) { session in
-                        SessionRowView(
-                            session: session,
-                            workTitle: workTitle(for: session, in: groups),
-                            action: { model.activate(session) },
-                            onRemove: { model.removeSession(session) }
-                        )
-                    }
-                }
+                sessionRows.background(rowHeightReader)
             }
-            .frame(maxHeight: 300)
-            .frame(minHeight: 120)
+            .frame(height: min(max(sessionRowsHeight, singleRowHeight), 300))
+        }
+    }
+
+    private var sessionRows: some View {
+        LazyVStack(alignment: .leading, spacing: 8) {
+            let groups = WorkGrouping.groups(from: model.resolved.sessions)
+            ForEach(WorkGrouping.orderedSessions(from: model.resolved.sessions)) { session in
+                SessionRowView(
+                    session: session,
+                    workTitle: workTitle(for: session, in: groups),
+                    action: { model.activate(session) },
+                    onRemove: { model.removeSession(session) }
+                )
+            }
+        }
+    }
+
+    /// Reads the rendered height of the rows. They lay out at their natural
+    /// height inside the scroll view regardless of the frame applied to it,
+    /// so this measures the content even before the first cycle settles.
+    private var rowHeightReader: some View {
+        GeometryReader { proxy in
+            Color.clear
+                .onAppear { sessionRowsHeight = proxy.size.height }
+                .onChange(of: proxy.size.height) { _, height in
+                    sessionRowsHeight = height
+                }
         }
     }
 
