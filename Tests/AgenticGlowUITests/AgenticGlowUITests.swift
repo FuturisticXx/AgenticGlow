@@ -119,7 +119,15 @@ final class AgenticGlowUITests: XCTestCase {
         XCTAssertLessThan(compact, withSessions)
         XCTAssertEqual(sessions.label, "Show sessions")
 
+        // Reopening settles over the disclosure animation rather than
+        // instantly, so this waits for the height rather than sampling it.
         sessions.click()
-        XCTAssertEqual(window.frame.height, withSessions, accuracy: 1)
+        let restored = XCTNSPredicateExpectation(
+            predicate: NSPredicate { _, _ in
+                abs(window.frame.height - withSessions) <= 1
+            },
+            object: nil
+        )
+        wait(for: [restored], timeout: 5)
     }
 }

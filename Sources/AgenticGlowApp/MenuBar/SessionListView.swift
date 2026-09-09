@@ -198,11 +198,23 @@ struct SessionListView: View {
     private var rowHeightReader: some View {
         GeometryReader { proxy in
             Color.clear
-                .onAppear { sessionRowsHeight = proxy.size.height }
+                .onAppear { recordRowsHeight(proxy.size.height) }
                 .onChange(of: proxy.size.height) { _, height in
-                    sessionRowsHeight = height
+                    recordRowsHeight(height)
                 }
         }
+    }
+
+    /// Two readings are noise rather than content. A zero is the reader
+    /// appearing before its first layout, which happens every time the
+    /// disclosure reopens; the shrinking heights of a closing list are the
+    /// removal transition, and recording those would leave the list too short
+    /// when it next opens. `isSessionsExpanded` is already false by then, so
+    /// the guard drops the whole closing sequence and keeps the last real
+    /// measurement.
+    private func recordRowsHeight(_ height: CGFloat) {
+        guard isSessionsExpanded, height > 0 else { return }
+        sessionRowsHeight = height
     }
 
     @ViewBuilder
