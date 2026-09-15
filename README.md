@@ -1,0 +1,121 @@
+# AgenticGlow
+
+AgenticGlow is a local macOS menu bar app that shows the status of your AI coding agent sessions. It shows what is happening now: a session with no activity for 10 minutes leaves the list and returns on its own when it next reports, while a session waiting on your permission stays however long it waits. It notifies you when an agent needs your permission, warns once when a usage window runs low, alerts once when the window is exhausted, hints low allowance on the menu bar icon, and can optionally show provider service incidents.
+
+## Requirements
+
+- macOS 14.0 or later
+- Apple Silicon (arm64) or Intel (x86_64)
+
+## Supported Providers
+
+- **Codex**: Codex app and CLI sessions
+- **Claude**: Claude Code sessions
+- **Cursor**: Cursor Agent sessions via official user-level hooks
+
+## Widget
+
+AgenticGlow includes an optional desktop widget (small, medium, and large)
+showing session and allowance status without opening the app. Launch
+AgenticGlow once, then right-click the desktop, choose **Edit Widgets**, search
+for **AgenticGlow**, and add the size you want. See
+[docs/widget.md](docs/widget.md) for architecture and current limitations.
+
+The widget's allowance section shows Codex and Claude. When Cursor usage is
+enabled, a small chevron appears at the bottom of the large and medium widgets;
+clicking it shows Cursor's two pools for about 12 seconds before the overview
+returns on its own.
+
+## Installation
+
+The latest signed and notarized public release is
+[v0.6.0](https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.6.0).
+
+### DMG
+
+Download the latest DMG from the [Releases](https://github.com/FuturisticXx/AgenticGlow/releases) page and drag AgenticGlow to your Applications folder.
+
+### Homebrew
+
+```bash
+brew install --cask FuturisticXx/agenticglow/agenticglow
+```
+
+## Setup
+
+1. Launch AgenticGlow from Applications
+2. In the setup window, click "Install" for each provider you use
+3. For Codex, open Codex, run `/hooks`, review the AgenticGlow entries, and choose "Trust". Cursor reloads hooks automatically.
+4. Click "Done" when complete
+
+### Optional subscription allowance
+
+Open the AgenticGlow menu, choose **Usage Access…**, and enable providers
+individually. Codex uses the installed local Codex app-server and its existing
+sign-in. Claude uses an unofficial private `claude.ai` connection because
+Anthropic does not publish a supported usage API:
+
+1. Open `claude.ai` and go to **Settings > Usage**.
+2. Open the browser developer tools and refresh the page.
+3. Select the `usage` network request.
+4. Copy the complete `Cookie` request header value.
+5. Paste it into AgenticGlow's Claude session cookie field.
+
+Cursor works the same way, and for the same reason: Cursor publishes no
+individual usage API, so AgenticGlow reads the same private endpoint the
+cursor.com dashboard uses.
+
+1. Open `cursor.com` and sign in.
+2. Open the browser developer tools and refresh the page.
+3. Select any request to `cursor.com`.
+4. Copy the complete `Cookie` request header value.
+5. Paste it into AgenticGlow's Cursor session cookie field.
+
+AgenticGlow stores each cookie only in macOS Keychain, under a separate entry
+per provider. Disabling a provider's usage deletes its cookie. If a provider
+reports that its cookie expired, repeat that provider's steps. AgenticGlow
+never reads these cookies from the provider's own app or from any browser
+cookie database: you paste them or there are none.
+
+Cursor's plans meter two separate allowances, **Cursor Models** and **Other
+Models**, against different denominators. AgenticGlow shows them separately and
+never combines them into one Cursor figure.
+
+### Jumping to a Codex session
+
+Clicking a Codex session brings its window forward, including across
+displays. The first time you do this, macOS asks for permission to let
+AgenticGlow control Codex (ChatGPT) automation. This is a one-time, Codex-only
+prompt, not the broader Accessibility permission. If you decline, or later
+revoke it in **System Settings > Privacy & Security > Automation**, clicking a
+Codex session still brings Codex forward generally, just without jumping to
+that exact window. Claude and Cursor sessions are unaffected either way.
+
+## Privacy
+
+AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps, and optional model slug) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks, explicit provider-specific subscription allowance access, and optional provider status checks. Usage access is off by default. Codex allowance uses the installed local Codex app-server, which manages its own sign-in. Optional Claude and Cursor allowance use explicitly disclosed private `claude.ai` and `cursor.com` endpoints with user-supplied session cookies, each stored only in macOS Keychain and never read from the provider's own app or a browser cookie store. Optional provider incident display (off by default) fetches only the public, unauthenticated Anthropic, OpenAI, and Cursor status pages. See [docs/privacy.md](docs/privacy.md) for the complete privacy contract.
+
+## Building
+
+```bash
+brew install xcodegen
+xcodegen generate
+xcodebuild test \
+  -project AgenticGlow.xcodeproj \
+  -scheme AgenticGlow \
+  -destination 'platform=macOS' \
+  -skip-testing:AgenticGlowUITests \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+### App Group Configuration
+
+The widget requires an App Group identifier to share data between the main app and the widget extension. For local development with code signing disabled, the default `group.com.twodamax.agenticglow` in `Config/Debug.xcconfig` and `Config/Release.xcconfig` works. For signed builds or release packaging, you must configure your own Apple Developer Team ID and App Group identifier in your Xcode project settings or by setting `APP_GROUP_ID` in the xcconfig files to include your Team ID prefix (e.g., `TEAMID.group.com.twodamax.agenticglow`).
+
+## Attribution
+
+AgenticGlow is an independent implementation inspired by Mick Cesanek's MIT-licensed Claude Status Bar project. AgenticGlow does not reuse that project's source code or branding.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.

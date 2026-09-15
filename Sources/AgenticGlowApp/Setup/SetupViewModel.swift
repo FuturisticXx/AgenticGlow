@@ -1,0 +1,126 @@
+import Foundation
+import Observation
+import AgenticGlowCore
+
+enum SetupPhase: Equatable {
+    case unavailable
+    case ready
+    case installing
+    case needsTrust
+    case installed
+    case restarting
+    case failed(String)
+}
+
+@MainActor
+@Observable
+final class SetupViewModel {
+    let provider: AgentProvider
+    let executableURL: URL?
+    private(set) var detectedVersion: String?
+    private let helperInstaller: HelperInstalling
+    private let integration: ProviderIntegrationManaging
+    private let syntheticEventService: SyntheticEventTesting
+    private let lastEvent: () -> Date?
+    private let setIntegrationEnabled: (Bool) -> Void
+    private let requestRestart: () async -> Bool
+    private let restartDelay: Duration
+    var phase: SetupPhase
+    var integrationStatus: IntegrationStatus?
+    var lastEventAt: Date?
+
+    init(
+        provider: AgentProvider,
+        executableURL: URL?,
+        helperInstaller: HelperInstalling,
+        integration: ProviderIntegrationManaging,
+        syntheticEventService: SyntheticEventTesting,
+        lastEvent: @escaping () -> Date? = { nil },
+        setIntegrationEnabled: @escaping (Bool) -> Void = { _ in },
+        requestRestart: @escaping () async -> Bool = { true },
+        restartDelay: Duration = .seconds(3)
+    ) {
+        self.provider = provider
+        self.executableURL = executableURL
+        self.detectedVersion = nil
+        self.helperInstaller = helperInstaller
+        self.integration = integration
+        self.syntheticEventService = syntheticEventService
+        self.lastEvent = lastEvent
+        self.setIntegrationEnabled = setIntegrationEnabled
+        self.requestRestart = requestRestart
+        self.restartDelay = restartDelay
+        self.phase = executableURL == nil ? .unavailable : .ready
+    }
+
+    func detectVersion() async {
+        guard let executableURL else { return }
+        detectedVersion = await Task.detached {
+            ProviderVersionDetector.detect(executableURL: executableURL)
+        }.value
+    }
+
+    func install() async {
+        phase = .installing
+        do {
+            try helperInstaller.install()
+            try integration.install()
+            guard try syntheticEventService.run(
+                provider: provider,
+                helperURL: helperInstaller.destinationURL
+            ) else {
+                phase = .failed("AgenticGlow did not receive the local test event.")
+                return
+            }
+            phase = provider == .codex ? .needsTrust : .installed
+            setIntegrationEnabled(true)
+            refreshDiagnostics()
+        } catch {
+            phase = .failed(error.localizedDescription)
+        }
+    }
+
+    func repair() async {
+        phase = .installing
+        do {
+            try helperInstaller.install()
+            try integration.repair()
+            phase = provider == .codex ? .needsTrust : .installed
+            setIntegrationEnabled(true)
+            refreshDiagnostics()
+            phase = .restarting
+            try? await Task.sleep(for: restartDelay)
+            let restarted = await requestRestart()
+            if !restarted {
+                // The relaunch didn't happen (e.g. NSWorkspace.openApplication
+                // failed) — the repair itself already succeeded and this
+                // process is still the one running, so recover to a usable
+                // state instead of leaving the UI stuck on "restarting"
+                // forever with its buttons hidden.
+                phase = provider == .codex ? .needsTrust : .installed
+            }
+        } catch {
+            phase = .failed(error.localizedDescription)
+        }
+    }
+
+    func remove() {
+        do {
+            try integration.remove()
+            phase = executableURL == nil ? .unavailable : .ready
+            setIntegrationEnabled(false)
+        } catch {
+            phase = .failed(error.localizedDescription)
+        }
+    }
+
+    func refreshDiagnostics() {
+        integrationStatus = try? integration.status()
+        lastEventAt = lastEvent()
+    }
+
+    func syncPhaseFromCurrentStatus() {
+        guard let status = try? integration.status(), status.installed else { return }
+        phase = status.requiresTrustReview ? .needsTrust : .installed
+    }
+}

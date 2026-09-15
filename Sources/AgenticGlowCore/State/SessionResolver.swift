@@ -1,0 +1,179 @@
+import Foundation
+
+public enum SessionResolver {
+    public static let completionDisplayDuration: TimeInterval = 8
+    public static let disconnectedDisplayDuration: TimeInterval = 15
+    public static let unknownProcessExpiration: TimeInterval = 4 * 60 * 60
+    /// How long a session reporting `phase` may go without a new event
+    /// before it is no longer treated as working. Delegates to
+    /// `SessionVisibilityPolicy` so the moment a session stops counting as
+    /// active is the moment it stops being shown.
+    public static func staleActiveDuration(for phase: SessionPhase) -> TimeInterval {
+        SessionVisibilityPolicy.activityWindow(for: phase)
+    }
+    public static let fileRetention: TimeInterval = 24 * 60 * 60
+
+    public static func resolve(
+        events: [NormalizedEvent],
+        now: Date,
+        memory: inout ResolutionMemory,
+        isProcessAlive: (Int32, Date?) -> Bool
+    ) -> ResolvedSessions {
+        let reportedEvents = shadowedDuplicatesRemoved(from: events)
+        let retainedKeys = Set(reportedEvents.compactMap { event in
+            now.timeIntervalSince(event.updatedAt) <= fileRetention ? SessionKey(event) : nil
+        })
+        memory.disconnectedRecords = memory.disconnectedRecords.filter {
+            retainedKeys.contains($0.key)
+        }
+        memory.hiddenRecords = memory.hiddenRecords.filter {
+            retainedKeys.contains($0.key)
+        }
+
+        let snapshots = reportedEvents.compactMap { event -> SessionSnapshot? in
+            let age = now.timeIntervalSince(event.updatedAt)
+            if age > fileRetention { return nil }
+
+            if let hidden = memory.hiddenRecords[SessionKey(event)] {
+                if hidden.eventUpdatedAt == event.updatedAt {
+                    return nil
+                }
+                memory.hiddenRecords.removeValue(forKey: SessionKey(event))
+            }
+
+            let phase: SessionPhase
+            // The newest genuine signal for this session. Defaults to the
+            // event's own timestamp; the dead-process branch replaces it with
+            // the moment that death was observed, which is a real state
+            // change rather than a poll.
+            var lastMeaningfulActivityAt = event.updatedAt
+            if let pid = event.sourceProcessID {
+                if !isProcessAlive(pid, event.sourceProcessStartedAt) {
+                    let key = SessionKey(event)
+                    let record: DisconnectionRecord
+                    if let storedRecord = memory.disconnectedRecords[key],
+                       storedRecord.eventUpdatedAt == event.updatedAt {
+                        record = storedRecord
+                    } else {
+                        record = DisconnectionRecord(
+                            eventUpdatedAt: event.updatedAt,
+                            detectedAt: now
+                        )
+                    }
+                    memory.disconnectedRecords[key] = record
+                    guard now.timeIntervalSince(record.detectedAt) <= disconnectedDisplayDuration else {
+                        return nil
+                    }
+                    lastMeaningfulActivityAt = max(lastMeaningfulActivityAt, record.detectedAt)
+                    // A process that dies mid-task (never reaching .completed)
+                    // reads as a failure; one that dies from idle/completed/
+                    // permission is a clean exit.
+                    phase = event.phase.isActive ? .failed : .disconnected
+                } else if event.phase == .completed && age > completionDisplayDuration {
+                    memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
+                    phase = .idle
+                } else if event.phase.isActive && age >= staleActiveDuration(for: event.phase) {
+                    // A single long-lived provider process (e.g. Codex's shared
+                    // app-server) backs many independent sessions, so "process is
+                    // alive" cannot detect a session whose turn finished without
+                    // sending its terminal event. Fall back to a time-based cutoff.
+                    memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
+                    phase = .idle
+                } else {
+                    memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
+                    phase = event.phase
+                }
+            } else {
+                memory.disconnectedRecords.removeValue(forKey: SessionKey(event))
+                guard age <= unknownProcessExpiration else { return nil }
+                if event.phase == .completed && age > completionDisplayDuration {
+                    phase = .idle
+                } else if event.phase.isActive && age >= staleActiveDuration(for: event.phase) {
+                    phase = .idle
+                } else {
+                    phase = event.phase
+                }
+            }
+
+            guard SessionVisibilityPolicy.isVisible(
+                phase: phase,
+                lastMeaningfulActivityAt: lastMeaningfulActivityAt,
+                now: now
+            ) else { return nil }
+
+            return SessionSnapshot(
+                provider: event.provider,
+                surface: event.surface,
+                sessionID: event.sessionID,
+                phase: phase,
+                label: phase == .idle ? "Idle" : phase == .disconnected ? "Disconnected" : event.label,
+                projectName: event.projectName,
+                workingDirectory: event.workingDirectory,
+                sourceBundleID: event.sourceBundleID,
+                elapsedSeconds: event.turnStartedAt.map { max(0, Int(now.timeIntervalSince($0))) },
+                turnStartedAt: event.turnStartedAt,
+                updatedAt: event.updatedAt,
+                toolCategory: phase == .usingTool ? event.toolCategory : nil,
+                model: event.model
+            )
+        }
+        .sorted(by: sort)
+
+        let dominant = snapshots.map(\.phase).min(by: {
+            priority($0) < priority($1)
+        }) ?? .idle
+
+        return ResolvedSessions(
+            sessions: snapshots,
+            dominantPhase: dominant,
+            activeCount: snapshots.filter { [.thinking, .usingTool, .permission].contains($0.phase) }.count,
+            permissionCount: snapshots.filter { $0.phase == .permission }.count,
+            activeProviders: Set(
+                snapshots
+                    .filter { $0.phase.isActive }
+                    .map(\.provider)
+            )
+        )
+    }
+
+    /// Cursor runs the Claude Code hooks in `~/.claude/settings.json` for its
+    /// own agent turns, so one Cursor conversation reports itself twice: once
+    /// through `~/.cursor/hooks.json` as `cursor`, and once as `claude`. Both
+    /// records carry the same session identifier, because `HookNormalizer`
+    /// hashes whatever identifier the hook reports and Cursor sends the same
+    /// `conversation_id` down both paths. The record from Cursor's own hooks
+    /// is the accurate one, so the shadow is dropped rather than shown as a
+    /// second session under the wrong provider.
+    private static func shadowedDuplicatesRemoved(
+        from events: [NormalizedEvent]
+    ) -> [NormalizedEvent] {
+        let cursorSessionIDs = Set(
+            events.lazy.filter { $0.provider == .cursor }.map(\.sessionID)
+        )
+        guard !cursorSessionIDs.isEmpty else { return events }
+        return events.filter { event in
+            event.provider == .cursor || !cursorSessionIDs.contains(event.sessionID)
+        }
+    }
+
+    private static func sort(_ lhs: SessionSnapshot, _ rhs: SessionSnapshot) -> Bool {
+        let left = priority(lhs.phase)
+        let right = priority(rhs.phase)
+        if left != right { return left < right }
+        if lhs.updatedAt != rhs.updatedAt { return lhs.updatedAt > rhs.updatedAt }
+        if lhs.provider != rhs.provider { return lhs.provider.rawValue < rhs.provider.rawValue }
+        return lhs.sessionID < rhs.sessionID
+    }
+
+    private static func priority(_ phase: SessionPhase) -> Int {
+        switch phase {
+        case .permission: 0
+        case .usingTool: 1
+        case .thinking: 2
+        case .failed: 3
+        case .completed: 4
+        case .disconnected: 5
+        case .idle: 6
+        }
+    }
+}

@@ -1,0 +1,23 @@
+{
+  "billingCycleStart": "2026-08-15T00:00:00.000Z",
+  "billingCycleEnd": "2026-09-15T00:00:00.000Z",
+  "membershipType": "pro",
+  "limitType": "hard",
+  "isUnlimited": false,
+  "autoModelSelectedDisplayMessage": "Cursor Models",
+  "namedModelSelectedDisplayMessage": "Other Models",
+  "individualUsage": {
+    "plan": {
+      "enabled": true,
+      "used": 1478,
+      "limit": 2000,
+      "remaining": 522,
+      "breakdown": { "included": 2000, "bonus": 0, "total": 1478 },
+      "autoPercentUsed": 26.4,
+      "apiPercentUsed": 94.2,
+      "totalPercentUsed": 73.9
+    },
+    "onDemand": { "enabled": false, "used": 0, "limit": null, "remaining": null }
+  },
+  "teamUsage": null
+}

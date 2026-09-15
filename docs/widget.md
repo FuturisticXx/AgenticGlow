@@ -1,0 +1,551 @@
+# AgenticGlow Widget
+
+A native WidgetKit extension (`AgenticGlowWidget`) that shows session and
+allowance status on the desktop without opening the app. This document
+covers the shared snapshot architecture, the widget UI, and the intentionally
+deferred configuration features.
+
+## Status: implemented; runtime data path verified locally
+
+This pass ships:
+
+- A real, tested, versioned snapshot model (`WidgetSnapshot` and friends)
+  and a pure builder (`WidgetSnapshotBuilder`) that turns the app's live
+  `ResolvedSessions` + allowance state into that snapshot. Both live in
+  `AgenticGlowCore` so they're covered by the existing unit test target.
+- The WidgetKit extension itself (`Sources/AgenticGlowWidget/`): small,
+  medium, and large layouts, all built and previewed against sample data.
+- `AppGroupSnapshotSource` and `AppGroupSnapshotWriter`, which read and write
+  `WidgetSnapshot.json` through the App Group container.
+- Live `AppModel` synchronization and `WidgetCenter.reloadAllTimelines()`
+  calls when a meaningfully different snapshot is written.
+- Matching signed App Group entitlements for the app and widget extension.
+  A signed local Release build installed at `/Applications/AgenticGlow.app`
+  produced a real snapshot containing Codex and Claude sessions plus both
+  allowance records on July 21, 2026.
+
+## The App Group ID must carry the Team ID prefix
+
+The App Group uses a Team ID prefix (e.g., `TEAMID.group.com.twodamax.agenticglow`), not the bare
+`group.com.twodamax.agenticglow`. The Team ID prefix is mandatory here and is
+not cosmetic: on macOS, an App Group shared between a **non-sandboxed**
+containing app (AgenticGlow) and a **sandboxed** app extension (the widget)
+only resolves to the same accessible container when the identifier is
+Team-ID-prefixed. Bare `group.`-prefixed IDs are the App Store / fully
+sandboxed convention.
+
+With the bare ID, everything looked correct and nothing reported an error:
+
+- Both targets signed with the same App Group entitlement, and
+  `codesign`/`pluginkit` verification passed.
+- `FileManager.containerURL(forSecurityApplicationGroupIdentifier:)` returned
+  a path in **both** processes, and the app wrote `WidgetSnapshot.json` there
+  successfully every couple of seconds.
+- The widget could `stat` that exact file and see its real size and
+  modification date.
+
+But when the widget actually **read** the file's contents, the extension
+process was killed outright. Not an exception, not an error return: there is
+no Swift error to catch and no crash report is produced. The visible symptoms
+were a widget permanently stuck on its "Waiting for AgenticGlow" empty state
+(the last entry it ever managed to render), `chronod` logging
+`getTimelines` failures with `NSCocoaErrorDomain Code=4099 "connection ... was
+invalidated"`, and a runaway relaunch storm of well over a thousand extension
+launches every ten minutes as WidgetKit retried.
+
+If this ever regresses, the fastest confirmation is a bisect on the widget's
+timeline provider: return a hardcoded entry without calling `loadSnapshot()`
+and the reloads succeed immediately, restore the read and they fail again.
+Note that `reload: succeeded`, `Content load successful`, and `LIVE view
+assigned` in the logs only prove the extension returned *an* entry, never that
+the entry holds real data, since the empty state is itself a valid entry.
+
+`project.yml` is the source of truth for both entitlement files. Change the
+group there and regenerate with `xcodegen generate`; editing
+`Config/*.entitlements` directly is silently reverted on the next
+regeneration.
+
+The final desktop render with current real data is not yet verified. macOS had
+zero AgenticGlow widget instances after the stale test widget was removed, so
+there was no widget process or desktop surface to inspect. Do not treat the
+successful shared snapshot or preview coverage as proof of the final render.
+
+App Intent configuration (filtering by provider/session) and interactive
+widget actions beyond opening the app/a session remain out of scope.
+
+## Architecture
+
+```
+AppModel (live state, 2s poll)
+   -> WidgetSnapshotBuilder.build(...)          [Core, pure, tested]
+   -> WidgetSnapshot (Codable)                  [Core]
+   -> written atomically to the App Group
+      shared container as WidgetSnapshot.json
+   -> WidgetCenter.reloadAllTimelines()
+
+AgenticGlowWidget extension (sandboxed, separate process)
+   -> AppGroupSnapshotSource.loadSnapshot()      [Core]
+      returns .notConfigured / .noSnapshotYet /
+              .corrupted / .loaded(WidgetSnapshot)
+   -> AgenticGlowTimelineProvider                [Widget target]
+   -> AgenticGlowWidgetView (small/medium/large) [Widget target]
+```
+
+The widget extension only depends on `AgenticGlowCore`, never on the
+`AgenticGlowApp` target. It cannot reuse `AllowancePresentation`,
+`StatusPresentation`, or `ProviderColor` directly (AppKit-flavored, app
+target only); their formatting conventions are re-expressed as small pure
+functions in `WidgetSnapshotFormatting.swift` and two duplicated color
+constants in `WidgetColorPalette.swift`.
+
+## Snapshot schema
+
+`WidgetSnapshot` (`Sources/AgenticGlowCore/Widget/WidgetSnapshot.swift`),
+versioned via `schemaVersion` (currently `2`):
+
+- `generatedAt`: when the app built this snapshot.
+- `sessions`: up to `WidgetSnapshotBuilder.maximumSessions` (8), already in
+  the same priority order as the main app (permission > usingTool >
+  thinking > failed > completed > disconnected > idle). Each entry carries
+  provider, project name, phase, tool category, elapsed seconds, last
+  updated time, and a `needsAttention` flag (`.permission` or `.failed`).
+- `allowances`: one entry per enabled provider with usage data. A
+  window-based provider (Codex, Claude) carries its current and weekly
+  fields; a pool-based provider (Cursor) instead carries `pools`, each
+  with a stable id, display name, percent left, and reset. `pools` is
+  absent from snapshots written before it existed and decodes as empty,
+  so an older snapshot renders exactly as it did.
+- `providers`: one entry per known provider with an `installed` flag (hook
+  integration configured or not).
+- `attentionCount`: computed over the full session set, not just the
+  capped list, so the small widget's headline number is always accurate
+  even when more sessions exist than fit on screen.
+- `activeCount`: passed straight through from `ResolvedSessions`.
+
+Only fields already covered by the existing privacy contract
+(`docs/privacy.md`) are included. No prompts, no raw provider responses, no
+credentials. `projectName` is the only free-text field, and it is already
+shown today in the main popover.
+
+The widget's temporary page state lives in a separate file,
+`WidgetDetailState.json`, written by the widget's own intents. Keeping it
+out of the snapshot means a page request can never corrupt or race the
+usage data the app publishes, and every failure to read it resolves to
+the default page.
+
+Schema changes: bump `WidgetSnapshot.currentSchemaVersion` and keep
+decoding permissive (the widget must never crash on an unknown or older
+`schemaVersion`; unknown extra fields decode silently, missing new fields
+should have safe defaults).
+
+## Refresh behavior and its limits
+
+WidgetKit does not support continuous updates. The MVP timeline provider
+(`AgenticGlowTimelineProvider`) requests one more check 15 minutes out as a
+fallback, on top of the `WidgetCenter.reloadAllTimelines()` calls the app makes
+after meaningful snapshot changes and WidgetKit's own system-managed refresh
+budget. Do not expect sub-minute updates; the widget is a glance, not a live
+view.
+
+Freshness is evaluated client-side: `WidgetDataFreshness.evaluate` marks a
+snapshot stale once it's older than 15 minutes (`staleThreshold`), above
+the app's own idle allowance refresh interval (5 minutes) so a normal idle
+gap doesn't falsely read as stale.
+
+### Explicit states
+
+- **Fresh** / **Stale**: `.loaded(snapshot)`, freshness evaluated against
+  `snapshot.generatedAt`.
+- **No data yet**: `.noSnapshotYet` — the container path resolves but no
+  snapshot file exists there. This is expected after adding the widget but
+  before the correctly signed main app has launched and written its first
+  snapshot.
+- **Main app not configured**: `.notConfigured` — `containerURL(...)`
+  returned `nil`. Reachable in principle (e.g. a stricter sandbox
+  environment, or a revoked entitlement after having one), but not the
+  state observed live on this Mac.
+- **Provider disconnected / not set up**: per-provider `installed: false`
+  in the snapshot; shown as a neutral "not set up in AgenticGlow" line in
+  the large layout rather than alarming language, since the common case is
+  simply "I don't use this provider."
+- **Error / unavailable**: `.corrupted` — a snapshot file exists but failed
+  to decode.
+- **Permission / setup required**: surfaced per-session via
+  `needsAttention` (phase `.permission`), promoted above regular sessions.
+- **Loading**: WidgetKit's own placeholder/redacted state
+  (`TimelineProvider.placeholder(in:)`), shown briefly before any real
+  entry loads.
+
+## Widget families
+
+- **Small**: one glance. Priority: attention count, then active session
+  count, then lowest individual allowance window remaining (across every
+  provider and window kind, not just each provider's current window), then
+  a calm "All quiet" state. Every headline is `lineLimit(1)` with a
+  `minimumScaleFactor`, because the 28pt line is the widest thing on a
+  170pt canvas and its text is data-driven: "1 session" truncated to
+  "1 ses..." on a real desktop widget. Shrinking beats eliding, since a
+  slightly smaller number still reads at a glance. The attention headline uses a neutral
+  `pause.circle` in `.secondary`, not a yellow exclamation: a session
+  awaiting permission is paused waiting on the user, and stating that is
+  reporting rather than prompting. The previous yellow also never survived
+  Tinted/Monochrome styles, which substitute custom colors.
+- **Medium**: up to 2 sessions (`+ N more` if truncated) and one status
+  bar for whichever individual allowance window (current or weekly, any
+  window-based provider) is lowest. When a pool-based provider has data,
+  a chevron opens its detail page (see below).
+- **Large**: a per-provider allowance block showing every window the
+  provider reports (current, and weekly when the provider has one) using
+  the menu-bar-style status bar, plus sessions and provider setup notices.
+  Session count adapts to how many allowance windows are showing (see
+  below). No app title or last-updated footer: both routinely clipped off
+  the bottom of the real fixed-height canvas, confirmed on an installed
+  desktop widget, and neither carried information the widget's context
+  (the desktop, right next to the app) doesn't already make obvious.
+  Content is pinned to the top of the canvas with a `GeometryReader`,
+  which claims the whole proposal and places content at its top leading
+  corner. A fill-and-align frame is not enough: the container centers a
+  page whose content does not fill the canvas, which left the shorter
+  detail page starting lower than the default one.
+
+Small keeps attention at the top of its priority ladder while medium and
+large carry **no attention banner**. Prompting the user about
+sessions that need them belongs to the menu bar and to notifications; the
+widget reports state. Individual session rows still show a `.permission`
+phase as "Needs you", which is status rather than a prompt. Small is the
+exception: there the attention count is the headline itself (see above),
+not a banner layered over other content.
+- `.systemExtraLarge` was evaluated and skipped for this pass (iPad
+  dashboard-oriented, not clearly worth it for a status companion).
+
+### Allowance windows
+
+`WidgetAllowanceSummary.windows` (`WidgetSnapshot.swift`) is a computed,
+non-serialized projection: it always includes the current window, and adds
+a second "Weekly" window only when the provider actually reports
+`weeklyPercentLeft`. This is why the large widget currently shows exactly
+three bars — Codex Weekly, Claude 5h, Claude Weekly — driven entirely by
+what the real snapshot contains, not a hardcoded count. If Codex starts
+reporting a separate weekly percentage alongside its current window, a
+fourth bar appears automatically.
+
+Medium and small pick the single lowest window with
+`snapshot.overviewAllowances.flatMap(\.windows).min(by: percentLeft)`, so
+a provider's weekly percentage can win even when its own (or another
+provider's) current window is numerically higher.
+
+### Allowance pools and the detail page
+
+A provider whose plan splits into several concurrently active allowances
+(Cursor: Cursor Models and Other Models) carries them as
+`WidgetAllowanceSummary.pools`, and `windows` projects those instead of
+the current/weekly pair. `WidgetSnapshot.overviewAllowances` and
+`poolAllowances` split the two kinds apart.
+
+Pool providers are deliberately absent from the default page. Three
+providers means six bars and three headings, which alone exceed the large
+canvas; enabling one must not cost the Codex and Claude layout its
+breathing room. Instead they get a temporary page of their own:
+
+- `AllowanceDetailControl` is a provider-neutral chevron, overlaid at the
+  bottom trailing corner rather than stacked as a row. As the last child
+  of the stack it was the first thing pushed past the bottom edge when
+  content ran long, and it rendered sliced by the card's rounded corner.
+  Overlaid it costs no layout height.
+- `ShowCursorUsageIntent` (a real `Button(intent:)`, supported from macOS
+  14, which is this project's deployment target) writes one expiry date to
+  `WidgetDetailState.json` in the App Group container and returns.
+  WidgetKit reloads the timeline itself.
+- The provider emits two entries: the detail page now, and the overview at
+  the expiry. The return is WidgetKit drawing a scheduled entry, so it
+  needs no timer, no polling, and no wake-up.
+- `WidgetDetailPresentation.page` resolves anything that is not an
+  unexpired request with pool data behind it to the overview, so the page
+  cannot stick, cannot outlive its 12 second expiry, and cannot survive
+  the provider being switched off.
+- The page state is presentation only: one date, never a credential, an
+  account identity, or a usage value.
+
+Small stays non-interactive. Its canvas is a single headline, and a
+control there would compete with the tap that opens the app, so pool
+providers are excluded from its lowest-window selection rather than shown
+without room for their pool names.
+
+The status bar itself (`WidgetAllowanceBar.swift`) is a widget-local port
+of the menu bar's `AllowanceBar` (`AllowanceSectionView.swift`, frozen,
+reference only): quiet capsule track, provider-colored gradient fill sized
+by `WidgetAllowanceWindow.normalizedProgress` (percent clamped to 0...1,
+4pt minimum visible width), and a monospaced percentage pill centered on
+the fill edge. The pill is sized once from real font metrics for the
+widest label it can ever show ("100%") rather than from a hardcoded
+half-width guess; the old guess was narrower than a 3-digit pill, so 100%
+overhung the widget's right padding. Below the threshold shared with the
+menu bar
+(`AllowanceWarning.thresholdPercentLeft`, `AgenticGlowCore`) a row adds a
+red warning triangle and provider-colored caption text; a `nil` percentage
+renders as an "Unavailable" line with no bar, never an empty (0%-looking)
+one.
+
+Large's session area is bounded by `LargeWidgetSessionBudget`
+(`AgenticGlowCore`), measured in points rather than rows because the two
+things the session area draws cost different amounts. Counting rows alone
+is what pushed the first row off the canvas: a list that overflows also
+draws a `+ N more` line, so it costs more than a list of the same visible
+length that does not. The budget falls as the allowance section grows
+(160pt at 0-2 windows, 90 at 3, 52 at 4, 18 at 5, none at 6+), and the
+layout drops a row at a time until what would actually be drawn fits. The
+four Codex and Claude windows are never traded away for a session row.
+
+The 52pt figure at four windows is calibrated against the installed
+widget, and it is why raising the top content inset to 24pt cost the
+second session row: two bare rows no longer fit beside four windows.
+Medium's cap stays fixed at 2. A `Text("+ N more")` line is intentional
+and honest either way, not a bug.
+
+### Typography
+
+Primary widget text now uses explicit point sizes matching Apple's own
+weather/stocks widgets rather than `.caption`-family text styles with
+`.fontWidth(.condensed)`: session project names and provider headings 14pt
+semibold, status/window labels 12-13pt medium, percentage pills 12pt
+semibold, reset captions 11pt medium, small's primary metric 28pt medium.
+`EmptyStateView` (the pre-add gallery preview) was left untouched, out of
+scope for this pass.
+
+### Rendering-mode legibility (Tinted/Monochrome desktop widget styles)
+
+macOS can render any desktop widget in a system "Tinted" or "Monochrome"
+style instead of full color, chosen per-widget and derived from the
+current wallpaper. This is exposed to SwiftUI as
+`@Environment(\.widgetRenderingMode)`
+(`.fullColor` / `.accented` / `.vibrant`). Content not marked
+`.widgetAccentable()` falls into a fixed "default" tone; content marked
+`.widgetAccentable()` picks up the wallpaper-derived accent. Live testing
+against an installed desktop widget (not previews — previews always render
+`.fullColor` and would never have caught this) found two real problems
+only visible in Tinted mode against a pale wallpaper:
+
+1. The allowance bar's percentage pill (`WidgetAllowanceBar.swift`) used a
+   custom provider-colored background behind white text. Neither element
+   was accentable, so with a pale wallpaper the system's derived accent
+   landed close to white for everything, making the percentage
+   unreadable and the provider dot/low-state caption colors
+   (`AllowanceStrip.swift`) wash out the same way.
+2. Even after marking the colored elements `.widgetAccentable()`, a pale
+   wallpaper's derived accent could still be too close to white for
+   reliable contrast — the system substitution itself, not just missing
+   accent markers, was the limiting factor.
+
+Fix: `WidgetAllowanceBar` and `AllowanceStrip` branch on
+`widgetRenderingMode`. In `.fullColor` they render exactly as designed
+(gradient fill, colored pill with white numerals, provider-tinted
+captions). Outside `.fullColor` the fill and captions fall back to
+`Color.primary`/`.foregroundStyle(.primary)`, at the cost of losing
+per-provider hue distinction (an acceptable, and largely unavoidable,
+trade-off: the whole point of those styles is a single-hue treatment).
+The low-state red warning triangle still uses its fixed color
+unconditionally in every mode; a real remaining limitation if a future
+desktop test shows it also washing out.
+
+An earlier pass dropped the percentage pill entirely outside
+`.fullColor`, leaving a bare number lying on the bar. That read as broken,
+worst at 100% where the fill spans the whole track and the number had no
+empty space to sit in. Restoring the pill took two more installed-widget
+rounds and produced three findings worth keeping:
+
+1. **Luminance maps to prominence, so "dark" is not available.** Bright
+   content becomes opaque, dark content becomes transparent. Solid text on
+   a solid pill washes out because both resolve to the same
+   wallpaper-derived tone. Knocking the numerals out as transparent holes
+   is legible but only barely, for the same reason.
+2. **The working answer is to carry contrast on the numerals, not the
+   capsule.** Full-strength text over a low-opacity capsule renders
+   exactly as legibly as the provider headings and reset captions beside
+   it. Opacity is the one relationship that survives both the accent
+   tinting of `.accented` and the luminance mapping of `.vibrant`, since
+   it applies after whatever color the system substitutes.
+3. **Blend modes are ignored in these styles.** A `.blendMode(.destinationOut)`
+   capsule used to erase the bar beneath the translucent pill worked in a
+   normal render and was silently dropped on the real widget, letting the
+   bar draw a line through the numerals. The track is therefore drawn as
+   two segments with a real gap where the pill sits: nothing to erase, so
+   nothing can leak through. Prefer geometry over compositing for anything
+   that must hold in every rendering mode.
+
+`ImageRenderer` and `#Preview` prove layout and geometry only. They always
+composite normally in `.fullColor`, so they cannot verify `blendMode`,
+`compositingGroup`, `mask`, or anything else whose result depends on
+`widgetRenderingMode`.
+
+## Deep links
+
+Scheme: `agenticglow://`. Parsing and construction are pure and tested
+(`Sources/AgenticGlowCore/Widget/WidgetDeepLink.swift`); `AppDelegate`
+registers a `kAEGetURL` Apple Event handler and routes through the
+existing `AppModel.activate(_:)` / popover-show methods, no new activation
+logic.
+
+- `agenticglow://open` — bring the app popover forward. Used as the
+  default `.widgetURL` for the whole widget.
+- `agenticglow://session?provider=<claude|codex>&id=<sessionID>` — used per
+  row in medium/large; activates that session's source app window (if
+  still resolvable) and shows the popover.
+
+## Privacy
+
+No new network requests. No credentials, cookies, or raw provider
+responses in the snapshot. The App Group container is shared only by
+AgenticGlow and its own widget extension, using the same protection model as
+other sandboxed shared containers. The main app atomically overwrites one
+`WidgetSnapshot.json` file and does not retain widget history. See
+`docs/privacy.md` for the complete contract.
+
+## Supported families and macOS versions
+
+Small, medium, large. macOS 14.0+ (matches the app's deployment target).
+Uses `.containerBackground(.background, for: .widget)` on every root view
+(required since macOS 14 WidgetKit; omitting it renders a blank/black
+widget). No macOS 26-only symbols.
+
+## Testing locally
+
+1. `xcodegen generate`
+2. `xcodebuild test -project AgenticGlow.xcodeproj -scheme AgenticGlow -destination 'platform=macOS' -skip-testing:AgenticGlowUITests` — covers every pure Core widget file (snapshot codable/schema, builder, formatting, freshness, deep link, snapshot-loading safety). On Xcode versions that still prepare the skipped UI runner, run the built non-UI XCTest bundles directly and record that limitation instead of treating a runner timeout as a product-test failure.
+3. Xcode canvas: open any file under `Sources/AgenticGlowWidget/Views/` and use the `#Preview` blocks — every family has previews across the major states (busy, attention, failed, low allowance, provider not set up, stale, no data yet, not configured, error).
+4. Real install: build and run AgenticGlow once with the Apple Development identity, then right-click the desktop, choose **Edit Widgets**, search for **AgenticGlow**, and add a widget. The app writes `WidgetSnapshot.json` into the App Group container and asks WidgetKit to reload after meaningful changes.
+5. Before trusting the result, run `pluginkit -m -A -D -v -i com.twodamax.agenticglow.widget` and confirm exactly one registration points inside `/Applications/AgenticGlow.app`. A DerivedData or `/tmp` path means macOS may launch a stale extension with different entitlements.
+
+## Live-data verification
+
+`AppModel` calls
+`WidgetSnapshotBuilder.build(...)` after `refresh()` and
+`syncAllowanceStates()`, writes atomically via `AppGroupSnapshotWriter` to
+`WidgetSnapshot.json` in the shared container, and calls
+`WidgetCenter.shared.reloadAllTimelines()` only when
+`WidgetSnapshotBuilder.isMeaningfullyDifferent` says something worth
+showing actually changed (elapsed-seconds ticking alone does not trigger a
+reload, to stay well under WidgetKit's reload budget). `installedProviders`
+comes from the existing `ClaudeIntegrationManager`/`CodexIntegrationManager`
+`.status().installed`. All of this is covered by unit tests
+(`AppGroupSnapshotWriterTests`, the `isMeaningfullyDifferent` cases in
+`WidgetSnapshotBuilderTests`).
+
+The installed local Release build is signed with matching App Group
+entitlements for `com.twodamax.agenticglow` and
+`com.twodamax.agenticglow.widget`. The signed extension profile includes
+the configured App Group ID, deep signature validation passes, and
+launching the app writes a decodable live snapshot to the shared container.
+
+On July 21, 2026, the installed app had one widget registration pointing to
+`/Applications/AgenticGlow.app`. Its fresh snapshot contained seven Codex
+sessions, one Claude session, and allowance data for both providers. The
+system widget metadata contained zero installed AgenticGlow desktop instances,
+so the current-data desktop render remains explicitly unverified.
+
+### Allowance-window parity pass (2026-07-22)
+
+Added `WidgetAllowanceWindow`/`WidgetAllowanceSummary.windows`
+(`WidgetAllowanceWindowTests.swift`, 7 cases, TDD red-then-green), ported
+the menu bar's status bar into the widget target (`WidgetAllowanceBar.swift`),
+rewrote `AllowanceStrip`/added `AllowanceWindowRow` to render one bar per
+window instead of only the current window, fixed medium/small to select
+the lowest individual window instead of the lowest provider's current
+window, raised primary typography, and made large's session cap adapt to
+allowance-window count. Full non-UI suite: 263 Core + 6 Event + 143 App,
+0 failures (up from 262/6/143; +7 for the new window tests, net widget
+view line count changes only). `Scripts/verify-privacy.sh` exit 0.
+
+The widget registration verification script ensures exactly one registration
+points to the installed app bundle at `/Applications/AgenticGlow.app` and removes
+any stale registrations from build directories. Confirmed matching App Group
+entitlement on both the app and widget, and a universal (`x86_64 arm64`)
+widget binary.
+
+The live `WidgetSnapshot.json` cannot be read directly from a shell because
+macOS App Sandbox group-container files are only readable by processes carrying
+the matching App Group entitlement.
+entitlement, and neither `cat`, Python, nor `osascript` running outside the
+app have it (`Operation not permitted` even with root-equivalent POSIX
+permissions on the file). This is expected sandbox behavior, not a bug.
+Real-data freshness and correctness were confirmed instead by directly
+inspecting the installed desktop widget itself (see below), which is
+stronger evidence than a raw file read anyway since it proves the full
+pipeline end to end.
+
+### Real desktop widget verification (2026-07-22)
+
+The large AgenticGlow widget was added to a live desktop and confirmed,
+across several iterations against his real wallpaper and widget style
+settings:
+
+- Exactly three allowance bars render for the real live data: Codex
+  Weekly, Claude 5h, Claude Weekly, each with a visibly different fill and
+  a readable percentage (16%, 70%, 50% at the time of the final check).
+- Reset captions read correctly ("Weekly resets in 144h 16m left", "5h
+  resets in 3h 24m left", etc.).
+- Session rows show live Codex/Claude session data with correct project
+  names, phase, and provider.
+- The widget's desktop compositor surface could not be captured by this
+  session's screenshot tooling (same restriction that blocks Notification
+  Center — system UI layers outside the normal app windowing model); every
+  round of this verification relied on direct screenshots rather
+  than automated capture, consistent with `docs/tasks/lessons.md`'s rule
+  to never claim visual completion from previews alone.
+- The widget extension is a long-lived background process that does not
+  restart just because the containing app is quit/relaunched or the
+  `.appex` bundle on disk is replaced; each local rebuild in this session
+  required explicitly killing the running `AgenticGlowWidget` process
+  (`pkill -f .../AgenticGlowWidget.appex` or a plain `kill <pid>`) so
+  macOS would respawn it from the new binary before a code change was
+  actually visible on the desktop.
+- Each local Debug rebuild/install also registered a second, transient
+  `pluginkit` entry pointing at `build/DerivedData/.../AgenticGlow.app`
+  (Xcode's own `RegisterWithLaunchServices` build phase), removed after
+  each install so exactly one registration remains, pointing at
+  `/Applications/AgenticGlow.app`.
+
+Ad-hoc signing (`CODE_SIGN_IDENTITY="-"`) cannot sign App Group entitlements,
+so widget runtime checks must use the Apple Development identity. The release
+builder now signs the helper, then the widget with
+`Config/AgenticGlowWidget.entitlements`, then the containing app.
+`Scripts/verify-release.sh` requires the embedded widget, both architecture
+slices, a valid widget signature, and the shared App Group entitlement on both
+targets. A notarized release containing this feature has not yet been produced.
+App Intent filtering and additional interactive actions remain follow-up work.
+
+### Pill restoration and attention-banner removal (2026-07-25)
+
+Three changes, all verified against the installed desktop widget in
+Tinted style rather than previews:
+
+- **Percentage pill restored in every rendering mode**
+  (`WidgetAllowanceBar.swift`). See "Rendering-mode legibility" above for
+  the two failed approaches and why full-strength numerals over a
+  low-opacity capsule is the one that works. The pill is now sized from
+  real font metrics for "100%", which also fixed the pill overhanging the
+  widget's right padding at 100%. Font family, size, and weight were
+  unchanged throughout.
+- **Track drawn as two segments with a gap** where the pill sits, outside
+  `.fullColor`. Replaces a `.blendMode(.destinationOut)` eraser that the
+  system silently ignored in Tinted mode.
+- **Attention banner removed from medium and large**
+  (`AttentionBanner.swift` deleted; nothing referenced it afterwards).
+  Prompting is the menu bar's and notifications' job. This also resolved a
+  clipping bug: the banner was an extra row that
+  `LargeWidgetView.displayedSessionLimit` never counted, so with three
+  allowance windows the content overshot the fixed canvas by roughly a
+  row and cut the top line in half. Large is now also pinned to the top of
+  its canvas so future overflow falls off the bottom instead.
+
+Correction to the 2026-07-22 note above: the desktop widget surface **can**
+be captured programmatically after all, via `screencapture -x -D <display>`
+run outside the agent's command sandbox. The per-display flag is what
+matters; the widget appears in the normal display capture. Note that
+screenshot tooling which filters by allowlisted application will show a
+blank desktop, because desktop widgets are drawn by `WindowManager` rather
+than by AgenticGlow itself.
+
+`NSFont` is deliberately not held in a `static let` here: it is not
+`Sendable` in every SDK this ships against, and a non-`Sendable` static is
+a hard error under Swift 6 language mode. CI runs `macos-15`, well behind
+the local toolchain, so only the measured `CGFloat`s are stored.

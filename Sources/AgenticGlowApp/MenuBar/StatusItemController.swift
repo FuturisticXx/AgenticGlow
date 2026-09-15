@@ -1,0 +1,478 @@
+import AppKit
+import AgenticGlowCore
+import Observation
+import Symbols
+import SwiftUI
+
+@MainActor
+final class StatusItemController: NSObject, NSPopoverDelegate {
+    private let model: AppModel
+    private let preferences: PreferencesStore
+    private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    private let popover = NSPopover()
+    private let symbolView = NSImageView()
+    private let badgeView = NSView()
+    private let popoverState = PopoverState()
+    private var lastPresentation: StatusPresentation?
+    private var lastCelebrationCount = 0
+    private var celebrationResetTask: Task<Void, Never>?
+    private var motionTask: Task<Void, Never>?
+    private var motionRotating = false
+    /// Providers coloring the animated icon; two entries cross-fade, one is a
+    /// solid provider tint. The frame task resolves actual colors per frame
+    /// against the bar's current appearance, so a wallpaper that flips the
+    /// bar light or dark re-palettes the icon within a frame, no observers.
+    private var motionProviders: [AgentProvider]?
+    private var currentSymbolName: String?
+    private var currentSolidColor: NSColor?
+    /// True while the icon alternates between the working hexagon and the
+    /// yellow permission exclamation (one session waiting, others working).
+    private var dissolvesPermission = false
+
+    /// Menu bar motion is ambient, not feedback: it plays for minutes at a time
+    /// while an agent works. Slow and continuous reads as calm; anything brisk
+    /// enough to notice becomes a distraction in the corner of the eye.
+    ///
+    /// Rotation is driven by our own frame task, not RotateSymbolEffect: the
+    /// cross-fade must swap the symbol image every frame (the menu bar flattens
+    /// contentTintColor, so color has to be baked in), and every image swap
+    /// restarts a symbol effect, which stuttered the spin.
+    private enum Motion {
+        /// Seconds per full revolution. The hexagon grid repeats every 60
+        /// degrees, so the visible pattern cycles once every period/6 seconds.
+        static let rotationPeriod: Double = 12.0
+        /// Seconds for one direction of the blue <-> orange sweep.
+        static let crossfadePeriod: Double = 5.0
+        /// The sweep tops out at this much orange instead of saturating.
+        static let crossfadePeakShare: Double = 0.8
+        /// 30fps. At the previous 0.06s the sweep banded into visible steps.
+        static let frameInterval: Double = 1.0 / 30.0
+    }
+
+    init(
+        model: AppModel,
+        preferences: PreferencesStore,
+        claudeCredentialStore: any SessionCredentialStoring,
+        cursorCredentialStore: any SessionCredentialStoring,
+        openIntegrations: @escaping () -> Void
+    ) {
+        self.model = model
+        self.preferences = preferences
+        super.init()
+
+        popover.behavior = .transient
+        popover.delegate = self
+        popover.contentSize = NSSize(width: 360, height: 420)
+        popover.contentViewController = NSHostingController(
+            rootView: SessionListView(
+                model: model,
+                preferences: preferences,
+                popoverState: popoverState,
+                claudeCredentialStore: claudeCredentialStore,
+                cursorCredentialStore: cursorCredentialStore,
+                openIntegrations: openIntegrations,
+                settingsPresentationChanged: { [weak self] isPresented in
+                    self?.setSettingsPresented(isPresented)
+                }
+            )
+        )
+
+        item.button?.target = self
+        item.button?.action = #selector(togglePopover)
+        item.button?.identifier = NSUserInterfaceItemIdentifier("AgenticGlow.StatusItem")
+        item.button?.setAccessibilityIdentifier("AgenticGlow.StatusItem")
+        if let button = item.button {
+            symbolView.translatesAutoresizingMaskIntoConstraints = false
+            symbolView.imageScaling = .scaleProportionallyDown
+            button.addSubview(symbolView)
+            badgeView.translatesAutoresizingMaskIntoConstraints = false
+            badgeView.wantsLayer = true
+            badgeView.layer?.cornerRadius = 3
+            badgeView.isHidden = true
+            button.addSubview(badgeView)
+            NSLayoutConstraint.activate([
+                symbolView.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 3),
+                symbolView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+                symbolView.widthAnchor.constraint(equalToConstant: 18),
+                symbolView.heightAnchor.constraint(equalToConstant: 18),
+                badgeView.trailingAnchor.constraint(equalTo: symbolView.trailingAnchor, constant: 1),
+                badgeView.topAnchor.constraint(equalTo: symbolView.topAnchor, constant: -1),
+                badgeView.widthAnchor.constraint(equalToConstant: 6),
+                badgeView.heightAnchor.constraint(equalToConstant: 6)
+            ])
+        }
+        observeModel()
+    }
+
+    func stop() {
+        motionTask?.cancel()
+        motionTask = nil
+        symbolView.removeAllSymbolEffects()
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        popoverState.isPresented = false
+    }
+
+    func showPopoverForVisualQA() {
+        guard !popover.isShown else { return }
+        togglePopover()
+    }
+
+    func setSettingsPresented(_ isPresented: Bool) {
+        popover.behavior = isPresented ? .applicationDefined : .transient
+    }
+
+    @objc func togglePopover() {
+        guard let button = item.button else { return }
+        if popover.isShown {
+            popover.performClose(nil)
+            popoverState.isPresented = false
+        } else {
+            NSApp.activate(ignoringOtherApps: true)
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            popoverState.isPresented = true
+            Task { await model.refreshUsage(.popoverOpened) }
+            Task { await model.refreshServiceStatus() }
+        }
+    }
+
+    private func observeModel() {
+        withObservationTracking {
+            update()
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                self?.observeModel()
+            }
+        }
+    }
+
+    private func update() {
+        let presentation = StatusPresentation(
+            resolved: model.resolved,
+            showTimer: model.showTimer,
+            reduceMotion: model.reduceMotion,
+            lowAllowance: model.hasLowAllowance
+        )
+        let celebrating = beginCelebrationIfNeeded(symbolName: presentation.symbolName)
+        guard presentation != lastPresentation else { return }
+        lastPresentation = presentation
+        applyTint(presentation, celebrating: celebrating)
+        badgeView.isHidden = !presentation.showsAllowanceBadge
+        badgeView.layer?.backgroundColor = NSColor.systemOrange.cgColor
+        item.button?.image = nil
+        item.button?.title = presentation.title.isEmpty ? "" : "     \(presentation.title)"
+        item.length = presentation.title.isEmpty ? 24 : NSStatusItem.variableLength
+        item.button?.setAccessibilityLabel(presentation.accessibilityLabel)
+        configureAnimation(enabled: presentation.animates)
+        reconcileMotionTask()
+    }
+
+    /// Briefly turns the icon green (with a bounce where available) when a
+    /// weekly allowance window rolls over, then restores the live state.
+    private func beginCelebrationIfNeeded(symbolName: String) -> Bool {
+        guard model.weeklyResetCount != lastCelebrationCount else {
+            return celebrationResetTask != nil
+        }
+        lastCelebrationCount = model.weeklyResetCount
+        motionProviders = nil
+        dissolvesPermission = false
+        setSymbol(symbolName, color: .systemGreen)
+        if !model.reduceMotion, #available(macOS 15.0, *) {
+            symbolView.addSymbolEffect(.bounce, options: .repeat(3))
+        }
+        celebrationResetTask?.cancel()
+        celebrationResetTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(4))
+            guard let self, !Task.isCancelled else { return }
+            self.celebrationResetTask = nil
+            self.lastPresentation = nil
+            self.update()
+        }
+        return true
+    }
+
+    private func configureAnimation(enabled: Bool) {
+        motionRotating = enabled
+    }
+
+    /// Colors the working icon by provider: solid for one, a slow blue <-> orange
+    /// cross-fade for both. Celebration green always wins. The color is baked
+    /// into a non-template symbol image because the menu bar renders template
+    /// images as flat monochrome and ignores contentTintColor (verified: a
+    /// template symbol with contentTintColor drew gray in the menu bar).
+    private func applyTint(_ presentation: StatusPresentation, celebrating: Bool) {
+        let name = presentation.symbolName
+        if celebrating {
+            motionProviders = nil
+            dissolvesPermission = false
+            setSymbol(name, color: .systemGreen)
+            return
+        }
+        let providers = presentation.activeProviders
+        dissolvesPermission = presentation.pulsesPermission && !providers.isEmpty
+        if dissolvesPermission {
+            // The motion task owns the icon: hexagon spinning in provider
+            // color, dissolving to and from the yellow exclamation.
+            motionProviders = providers
+            currentSymbolName = "circle.hexagongrid"
+            currentSolidColor = ProviderColor.nsColor(for: providers[0], on: barAppearance)
+        } else if providers.isEmpty {
+            motionProviders = nil
+            setSymbol(name, color: presentation.color)
+        } else if providers.count > 1, model.reduceMotion {
+            motionProviders = nil
+            setSymbol(
+                name,
+                color: ProviderColor.blend(of: providers, on: barAppearance),
+                template: monochromeWorkingIcon
+            )
+        } else {
+            motionProviders = providers
+            currentSymbolName = name
+            setSymbol(
+                name,
+                color: ProviderColor.nsColor(for: providers[0], on: barAppearance),
+                template: monochromeWorkingIcon
+            )
+        }
+    }
+
+    /// Whether the *working* icon drops its provider color. Read fresh at
+    /// each use rather than observed, same as `barAppearance`: this view is
+    /// redrawn by a frame task, so a change lands within a frame and there
+    /// is nothing to storm.
+    private var monochromeWorkingIcon: Bool {
+        preferences.menuBarIconStyle == .monochrome
+    }
+
+    /// Only for the permission dissolve, which bakes the working glyph and
+    /// the yellow exclamation into a single image and therefore cannot use
+    /// a template (it would flatten the yellow away too). Everywhere else
+    /// the monochrome icon is a real template image and macOS picks the
+    /// tone, including the dimming applied on inactive displays.
+    private static func monochromeTone(on appearance: ProviderColor.BarAppearance) -> NSColor {
+        appearance == .light ? .black : .white
+    }
+
+    /// macOS re-tints each menu bar light or dark for the wallpaper behind
+    /// it; the button's effectiveAppearance carries that verdict.
+    private var barAppearance: ProviderColor.BarAppearance {
+        let match = item.button?.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua])
+        return match == .aqua ? .light : .dark
+    }
+
+    private func setSymbol(_ name: String, color: NSColor, template: Bool = false) {
+        currentSymbolName = name
+        currentSolidColor = color
+        symbolView.image = Self.symbolImage(
+            name,
+            color: color,
+            rotatedDegrees: 0,
+            template: template
+        )
+    }
+
+    /// Rotation is baked into the image alongside the color: rotating the view
+    /// (frameCenterRotation) fights Auto Layout and blanked the icon, and layer
+    /// transforms get reset by layout passes. Drawing the rotated symbol into a
+    /// fresh image each frame is the one path the menu bar renders reliably.
+    private static func symbolImage(
+        _ name: String,
+        color: NSColor,
+        rotatedDegrees degrees: Double,
+        template: Bool = false
+    ) -> NSImage? {
+        // A template image carries no color of its own; the menu bar
+        // flattens it to whatever tone it is currently using. That is the
+        // whole point of the monochrome style, and it is also why the
+        // colored states must never take this path.
+        let configured = template
+            ? NSImage(systemSymbolName: name, accessibilityDescription: nil)
+            : NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+                .withSymbolConfiguration(NSImage.SymbolConfiguration(paletteColors: [color]))
+        guard let base = configured else { return nil }
+        base.isTemplate = template
+        guard degrees != 0 else { return base }
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            let transform = NSAffineTransform()
+            transform.translateX(by: rect.midX, yBy: rect.midY)
+            transform.rotate(byDegrees: CGFloat(degrees))
+            transform.translateX(by: -rect.midX, yBy: -rect.midY)
+            transform.concat()
+            let baseSize = base.size
+            let scale = min(rect.width / baseSize.width, rect.height / baseSize.height)
+            let drawSize = NSSize(width: baseSize.width * scale, height: baseSize.height * scale)
+            let origin = NSPoint(
+                x: rect.midX - drawSize.width / 2,
+                y: rect.midY - drawSize.height / 2
+            )
+            base.draw(in: NSRect(origin: origin, size: drawSize))
+            return true
+        }
+        image.isTemplate = template
+        return image
+    }
+
+    /// Both glyphs baked into one frame at complementary opacity. Drawing
+    /// them into a single image keeps the menu bar path identical to the
+    /// plain motion frames; only the pixels change.
+    private static func dissolveImage(
+        workingName: String,
+        workingColor: NSColor,
+        rotatedDegrees: Double,
+        workingOpacity: Double
+    ) -> NSImage? {
+        guard let working = symbolImage(
+            workingName,
+            color: workingColor,
+            rotatedDegrees: rotatedDegrees == 0 ? 0.0001 : rotatedDegrees
+        ), let permission = symbolImage(
+            "exclamationmark.circle.fill",
+            color: .systemYellow,
+            rotatedDegrees: 0
+        ) else { return nil }
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            working.draw(
+                in: rect,
+                from: .zero,
+                operation: .sourceOver,
+                fraction: CGFloat(workingOpacity)
+            )
+            permission.draw(
+                in: aspectFit(permission.size, in: rect),
+                from: .zero,
+                operation: .sourceOver,
+                fraction: CGFloat(1 - workingOpacity)
+            )
+            return true
+        }
+        image.isTemplate = false
+        return image
+    }
+
+    private static func aspectFit(_ imageSize: NSSize, in rect: NSRect) -> NSRect {
+        let scale = min(rect.width / imageSize.width, rect.height / imageSize.height)
+        let size = NSSize(width: imageSize.width * scale, height: imageSize.height * scale)
+        return NSRect(
+            x: rect.midX - size.width / 2,
+            y: rect.midY - size.height / 2,
+            width: size.width,
+            height: size.height
+        )
+    }
+
+    /// One frame task drives both the spin and the color sweep so neither ever
+    /// restarts when the other changes. State flips (provider joins or leaves,
+    /// celebration) just change what the next frame renders; the task and its
+    /// clock keep running, which keeps rotation phase and sweep phase steady.
+    private func reconcileMotionTask() {
+        guard motionRotating || motionProviders != nil else {
+            motionTask?.cancel()
+            motionTask = nil
+            return
+        }
+        guard motionTask == nil else { return }
+        motionTask = Task { [weak self] in
+            // Read the clock instead of accumulating the nominal step:
+            // Task.sleep overshoots, and the error compounds every frame.
+            let start = ContinuousClock.now
+            while !Task.isCancelled {
+                guard let self else { break }
+                let elapsed = ContinuousClock.now - start
+                let seconds = Double(elapsed.components.seconds)
+                    + Double(elapsed.components.attoseconds) * 1e-18
+                self.renderMotionFrame(at: seconds)
+                try? await Task.sleep(for: .seconds(Motion.frameInterval))
+            }
+        }
+    }
+
+    private func renderMotionFrame(at seconds: Double) {
+        // The celebration bounce effect owns the icon while it plays; swapping
+        // images under it would cancel the bounce.
+        guard celebrationResetTask == nil, let name = currentSymbolName else { return }
+        let color: NSColor
+        if let providers = motionProviders, providers.count == 2 {
+            let bar = barAppearance
+            let first = ProviderColor.nsColor(for: providers[0], on: bar)
+            let second = ProviderColor.nsColor(for: providers[1], on: bar)
+            // While dissolving, the sweep is synced to the dissolve cycle so
+            // the second-color peak always lands mid-dwell where it is visible;
+            // the free-running sweep drifts against the 11s cycle and kept hiding
+            // its second color inside the yellow dwell.
+            let firstShare: Double
+            if dissolvesPermission {
+                firstShare = PermissionDissolve.sweepBlueShare(at: seconds)
+            } else {
+                let phase = seconds.truncatingRemainder(dividingBy: 2 * Motion.crossfadePeriod)
+                firstShare = (1 - cos(.pi * phase / Motion.crossfadePeriod)) / 2
+            }
+            // The cosine dwells at its extremes, so an uncapped sweep parks on
+            // the second color, which can read as an alert. Cap that end and
+            // let the first color saturate fully.
+            let secondShare = Motion.crossfadePeakShare * (1 - firstShare)
+            color = Self.blend(first, second, 1 - secondShare)
+        } else if let providers = motionProviders, providers.count > 2 {
+            let pairPeriod = 2 * Motion.crossfadePeriod
+            let pairIndex = Int(seconds / pairPeriod) % providers.count
+            let first = ProviderColor.nsColor(for: providers[pairIndex], on: barAppearance)
+            let second = ProviderColor.nsColor(
+                for: providers[(pairIndex + 1) % providers.count],
+                on: barAppearance
+            )
+            let phase = seconds.truncatingRemainder(dividingBy: pairPeriod)
+            let firstShare = (1 - cos(.pi * phase / Motion.crossfadePeriod)) / 2
+            let secondShare = Motion.crossfadePeakShare * (1 - firstShare)
+            color = Self.blend(first, second, 1 - secondShare)
+        } else if let providers = motionProviders, providers.count == 1 {
+            color = ProviderColor.nsColor(for: providers[0], on: barAppearance)
+        } else if motionRotating, let solid = currentSolidColor {
+            color = solid
+        } else {
+            return
+        }
+        let turns = motionRotating
+            ? (seconds / Motion.rotationPeriod).truncatingRemainder(dividingBy: 1)
+            : 0
+        let rotated = -360.0 * turns
+        // Monochrome applies to the working icon only. `motionProviders`
+        // being non-nil is exactly "an agent is working", so the idle,
+        // completed, failed, and celebration glyphs keep their colors.
+        let monochrome = monochromeWorkingIcon && motionProviders != nil
+        if dissolvesPermission {
+            let opacity = PermissionDissolve.workingOpacity(at: seconds)
+            symbolView.image = Self.dissolveImage(
+                workingName: name,
+                workingColor: monochrome ? Self.monochromeTone(on: barAppearance) : color,
+                rotatedDegrees: rotated,
+                workingOpacity: opacity
+            )
+        } else {
+            symbolView.image = Self.symbolImage(
+                name,
+                color: color,
+                rotatedDegrees: rotated,
+                template: monochrome
+            )
+        }
+    }
+
+    private static func blend(_ a: NSColor, _ b: NSColor, _ fraction: Double) -> NSColor {
+        let t = CGFloat(fraction)
+        return NSColor(
+            srgbRed: a.redComponent + (b.redComponent - a.redComponent) * t,
+            green: a.greenComponent + (b.greenComponent - a.greenComponent) * t,
+            blue: a.blueComponent + (b.blueComponent - a.blueComponent) * t,
+            alpha: 1
+        )
+    }
+}
+
+@MainActor
+@Observable
+final class PopoverState {
+    var isPresented = false
+}
