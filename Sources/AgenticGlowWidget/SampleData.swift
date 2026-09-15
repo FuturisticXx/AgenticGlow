@@ -4,7 +4,7 @@ import AgenticGlowCore
 /// Illustrative fixtures used only for the WidgetKit gallery preview
 /// (shown before a user adds the widget) and SwiftUI #Preview canvases.
 /// Never used as a fallback for real data; AppGroupSnapshotSource's honest
-/// states (.notConfigured / .noSnapshotYet / .corrupted) are what actually
+/// states (.notConfigured / .noSnapshotYet / .unreadable / .corrupted) are what actually
 /// ships when there is nothing real to show.
 enum SampleData {
     static let now = Date()

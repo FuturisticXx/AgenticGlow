@@ -27,6 +27,12 @@ codesign --verify --deep --strict --verbose=2 "$app"
 codesign --verify --verbose=2 "$dmg"
 widget_entitlements="$(codesign -d --entitlements :- "$widget" 2>/dev/null)"
 app_entitlements="$(codesign -d --entitlements :- "$app" 2>/dev/null)"
+# An unresolved build variable here shipped once (v0.6.0 candidate 1).
+# Written as explicit tests: `set -e` ignores a failing `! grep`.
+if grep -q '\$(APP_GROUP_ID)' <<< "$widget_entitlements$app_entitlements"; then
+  echo "verify-release: unresolved APP_GROUP_ID in the signed entitlements" >&2
+  exit 1
+fi
 grep -q '<string>Z52AX2BH7T.group.com.twodamax.agenticglow</string>' <<< "$widget_entitlements"
 grep -q '<string>Z52AX2BH7T.group.com.twodamax.agenticglow</string>' <<< "$app_entitlements"
 spctl --assess --type execute --verbose=2 "$app"

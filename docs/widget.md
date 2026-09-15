@@ -85,7 +85,7 @@ AppModel (live state, 2s poll)
 
 AgenticGlowWidget extension (sandboxed, separate process)
    -> AppGroupSnapshotSource.loadSnapshot()      [Core]
-      returns .notConfigured / .noSnapshotYet /
+      returns .notConfigured / .noSnapshotYet / .unreadable /
               .corrupted / .loaded(WidgetSnapshot)
    -> AgenticGlowTimelineProvider                [Widget target]
    -> AgenticGlowWidgetView (small/medium/large) [Widget target]
@@ -170,6 +170,13 @@ gap doesn't falsely read as stale.
   simply "I don't use this provider."
 - **Error / unavailable**: `.corrupted` — a snapshot file exists but failed
   to decode.
+- **Not allowed to read it**: `.unreadable` — the snapshot file exists but
+  the read itself was refused (any error other than "no such file"). This is
+  what a widget binary sees when macOS denies it the TCC-protected group
+  container: an unsigned local build, or a binary whose signature does not
+  carry the team-prefixed App Group. Reported separately from
+  `.noSnapshotYet` because "the app hasn't run yet" is the wrong diagnosis
+  and reopening the app cannot fix it.
 - **Permission / setup required**: surfaced per-session via
   `needsAttention` (phase `.permission`), promoted above regular sessions.
 - **Loading**: WidgetKit's own placeholder/redacted state
@@ -413,7 +420,7 @@ widget). No macOS 26-only symbols.
 2. `xcodebuild test -project AgenticGlow.xcodeproj -scheme AgenticGlow -destination 'platform=macOS' -skip-testing:AgenticGlowUITests` — covers every pure Core widget file (snapshot codable/schema, builder, formatting, freshness, deep link, snapshot-loading safety). On Xcode versions that still prepare the skipped UI runner, run the built non-UI XCTest bundles directly and record that limitation instead of treating a runner timeout as a product-test failure.
 3. Xcode canvas: open any file under `Sources/AgenticGlowWidget/Views/` and use the `#Preview` blocks — every family has previews across the major states (busy, attention, failed, low allowance, provider not set up, stale, no data yet, not configured, error).
 4. Real install: build and run AgenticGlow once with the Apple Development identity, then right-click the desktop, choose **Edit Widgets**, search for **AgenticGlow**, and add a widget. The app writes `WidgetSnapshot.json` into the App Group container and asks WidgetKit to reload after meaningful changes.
-5. Before trusting the result, run `pluginkit -m -A -D -v -i com.twodamax.agenticglow.widget` and confirm exactly one registration points inside `/Applications/AgenticGlow.app`. A DerivedData or `/tmp` path means macOS may launch a stale extension with different entitlements.
+5. Before trusting the result, run `Scripts/verify-widget-registration.sh`. It confirms that exactly one `pluginkit` registration points inside `/Applications/AgenticGlow.app`, that the launchd service inside WidgetKit's daemon (`launchctl print pid/$(pgrep -x chronod)/com.twodamax.agenticglow.widget`) is bound to that same path, and that the last ten minutes of the unified log hold no `re-bootstrap service from different path` or `REJECTED ... TCC-protected group container` lines for the widget. The launchd check matters on its own: chronod binds the extension service to the path it first launched and keeps it for the whole login session, so a Debug `.appex` run once from DerivedData keeps being executed for every later reload while `pluginkit` already reports the installed one. The fix is to restart the daemon (`kill $(pgrep -x chronod)`; it relaunches on demand and the widgets reload), not to reinstall the app or clear containers.
 
 ## Live-data verification
 

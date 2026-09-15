@@ -42,6 +42,14 @@ struct AgenticGlowWidgetView: View {
                 title: "Unavailable",
                 message: "AgenticGlow's status could not be read. Open the app to refresh."
             )
+        case .result(.unreadable):
+            // The file is there; this widget process was refused access to
+            // it. Reopening the app cannot help, so the copy says what can.
+            EmptyStateView(
+                systemImage: "lock.trianglebadge.exclamationmark",
+                title: "Unavailable",
+                message: "This widget isn't allowed to read AgenticGlow's status. Reinstall AgenticGlow to restore it."
+            )
         case let .result(.loaded(snapshot)):
             LoadedContentView(snapshot: snapshot, family: family, now: entry.date, page: entry.page)
         }

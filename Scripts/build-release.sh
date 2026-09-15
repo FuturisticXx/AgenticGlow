@@ -23,8 +23,13 @@ source_app="build/DerivedData/Build/Products/Release/AgenticGlow.app"
 app="build/AgenticGlow.app"
 widget="$app/Contents/PlugIns/AgenticGlowWidget.appex"
 helper="$app/Contents/Resources/bin/agenticglow-event"
+framework="$app/Contents/Frameworks/AgenticGlowCore.framework"
 ditto "$source_app" "$app"
 
+# Innermost first: the embedded framework, then the helper and the widget,
+# then the app whose seal covers them all.
+codesign --force --options runtime --timestamp \
+  --sign "$DEVELOPER_ID_APPLICATION" "$framework"
 codesign --force --options runtime --timestamp \
   --sign "$DEVELOPER_ID_APPLICATION" "$helper"
 codesign --force --options runtime --timestamp \
@@ -37,3 +42,4 @@ codesign --force --options runtime --timestamp \
 codesign --verify --deep --strict --verbose=2 "$app"
 lipo -archs "$app/Contents/MacOS/AgenticGlow"
 lipo -archs "$helper"
+Scripts/verify-entitlements.sh "$app" "Z52AX2BH7T.group.com.twodamax.agenticglow"

@@ -9,6 +9,13 @@ public enum WidgetSnapshotLoadResult: Equatable, Sendable {
     /// The container exists but AgenticGlow has not written a snapshot yet
     /// (fresh install, or the app hasn't launched since).
     case noSnapshotYet
+    /// A snapshot file exists but this process is not allowed to read it.
+    /// On macOS the group container is TCC-protected, so a widget binary
+    /// whose signature does not carry the team-prefixed App Group (an
+    /// unsigned local build, a stale extension registration) is refused at
+    /// the kernel. That is not "the app hasn't run yet", and reporting it as
+    /// such hid a wrong-binary failure behind a waiting message.
+    case unreadable
     /// A snapshot file exists but could not be decoded (corrupted on disk,
     /// or an unreadable schema).
     case corrupted
@@ -45,7 +52,12 @@ public struct AppGroupSnapshotSource: WidgetSnapshotLoading {
     public func loadSnapshot() -> WidgetSnapshotLoadResult {
         guard let directory = containerDirectory() else { return .notConfigured }
         let url = directory.appendingPathComponent(Self.snapshotFilename)
-        guard let data = try? Data(contentsOf: url) else { return .noSnapshotYet }
+        let data: Data
+        do {
+            data = try Data(contentsOf: url)
+        } catch {
+            return Self.isMissingFile(error) ? .noSnapshotYet : .unreadable
+        }
         guard let snapshot = try? JSONDecoder.agenticglow.decode(WidgetSnapshot.self, from: data) else {
             return .corrupted
         }
@@ -58,5 +70,23 @@ public struct AppGroupSnapshotSource: WidgetSnapshotLoading {
             return .corrupted
         }
         return .loaded(snapshot)
+    }
+
+    /// Only a genuinely absent file means the app has not published yet.
+    /// Every other read failure (permission refused, sandbox or TCC denial,
+    /// an unreadable volume) is a different problem with a different fix.
+    static func isMissingFile(_ error: any Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == NSCocoaErrorDomain,
+           nsError.code == CocoaError.fileReadNoSuchFile.rawValue || nsError.code == CocoaError.fileNoSuchFile.rawValue {
+            return true
+        }
+        if nsError.domain == NSPOSIXErrorDomain, nsError.code == Int(ENOENT) {
+            return true
+        }
+        if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
+            return isMissingFile(underlying)
+        }
+        return false
     }
 }

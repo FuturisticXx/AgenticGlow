@@ -128,3 +128,9 @@ struct MediumWidgetView: View {
 } timeline: {
     AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.corrupted))
 }
+
+#Preview("Unreadable", as: .systemMedium) {
+    SessionAllowanceWidget()
+} timeline: {
+    AgenticGlowWidgetEntry(date: SampleData.now, state: .result(.unreadable))
+}

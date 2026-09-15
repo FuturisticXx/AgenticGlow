@@ -29,7 +29,14 @@ struct AgenticGlowTimelineProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<AgenticGlowWidgetEntry>) -> Void) {
-        let now = Date()
+        completion(timeline(now: Date()))
+    }
+
+    /// The whole timeline for one refresh, separated from WidgetKit's
+    /// callback so the real load -> entry mapping can be exercised with a
+    /// controlled source and clock. Every entry here carries a `.result`;
+    /// `.placeholder` is produced only by `placeholder(in:)`.
+    func timeline(now: Date) -> Timeline<AgenticGlowWidgetEntry> {
         let result = snapshotSource.loadSnapshot()
         let entry = AgenticGlowWidgetEntry(date: now, state: .result(result), page: page(for: result, now: now))
         var entries = [entry]
@@ -46,11 +53,10 @@ struct AgenticGlowTimelineProvider: TimelineProvider {
         // asks for one more check in 15 minutes in case the app never does,
         // e.g. it hasn't run since the widget was added.
         let nextRefresh = now.addingTimeInterval(15 * 60)
-        completion(Timeline(entries: entries, policy: .after(nextRefresh)))
+        return Timeline(entries: entries, policy: .after(nextRefresh))
     }
 
-    private func currentEntry() -> AgenticGlowWidgetEntry {
-        let now = Date()
+    func currentEntry(now: Date = Date()) -> AgenticGlowWidgetEntry {
         let result = snapshotSource.loadSnapshot()
         return AgenticGlowWidgetEntry(
             date: now,

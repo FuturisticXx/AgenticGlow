@@ -22,7 +22,7 @@ xcodebuild build-for-testing \
   -derivedDataPath "$derived" \
   CODE_SIGNING_ALLOWED=NO
 
-for bundle in AgenticGlowCoreTests AgenticGlowEventTests; do
+for bundle in AgenticGlowCoreTests AgenticGlowEventTests AgenticGlowWidgetTests; do
   echo "== $bundle"
   xcrun xctest "$products/$bundle.xctest"
 done

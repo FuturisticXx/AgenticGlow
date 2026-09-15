@@ -182,6 +182,24 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.event-tests
         GENERATE_INFOPLIST_FILE: YES
+  AgenticGlowWidgetTests:
+    # Compiles the extension's sources directly (minus its @main bundle) so
+    # the real timeline provider and entry mapping run under XCTest. The
+    # .appex itself cannot host a test bundle.
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - Tests/AgenticGlowWidgetTests
+      - path: Sources/AgenticGlowWidget
+        excludes:
+          - AgenticGlowWidgetBundle.swift
+    dependencies:
+      - target: AgenticGlowCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.widget-tests
+        GENERATE_INFOPLIST_FILE: YES
   AgenticGlowAppTests:
     type: bundle.unit-test
     platform: macOS
@@ -216,12 +234,14 @@ schemes:
         AgenticGlow: all
         AgenticGlowCoreTests: [test]
         AgenticGlowEventTests: [test]
+        AgenticGlowWidgetTests: [test]
         AgenticGlowAppTests: [test]
         AgenticGlowUITests: [test]
     test:
       targets:
         - AgenticGlowCoreTests
         - AgenticGlowEventTests
+        - AgenticGlowWidgetTests
         - AgenticGlowAppTests
         - AgenticGlowUITests
   AgenticGlowEvent:
