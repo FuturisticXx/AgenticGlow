@@ -3,4 +3,4 @@ CURRENT_PROJECT_VERSION = 6
 CODE_SIGN_STYLE = Manual
 ENABLE_HARDENED_RUNTIME = YES
 DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
-APP_GROUP_ID = group.com.twodamax.agenticglow
+APP_GROUP_ID = Z52AX2BH7T.group.com.twodamax.agenticglow

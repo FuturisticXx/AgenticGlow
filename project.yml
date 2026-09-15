@@ -45,7 +45,9 @@ targets:
           - "@loader_path/../Frameworks"
           - "@loader_path/../../Frameworks"
           - "@executable_path/../Frameworks"
-
+      configs:
+        Debug:
+          DEVELOPMENT_TEAM: Z52AX2BH7T
   AgenticGlowWidget:
     type: app-extension
     platform: macOS
@@ -67,7 +69,7 @@ targets:
       properties:
         com.apple.security.app-sandbox: true
         com.apple.security.application-groups:
-          - $(APP_GROUP_ID)
+          - Z52AX2BH7T.group.com.twodamax.agenticglow
     dependencies:
       - target: AgenticGlowCore
     settings:
@@ -77,7 +79,9 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         REGISTER_APP_GROUPS: YES
         SKIP_INSTALL: YES
-
+      configs:
+        Debug:
+          DEVELOPMENT_TEAM: Z52AX2BH7T
   AgenticGlow:
     type: application
     platform: macOS
@@ -104,7 +108,7 @@ targets:
       path: Config/AgenticGlow.entitlements
       properties:
         com.apple.security.application-groups:
-          - $(APP_GROUP_ID)
+          - Z52AX2BH7T.group.com.twodamax.agenticglow
     dependencies:
       - target: AgenticGlowCore
       - target: AgenticGlowEvent
@@ -147,7 +151,9 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         REGISTER_APP_GROUPS: YES
-
+      configs:
+        Debug:
+          DEVELOPMENT_TEAM: Z52AX2BH7T
   AgenticGlowCoreTests:
     type: bundle.unit-test
     platform: macOS

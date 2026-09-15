@@ -24,7 +24,7 @@ public protocol WidgetSnapshotLoading: Sendable {
 /// every failure mode maps to an explicit, honest result case instead of
 /// being flattened into "no data."
 public struct AppGroupSnapshotSource: WidgetSnapshotLoading {
-    public static let appGroupIdentifier = "group.com.twodamax.agenticglow"
+    public static let appGroupIdentifier = "Z52AX2BH7T.group.com.twodamax.agenticglow"
     public static let snapshotFilename = "WidgetSnapshot.json"
 
     private let containerDirectory: @Sendable () -> URL?
