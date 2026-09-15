@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Test
+        run: |
+          xcodebuild test \
+            -project AgenticGlow.xcodeproj \
+            -scheme AgenticGlow \
+            -destination 'platform=macOS' \
+            -derivedDataPath build/DerivedData \
+            -skip-testing:AgenticGlowUITests \
+            CODE_SIGNING_ALLOWED=NO
+      - name: Verify standalone helper
+        run: Scripts/verify-standalone-helper.sh build/DerivedData/Build/Products/Debug/AgenticGlow.app/Contents/Resources/bin/agenticglow-event
+      - name: Verify privacy contract
+        run: Scripts/verify-privacy.sh

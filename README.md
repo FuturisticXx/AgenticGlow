@@ -28,8 +28,8 @@ returns on its own.
 
 ## Installation
 
-The latest signed and notarized public release is
-[v0.6.0](https://github.com/FuturisticXx/AgenticGlow/releases/tag/v0.6.0).
+The latest signed and notarized public release is available from the
+[Releases](https://github.com/FuturisticXx/AgenticGlow/releases) page.
 
 ### DMG
 
