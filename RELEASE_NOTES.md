@@ -1,3 +1,15 @@
+# v0.7.0
+
+## New
+
+- **Usage reset alerts.** When a provider's usage window has run out, AgenticGlow tells you when it is available again. It decides from two live readings in a row, not from the advertised reset time, so a network failure or an old cached reading can never fake a reset. Each reset is announced once, even across a relaunch.
+- Alerts arrive as a macOS notification (on by default). You can also turn on an iMessage alert to a recipient you choose in Settings. The recipient is kept in your Keychain, and the message is sent through the Messages app on your Mac, so nothing passes through any server of ours.
+- Choose which providers alert, and send a test alert from Settings.
+
+## Changed
+
+- The first iMessage alert asks for macOS Automation permission for Messages. AgenticGlow now carries the Apple Events entitlement this needs; macOS still asks before AgenticGlow can control any app.
+
 # v0.6.1
 
 ## Fixed

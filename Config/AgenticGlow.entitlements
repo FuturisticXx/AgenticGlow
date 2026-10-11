@@ -6,5 +6,7 @@
 	<array>
 		<string>Z52AX2BH7T.group.com.twodamax.agenticglow</string>
 	</array>
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
 </dict>
 </plist>
