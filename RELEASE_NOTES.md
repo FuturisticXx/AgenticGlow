@@ -1,3 +1,10 @@
+# v0.6.1
+
+## Fixed
+
+- **No more false "Codex is waiting for permission" alerts.** When Codex's automatic reviewer handles an approval, nobody is waiting on you, so AgenticGlow no longer marks the session as needing permission or sends a notification. Requests you review yourself still alert as before. If AgenticGlow cannot tell who reviews a request, it assumes you do, so a real request is never hidden.
+- To tell the two apart, the event helper reads the reviewer setting from the Codex session transcript on your Mac. Nothing from the transcript is stored or sent anywhere; see [docs/privacy.md](docs/privacy.md).
+
 # v0.6.0
 
 This is the initial curated public release of AgenticGlow, a local macOS menu bar app and widget for monitoring AI coding agent sessions.

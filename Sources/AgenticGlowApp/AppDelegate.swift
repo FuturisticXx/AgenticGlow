@@ -160,10 +160,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case "signals": ProviderStatusMonitor(requester: UITestStatusRequester())
         default: nil
         }
-        if fixtureName == nil {
-            // A release that changes hook-processing logic must not ship
-            // silently inert for existing users until they happen to
-            // reopen Setup and click Repair (hit by hand during v0.5.3).
+        // A release that changes hook-processing logic must not ship
+        // silently inert for existing users until they happen to reopen
+        // Setup and click Repair (hit by hand during v0.5.3). A test run
+        // must not refresh it either: the installed helper is what every
+        // provider's hooks call, so refreshing it from a test build makes
+        // unreleased hook logic live (tasks/lessons.md, 2026-10-10).
+        if fixtureName == nil, !Self.isRunningUnderXCTest {
             try? HelperInstaller(
                 sourceURL: Self.embeddedHelperSourceURL(),
                 destinationURL: HelperInstaller.defaultDestination

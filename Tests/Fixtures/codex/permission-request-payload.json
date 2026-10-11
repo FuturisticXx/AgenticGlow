@@ -1,0 +1,14 @@
+{
+  "session_id": "01a10000-0000-7000-8000-000000000001",
+  "turn_id": "01a10000-0000-7000-8000-0000000000t1",
+  "transcript_path": "TRANSCRIPT_PATH",
+  "cwd": "/tmp/AgenticGlow",
+  "hook_event_name": "PermissionRequest",
+  "model": "gpt-6.1-sol",
+  "permission_mode": "default",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "SECRET_COMMAND_MUST_NOT_PERSIST",
+    "description": "needs network"
+  }
+}

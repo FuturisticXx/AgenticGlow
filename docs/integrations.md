@@ -45,6 +45,13 @@ AgenticGlow installs hooks for the following events:
 - `permissionRequest`
 - `stop`
 
+Codex runs `PermissionRequest` hooks before it decides who reviews the request,
+so the hook also fires for requests its automatic reviewer
+(`approvals_reviewer = "auto_review"`) answers without the user. The helper
+reads the reviewer from the newest `turn_context` line of the session
+transcript and records a permission phase only when the user will be asked.
+An unreadable transcript counts as the user's decision. See `docs/privacy.md`.
+
 ### Hook Format
 Each hook entry is marked with `--agenticglow-hook` in the command string for identification. The command executes the `agenticglow-event` helper with the provider, event kind, and marker flag.
 

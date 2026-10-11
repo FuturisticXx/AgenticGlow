@@ -30,6 +30,22 @@ public struct AgenticGlowEventCommand {
         }
         let payload = provider == .cursor ? CursorHookPayload.normalized(parsed) : parsed
 
+        // Codex's automatic reviewer answers this request without the user,
+        // so nothing is waiting on them. Leave the session's working state.
+        let codexReviewer = provider == .codex && event == .permissionRequest
+            ? CodexApprovalRouting.reviewer(transcriptPath: payload["transcript_path"] as? String)
+            : nil
+        if codexReviewer == .autoReview {
+            logger?.record(
+                provider: provider,
+                event: event,
+                sessionID: (payload["session_id"] as? String).map(HookNormalizer.sessionIdentifier) ?? "unknown",
+                result: "skipped:reviewer=\(CodexApprovalRouting.Reviewer.autoReview.rawValue)",
+                rawPayload: nil
+            )
+            return 0
+        }
+
         do {
             let normalizedCandidate = try HookNormalizer.normalize(
                 provider: provider,
@@ -67,7 +83,7 @@ public struct AgenticGlowEventCommand {
                 provider: provider,
                 event: event,
                 sessionID: normalized.sessionID,
-                result: "written",
+                result: codexReviewer.map { "written:reviewer=\($0.rawValue)" } ?? "written",
                 rawPayload: nil
             )
             return 0
