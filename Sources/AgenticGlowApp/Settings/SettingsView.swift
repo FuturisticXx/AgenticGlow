@@ -1,5 +1,22 @@
 import AppKit
 import SwiftUI
+import AgenticGlowCore
+
+/// Keeps the Keychain out of the view. `save` returns an error message to
+/// show, or nil on success, so the view never handles a thrown error and
+/// the recipient value never travels through a preference object.
+struct MessagesRecipientBinding {
+    var load: () -> String?
+    var save: (String) -> String?
+
+    init(
+        load: @escaping () -> String? = { nil },
+        save: @escaping (String) -> String? = { _ in nil }
+    ) {
+        self.load = load
+        self.save = save
+    }
+}
 
 struct SettingsView: View {
     @Bindable var preferences: PreferencesStore
@@ -10,10 +27,24 @@ struct SettingsView: View {
     let notificationsDenied: () async -> Bool
     let settingsPresentationChanged: (Bool) -> Void
     let registerGlobalShortcut: (GlobalShortcut) -> GlobalShortcutRegistrationResult
+    let messagesRecipient: MessagesRecipientBinding
+    let sendTestUsageResetAlert: () -> Void
     @State private var launchAtLoginEnabled: Bool
     @State private var showsDeniedHint = false
     @State private var isRecordingShortcut = false
     @State private var shortcutAlert: ShortcutAlert?
+    /// Loaded in `.task`, never in `init`. SwiftUI re-initializes this view
+    /// whenever an observed preference changes, so reading the Keychain from
+    /// the initializer meant a synchronous Keychain hit on the main thread
+    /// every time any toggle in this window moved.
+    @State private var recipient = ""
+    @State private var recipientError: String?
+    @State private var confirmsTestAlert = false
+    /// What is actually in the Keychain, as opposed to what is currently
+    /// typed. Messages delivery uses the stored value, so the two drifting
+    /// apart is the difference between an alert arriving and vanishing.
+    @State private var storedRecipient = ""
+    @FocusState private var recipientFocused: Bool
 
     init(
         preferences: PreferencesStore,
@@ -23,7 +54,9 @@ struct SettingsView: View {
         serviceStatusChanged: @escaping (Bool) -> Void = { _ in },
         notificationsDenied: @escaping () async -> Bool = { false },
         settingsPresentationChanged: @escaping (Bool) -> Void = { _ in },
-        registerGlobalShortcut: @escaping (GlobalShortcut) -> GlobalShortcutRegistrationResult = { _ in .unavailable }
+        registerGlobalShortcut: @escaping (GlobalShortcut) -> GlobalShortcutRegistrationResult = { _ in .unavailable },
+        messagesRecipient: MessagesRecipientBinding = MessagesRecipientBinding(),
+        sendTestUsageResetAlert: @escaping () -> Void = {}
     ) {
         self.preferences = preferences
         self.updates = updates
@@ -33,6 +66,8 @@ struct SettingsView: View {
         self.notificationsDenied = notificationsDenied
         self.settingsPresentationChanged = settingsPresentationChanged
         self.registerGlobalShortcut = registerGlobalShortcut
+        self.messagesRecipient = messagesRecipient
+        self.sendTestUsageResetAlert = sendTestUsageResetAlert
         _launchAtLoginEnabled = State(initialValue: launchAtLogin.isEnabled)
     }
 
@@ -90,6 +125,7 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            usageResetSection
             Section {
                 Toggle("Show provider incidents", isOn: Binding(
                     get: { preferences.serviceStatusEnabled },
@@ -136,6 +172,8 @@ struct SettingsView: View {
         .frame(width: 520)
         .task {
             showsDeniedHint = await notificationsDenied()
+            storedRecipient = messagesRecipient.load() ?? ""
+            recipient = storedRecipient
         }
         .onDisappear {
             settingsPresentationChanged(false)
@@ -146,6 +184,131 @@ struct SettingsView: View {
                 message: Text(alert.message),
                 dismissButton: .default(Text("OK"))
             )
+        }
+    }
+
+    @ViewBuilder
+    private var usageResetSection: some View {
+        Section("Usage Reset Alerts") {
+            Toggle("Notify when usage resets", isOn: $preferences.notifyUsageReset)
+            Text("Alerts only after AgenticGlow sees usage actually return, not when a reset time passes.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ForEach(AgentProvider.allCases, id: \.rawValue) { provider in
+                Toggle(provider.displayName, isOn: Binding(
+                    get: { preferences.usageResetProviders.contains(provider) },
+                    set: { isOn in
+                        if isOn {
+                            preferences.usageResetProviders.insert(provider)
+                        } else {
+                            preferences.usageResetProviders.remove(provider)
+                        }
+                    }
+                ))
+                .disabled(!preferences.notifyUsageReset)
+                .accessibilityIdentifier("AgenticGlow.UsageReset.\(provider.rawValue)")
+            }
+
+            Toggle("macOS notification", isOn: $preferences.usageResetNativeNotification)
+                .disabled(!preferences.notifyUsageReset)
+            Toggle("Messages", isOn: $preferences.usageResetMessages)
+                .disabled(!preferences.notifyUsageReset)
+                .accessibilityIdentifier("AgenticGlow.UsageReset.Messages")
+
+            if preferences.usageResetMessages {
+                VStack(alignment: .leading, spacing: 6) {
+                    // An explicit bordered field with the text as a prompt.
+                    // A titled TextField in a grouped Form splits into an
+                    // external label plus a trailing input, and nested in
+                    // this VStack the input collapsed to zero width, so the
+                    // row rendered as a label with nowhere to type.
+                    TextField(
+                        "",
+                        text: $recipient,
+                        prompt: Text("Phone number or Apple Account")
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .labelsHidden()
+                    .accessibilityLabel("Messages recipient")
+                    .accessibilityIdentifier("AgenticGlow.UsageReset.Recipient")
+                    .focused($recipientFocused)
+                    .onSubmit(saveRecipient)
+                    // Clicking away used to discard the typed value in
+                    // silence, leaving Messages enabled with no destination.
+                    .onChange(of: recipientFocused) { _, focused in
+                        if !focused { saveRecipient() }
+                    }
+                    Button("Save Recipient", action: saveRecipient)
+                    if let recipientError {
+                        Text(recipientError)
+                            .font(.caption)
+                            .foregroundStyle(Color(nsColor: .systemRed))
+                    } else if storedRecipient.isEmpty {
+                        Label(
+                            "No recipient saved yet, so no message will be sent.",
+                            systemImage: "exclamationmark.triangle.fill"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(Color(nsColor: .systemOrange))
+                        .accessibilityIdentifier("AgenticGlow.UsageReset.NoRecipient")
+                    } else if recipient.trimmed != storedRecipient {
+                        Text("Unsaved change. Click Save Recipient to use it.")
+                            .font(.caption)
+                            .foregroundStyle(Color(nsColor: .systemOrange))
+                    }
+                    Text("Stored in your Keychain, never in a settings file. The first message asks macOS for permission to control Messages.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Button("Send Test Alert") {
+                if sendsTestMessage {
+                    confirmsTestAlert = true
+                } else {
+                    sendTestUsageResetAlert()
+                }
+            }
+            .disabled(!preferences.notifyUsageReset || !hasUsageResetChannel)
+            .accessibilityIdentifier("AgenticGlow.UsageReset.Test")
+            // Attached to the button, not to the Form. Stacking this on the
+            // same view as the shortcut alert meant only one of the two
+            // presentations ever registered, so this dialog never appeared
+            // and the button did nothing at all.
+            .confirmationDialog(
+                "Send a test message?",
+                isPresented: $confirmsTestAlert,
+                titleVisibility: .visible
+            ) {
+                Button("Send Test Alert") { sendTestUsageResetAlert() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("A real iMessage will be sent to your saved recipient.")
+            }
+        }
+    }
+
+    /// Only warn about a real message when one will actually be sent. With
+    /// Messages on but nothing stored, the test is native-only and a
+    /// confirmation would be a lie.
+    private var sendsTestMessage: Bool {
+        preferences.usageResetMessages && !storedRecipient.isEmpty
+    }
+
+    /// With no channel on there is nothing for a test to exercise, and a
+    /// button that silently does nothing is worse than a disabled one.
+    private var hasUsageResetChannel: Bool {
+        preferences.usageResetNativeNotification || preferences.usageResetMessages
+    }
+
+    private func saveRecipient() {
+        let value = recipient.trimmed
+        guard value != storedRecipient else { return }
+        recipientError = messagesRecipient.save(value)
+        if recipientError == nil {
+            storedRecipient = value
+            recipient = value
         }
     }
 
@@ -243,5 +406,11 @@ private final class ShortcutRecorderButton: NSButton {
         if modifiers.contains(.shift) { result += "⇧" }
         if modifiers.contains(.command) { result += "⌘" }
         return result
+    }
+}
+
+private extension String {
+    var trimmed: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

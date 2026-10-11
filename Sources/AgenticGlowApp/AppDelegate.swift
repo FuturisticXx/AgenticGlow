@@ -25,6 +25,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var notificationService: AgentNotificationService?
+    private var usageResetCoordinator: UsageResetAlertCoordinator?
+    private var messagesRecipientStore: any MessagesRecipientStoring = MessagesRecipientStore()
     private let notificationClient = UserNotificationCenterClient()
     private var hotKeyRef: EventHotKeyRef?
     private var hotKeyEventHandlerRef: EventHandlerRef?
@@ -126,6 +128,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if fixtureName != nil || Self.isRunningUnderXCTest {
             claudeCredentialStore = InMemorySessionCredentialStore()
             cursorCredentialStore = InMemorySessionCredentialStore()
+            messagesRecipientStore = InMemoryMessagesRecipientStore()
         }
 
         // Check for UI test fixtures
@@ -152,6 +155,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }) else { return false }
                     self?.model.activate(session)
                     return true
+                }
+            )
+            usageResetCoordinator = UsageResetAlertCoordinator(
+                scheduler: notificationClient,
+                messages: MessagesNotifier(),
+                recipientStore: messagesRecipientStore,
+                // UI-test fixtures must not read or write the real
+                // detector state on this Mac.
+                stateStore: fixtureName == nil
+                    ? FileUsageResetStateStore(directory: Self.allowanceDirectory())
+                    : nil,
+                enabled: { [weak self] in self?.preferences.notifyUsageReset ?? false },
+                providerEnabled: { [weak self] provider in
+                    self?.preferences.usageResetProviders.contains(provider) ?? false
+                },
+                nativeEnabled: { [weak self] in
+                    self?.preferences.usageResetNativeNotification ?? false
+                },
+                messagesEnabled: { [weak self] in self?.preferences.usageResetMessages ?? false },
+                didDeliver: { [weak self] delivery in
+                    self?.model.recordUsageReset(delivery)
                 }
             )
         }
@@ -197,6 +221,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             activator: activator,
             allowanceCoordinator: makeAllowanceCoordinator(fixtureName: fixtureName),
             notifier: notificationService,
+            resetAlerts: usageResetCoordinator,
             statusMonitor: statusMonitor,
             codexSessionDiscoverer: fixtureName == nil
                 ? makeCodexSessionDiscoverer()
@@ -383,6 +408,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     self.preferences.globalShortcut = shortcut
                 }
                 return result
+            },
+            messagesRecipient: MessagesRecipientBinding(
+                load: { [messagesRecipientStore] in try? messagesRecipientStore.load() },
+                save: { [messagesRecipientStore] value in
+                    do {
+                        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if trimmed.isEmpty {
+                            try messagesRecipientStore.delete()
+                        } else {
+                            try messagesRecipientStore.save(trimmed)
+                        }
+                        return nil
+                    } catch {
+                        return error.localizedDescription
+                    }
+                }
+            ),
+            sendTestUsageResetAlert: { [weak self] in
+                // Test copy is provider-neutral in its own right, but the
+                // pipeline is per provider, so use whichever the user has
+                // reset alerts turned on for.
+                guard let self else { return }
+                let provider = AgentProvider.menuBarTintOrder.first {
+                    self.preferences.usageResetProviders.contains($0)
+                } ?? .codex
+                self.usageResetCoordinator?.sendTestAlert(provider: provider)
             }
         )
     }
@@ -623,14 +674,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updateViewModel = UpdateViewModel(defaults: defaults)
     }
 
-    private func makeAllowanceCoordinator(fixtureName: String?) -> AllowanceRefreshCoordinator {
-        let base = FileManager.default.urls(
+    /// Local, private store for the normalized allowance cache and the
+    /// reset detector's evidence. Both are per-provider state with the same
+    /// lifetime, so they share one directory.
+    private static func allowanceDirectory() -> URL {
+        FileManager.default.urls(
             for: .applicationSupportDirectory,
             in: .userDomainMask
         ).first!
-        let directory = base
             .appendingPathComponent(ProductMetadata.displayName, isDirectory: true)
             .appendingPathComponent("Allowance", isDirectory: true)
+    }
+
+    private func makeAllowanceCoordinator(fixtureName: String?) -> AllowanceRefreshCoordinator {
+        let directory = Self.allowanceDirectory()
         let codexAdapter: any AllowanceProviding
         if fixtureName == "signals" {
             codexAdapter = UITestAllowanceAdapter(provider: .codex)

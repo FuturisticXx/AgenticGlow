@@ -34,7 +34,8 @@ struct AllowanceSectionView: View {
                 ForEach(disclosure.primary, id: \.rawValue) { provider in
                     ProviderAllowanceRow(
                         provider: provider,
-                        state: model.allowanceState(for: provider)
+                        state: model.allowanceState(for: provider),
+                        reset: model.usageReset(for: provider)
                     )
                 }
                 if disclosure.hasAdditionalUsage {
@@ -43,7 +44,8 @@ struct AllowanceSectionView: View {
                         ForEach(disclosure.additional, id: \.rawValue) { provider in
                             ProviderAllowanceRow(
                                 provider: provider,
-                                state: model.allowanceState(for: provider)
+                                state: model.allowanceState(for: provider),
+                                reset: model.usageReset(for: provider)
                             )
                         }
                         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -82,6 +84,7 @@ struct AllowanceSectionView: View {
 private struct ProviderAllowanceRow: View {
     let provider: AgentProvider
     let state: AllowanceAvailability
+    let reset: UsageResetDelivery?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -199,6 +202,32 @@ private struct ProviderAllowanceRow: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
+        if let reset {
+            resetNotice(reset)
+        }
+    }
+
+    /// Closes the loop on the alert the user was waiting for: what came
+    /// back, when it was confirmed, and whether we managed to tell them.
+    @ViewBuilder
+    private func resetNotice(_ reset: UsageResetDelivery) -> some View {
+        let time = reset.detectedAt.formatted(date: .omitted, time: .shortened)
+        let sent = reset.didDeliver
+        HStack(spacing: 4) {
+            Image(systemName: sent ? "checkmark.circle.fill" : "bell.slash")
+                .foregroundStyle(sent ? Color(nsColor: .systemGreen) : .secondary)
+                .accessibilityHidden(true)
+            Text(sent
+                ? "Reset detected \(time) · Alert sent"
+                : "Reset detected \(time) · Alert not delivered")
+        }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "\(provider.displayName) \(reset.key.spokenWindowName) usage reset detected at \(time). "
+                + (sent ? "Alert sent." : "Alert not delivered.")
+        )
     }
 
     private func weeklyCaption(_ presentation: AllowancePresentation) -> String {
