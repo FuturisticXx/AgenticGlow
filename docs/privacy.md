@@ -36,6 +36,16 @@ remain authoritative for detailed tool and permission phases when available.
 The request runs only against the installed local Codex app-server and does not
 add an AgenticGlow network request.
 
+When Codex reports a permission request, the hook helper reads that session's
+local Codex transcript, at the path Codex passes to the hook, to learn who will
+answer it: the user, or Codex's automatic reviewer. It reads backwards from the
+end of the file, decodes only lines carrying the `turn_context` marker, and uses
+only `approval_policy` and `approvals_reviewer` from the newest one. Neither the
+transcript's contents nor its path are stored; the optional diagnostic log
+records only the resulting reviewer (`user` or `auto-review`). A request the
+automatic reviewer will answer is not shown as awaiting permission and does not
+notify.
+
 ## Network requests
 
 AgenticGlow makes no network request by default. A manual update check, or an

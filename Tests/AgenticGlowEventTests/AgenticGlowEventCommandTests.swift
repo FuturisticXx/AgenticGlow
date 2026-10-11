@@ -186,6 +186,88 @@ final class AgenticGlowEventCommandTests: XCTestCase {
         XCTAssertEqual(try store.loadAll(), [])
     }
 
+    // Codex runs PermissionRequest hooks before routing a request to either
+    // its automatic reviewer or the user, so the hook alone cannot say the
+    // user is blocked. The turn's reviewer decides it.
+    func testCodexPermissionRequestUnderAutoReviewDoesNotAwaitPermission() throws {
+        let directory = temporaryDirectory()
+        let store = FileSessionStateStore(directory: directory)
+        let logger = RecordingDiagnosticLogger()
+        let command = AgenticGlowEventCommand(store: store, processIdentity: { _, _ in .fixture }, logger: logger)
+        let transcript = try codexTranscript(
+            in: directory,
+            turnContexts: [
+                #"{"approval_policy":"on-request","approvals_reviewer":"user"}"#,
+                #"{"approval_policy":"on-request","approvals_reviewer":"auto_review"}"#
+            ]
+        )
+
+        let toolCode = runCodex(command, "PreToolUse", transcript: transcript, now: 500)
+        let permissionCode = runCodex(command, "PermissionRequest", transcript: transcript, now: 501)
+
+        XCTAssertEqual(toolCode, 0)
+        XCTAssertEqual(permissionCode, 0)
+        let event = try XCTUnwrap(try store.loadAll().first)
+        XCTAssertEqual(event.phase, .usingTool)
+        XCTAssertEqual(logger.records.last?.result, "skipped:reviewer=auto-review")
+    }
+
+    func testCodexPermissionRequestForUserReviewerAwaitsPermission() throws {
+        let directory = temporaryDirectory()
+        let store = FileSessionStateStore(directory: directory)
+        let logger = RecordingDiagnosticLogger()
+        let command = AgenticGlowEventCommand(store: store, processIdentity: { _, _ in .fixture }, logger: logger)
+        let transcript = try codexTranscript(
+            in: directory,
+            turnContexts: [
+                #"{"approval_policy":"on-request","approvals_reviewer":"auto_review"}"#,
+                #"{"approval_policy":"on-request","approvals_reviewer":"user"}"#
+            ]
+        )
+
+        let code = runCodex(command, "PermissionRequest", transcript: transcript, now: 501)
+
+        XCTAssertEqual(code, 0)
+        XCTAssertEqual(try XCTUnwrap(try store.loadAll().first).phase, .permission)
+        XCTAssertEqual(logger.records.last?.result, "written:reviewer=user")
+    }
+
+    func testCodexPermissionRequestWithoutReadableTranscriptAwaitsPermission() throws {
+        let directory = temporaryDirectory()
+        let store = FileSessionStateStore(directory: directory)
+        let logger = RecordingDiagnosticLogger()
+        let command = AgenticGlowEventCommand(store: store, processIdentity: { _, _ in .fixture }, logger: logger)
+
+        let code = runCodex(
+            command,
+            "PermissionRequest",
+            transcript: directory.appendingPathComponent("missing.jsonl").path,
+            now: 501
+        )
+
+        XCTAssertEqual(code, 0)
+        XCTAssertEqual(try XCTUnwrap(try store.loadAll().first).phase, .permission)
+        XCTAssertEqual(logger.records.last?.result, "written:reviewer=user-assumed:no-turn-context")
+    }
+
+    // Contract with Codex 0.153.2: the payload carries every field of Codex's
+    // `PermissionRequestCommandInput`, and the transcripts copy the shape of
+    // its rollout lines with personal values replaced. If a Codex update
+    // changes either shape, these fail instead of false alarms returning.
+    func testCodexContractAutoReviewTranscriptDoesNotAwaitPermission() throws {
+        let (phase, log) = try runCodexContract(transcript: "transcript-auto-review")
+
+        XCTAssertNil(phase)
+        XCTAssertEqual(log, "skipped:reviewer=auto-review")
+    }
+
+    func testCodexContractUserReviewerTranscriptAwaitsPermission() throws {
+        let (phase, log) = try runCodexContract(transcript: "transcript-user-reviewer")
+
+        XCTAssertEqual(phase, .permission)
+        XCTAssertEqual(log, "written:reviewer=user")
+    }
+
     func testCursorPayloadMapsConversationIdentityAndOmitsSecrets() throws {
         let directory = temporaryDirectory()
         let store = FileSessionStateStore(directory: directory)
@@ -216,6 +298,70 @@ final class AgenticGlowEventCommandTests: XCTestCase {
         XCTAssertFalse(encoded.contains("secret@example.com"))
         XCTAssertFalse(encoded.contains("conv-live-secret"))
         XCTAssertFalse(encoded.contains("/tmp/secret.jsonl"))
+    }
+
+    /// A rollout shaped like Codex's: one compact JSON object per line, with
+    /// large unrelated lines after the newest turn context, the way tool
+    /// output follows it in a long turn.
+    private func codexTranscript(in directory: URL, turnContexts: [String]) throws -> String {
+        let filler = String(repeating: "x", count: 300_000)
+        var lines = [#"{"type":"session_meta","payload":{}}"#]
+        for context in turnContexts {
+            lines.append(#"{"timestamp":"t","type":"turn_context","payload":"# + context + "}")
+            lines.append(#"{"type":"response_item","payload":{"output":"\"type\":\"turn_context\" "# + filler + #""}}"#)
+        }
+        let url = directory.appendingPathComponent("rollout.jsonl")
+        try Data((lines.joined(separator: "\n") + "\n").utf8).write(to: url)
+        return url.path
+    }
+
+    private func runCodexContract(transcript: String) throws -> (SessionPhase?, String?) {
+        let fixtures = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/codex")
+        let transcriptPath = fixtures.appendingPathComponent("\(transcript).jsonl").path
+        let payload = try String(
+            contentsOf: fixtures.appendingPathComponent("permission-request-payload.json"),
+            encoding: .utf8
+        ).replacingOccurrences(of: "TRANSCRIPT_PATH", with: transcriptPath)
+        // A directory the store creates itself, so an empty one still reads
+        // as private when nothing was written.
+        let store = FileSessionStateStore(directory: temporaryDirectory().appendingPathComponent("Sessions"))
+        let logger = RecordingDiagnosticLogger()
+        let command = AgenticGlowEventCommand(store: store, processIdentity: { _, _ in .fixture }, logger: logger)
+
+        let code = command.run(
+            arguments: ["agenticglow-event", "codex", "PermissionRequest", "--agenticglow-hook"],
+            input: Data(payload.utf8),
+            environment: [:],
+            now: Date(timeIntervalSince1970: 500)
+        )
+
+        XCTAssertEqual(code, 0)
+        let event = try store.loadAll().first
+        if let event {
+            let encoded = String(decoding: try JSONEncoder.agenticglow.encode(event), as: UTF8.self)
+            XCTAssertFalse(encoded.contains("SECRET_COMMAND_MUST_NOT_PERSIST"))
+            XCTAssertFalse(encoded.contains(transcriptPath))
+        }
+        return (event?.phase, logger.records.last?.result)
+    }
+
+    private func runCodex(
+        _ command: AgenticGlowEventCommand,
+        _ event: String,
+        transcript: String,
+        now: TimeInterval
+    ) -> Int32 {
+        command.run(
+            arguments: ["agenticglow-event", "codex", event, "--agenticglow-hook"],
+            input: Data("""
+            {"session_id":"codex-session","turn_id":"turn","cwd":"/tmp/AgenticGlow","tool_name":"Bash","transcript_path":"\(transcript)"}
+            """.utf8),
+            environment: [:],
+            now: Date(timeIntervalSince1970: now)
+        )
     }
 }
 

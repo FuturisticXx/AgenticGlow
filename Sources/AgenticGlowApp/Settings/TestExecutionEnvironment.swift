@@ -1,7 +1,7 @@
 import Foundation
 
-/// Whether this process is a test run, used only to keep tests off the
-/// login Keychain.
+/// Whether this process is a test run, used to keep tests off the login
+/// Keychain and away from the installed hook helper.
 ///
 /// The check exists because app-hosted unit tests launch the real app,
 /// and every locally re-signed build is a new code identity, so reading a
@@ -23,7 +23,9 @@ import Foundation
 /// false positive means the launch finds no stored cookie and Usage
 /// Access reads as unconfigured; the in-memory store never reads, writes,
 /// or deletes anything in the Keychain, so no credential is exposed and
-/// none is lost. A false negative simply restores the previous behavior.
+/// none is lost. It also skips the launch-time helper refresh, leaving the
+/// previously installed helper until Setup's Repair. A false negative
+/// simply restores the previous behavior.
 enum TestExecutionEnvironment {
     static func isRunningTests(
         environment: [String: String] = ProcessInfo.processInfo.environment,
