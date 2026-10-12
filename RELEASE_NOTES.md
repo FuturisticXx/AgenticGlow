@@ -1,3 +1,18 @@
+# v0.8.0
+
+## New
+
+- **Groundwork for an iPhone widget.** A new **Sync to the iPhone widget** setting publishes what the desktop widget shows to the private database of your own iCloud account, for an AgenticGlow iPhone widget. It is off by default, and nothing about it runs while it is off. The iPhone app is not yet available to install, so leave the setting off for now. There is no AgenticGlow server; see [docs/privacy.md](docs/privacy.md#iphone-widget-sync-optional-off-by-default) for exactly what is sent.
+
+## Fixed
+
+- **Codex usage reads again** after Codex moved its command-line tool, and keeps refreshing while a permission prompt is waiting.
+- **The widget no longer passes old usage off as current.** A reading that has not refreshed for a while is labeled "Updated 2h ago", and the label appears on time.
+
+## Changed
+
+- Release builds embed a Developer ID provisioning profile for the iCloud entitlement, and a stricter check verifies the signed app's entitlements, profile and signatures before anything is notarized.
+
 # v0.7.0
 
 ## New

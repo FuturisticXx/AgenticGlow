@@ -26,6 +26,16 @@ enabled, a small chevron appears at the bottom of the large and medium widgets;
 clicking it shows Cursor's two pools for about 12 seconds before the overview
 returns on its own.
 
+An iPhone version of the widget is on its way. The Mac side ships now as
+**Sync to the iPhone widget** in AgenticGlow's Settings (off by default); the
+iPhone app itself is not yet available to install, so leave the setting off
+until it is. With it on and the app installed on a phone signed in to the same
+iCloud account, the widget can be added to the Home Screen. The Mac publishes
+only what its own widget shows, through your private iCloud database, and the
+phone says how old what it shows is. See
+[docs/widget.md](docs/widget.md#iphone-widget) and
+[docs/privacy.md](docs/privacy.md#iphone-widget-sync-optional-off-by-default).
+
 ## Installation
 
 The latest signed and notarized public release is available from the
@@ -93,7 +103,7 @@ that exact window. Claude and Cursor sessions are unaffected either way.
 
 ## Privacy
 
-AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports. It stores only session metadata (provider, phase, project name, timestamps, and optional model slug) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks, explicit provider-specific subscription allowance access, and optional provider status checks. Usage access is off by default. Codex allowance uses the installed local Codex app-server, which manages its own sign-in. Optional Claude and Cursor allowance use explicitly disclosed private `claude.ai` and `cursor.com` endpoints with user-supplied session cookies, each stored only in macOS Keychain and never read from the provider's own app or a browser cookie store. Optional provider incident display (off by default) fetches only the public, unauthenticated Anthropic, OpenAI, and Cursor status pages. See [docs/privacy.md](docs/privacy.md) for the complete privacy contract.
+AgenticGlow runs entirely on your Mac. It has no account system, backend, analytics, telemetry, advertising, remote monitoring, or uploaded crash reports. Its one cloud feature, syncing the widget's status to the iPhone widget through your own private iCloud database, is off by default. It stores only session metadata (provider, phase, project name, timestamps, and optional model slug) and never stores prompts, responses, commands, or tool arguments. Network requests are limited to optional GitHub release checks, explicit provider-specific subscription allowance access, and optional provider status checks. Usage access is off by default. Codex allowance uses the installed local Codex app-server, which manages its own sign-in. Optional Claude and Cursor allowance use explicitly disclosed private `claude.ai` and `cursor.com` endpoints with user-supplied session cookies, each stored only in macOS Keychain and never read from the provider's own app or a browser cookie store. Optional provider incident display (off by default) fetches only the public, unauthenticated Anthropic, OpenAI, and Cursor status pages. See [docs/privacy.md](docs/privacy.md) for the complete privacy contract.
 
 ## Building
 

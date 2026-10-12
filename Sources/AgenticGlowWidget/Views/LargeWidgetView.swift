@@ -16,6 +16,14 @@ struct LargeWidgetView: View {
     let snapshot: WidgetSnapshot
     let now: Date
     var page: WidgetAllowancePage = .overview
+    /// Set on the iPhone: adds the Mac footer and withdraws what an
+    /// offline Mac cannot vouch for. Nil on the desktop, which is
+    /// unchanged. The footer is paid for by the iOS session budget.
+    var provenance: WidgetSyncProvenance? = nil
+
+    private var syncFreshness: SyncFreshness? {
+        provenance?.freshness(now: now)
+    }
 
     /// Matches the breathing room the system's own widgets leave above
     /// their first line.
@@ -40,6 +48,14 @@ struct LargeWidgetView: View {
                         AllowanceDetailControl()
                     }
                 }
+                // Overlaid for the same reason as the control: it costs
+                // no layout height, so it cannot displace an allowance
+                // bar and cannot itself be pushed off the canvas.
+                .overlay(alignment: .bottomLeading) {
+                    if let provenance {
+                        SyncStatusFooter(provenance: provenance, now: now)
+                    }
+                }
         }
         // A uniform inset left the first session 12.5pt below the
         // rounded edge where the system's own widgets sit around 20pt.
@@ -53,7 +69,13 @@ struct LargeWidgetView: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: isCrowded ? 4 : 8) {
-            if snapshot.sessions.isEmpty {
+            if syncFreshness?.isOffline == true {
+                if sessionLayout.rows > 0 {
+                    Text(SyncStatusCopy.offlineSessionsLine)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+            } else if snapshot.sessions.isEmpty {
                 if sessionLayout.rows > 0 {
                     Text("No active or recent sessions")
                         .font(.system(size: 12, weight: .medium))
@@ -65,7 +87,12 @@ struct LargeWidgetView: View {
                 // nothing is inserted or removed and the divider below it
                 // cannot be displaced.
                 ForEach(Array(visibleSessions.enumerated()), id: \.offset) { _, session in
-                    SessionRow(session: session, now: now, style: .detailed)
+                    SessionRow(
+                        session: session,
+                        now: now,
+                        style: .detailed,
+                        showsElapsed: syncFreshness?.isFresh ?? true
+                    )
                 }
                 // Total eligible sessions minus the rows on screen, so it
                 // stays put while the visible session changes.
@@ -86,6 +113,7 @@ struct LargeWidgetView: View {
                     AllowanceStrip(
                         allowance: allowance,
                         showsResets: showsResetCaptions,
+                        rollsOverElapsedWindows: provenance != nil,
                         now: now
                     )
                 }

@@ -31,6 +31,22 @@ public enum ExecutableLocator {
         return URL(fileURLWithPath: path)
     }
 
+    /// The environment to launch a located executable with. A GUI app
+    /// inherits launchd's minimal PATH, so an npm-installed launcher such
+    /// as Homebrew's `codex` (`#!/usr/bin/env node`) cannot find the
+    /// `node` installed beside it and exits 127 before answering. The
+    /// launcher's own directory goes first; nothing else is added.
+    public static func launchEnvironment(
+        for executableURL: URL,
+        base: [String: String] = ProcessInfo.processInfo.environment
+    ) -> [String: String] {
+        var environment = base
+        let directory = (executableURL.path as NSString).deletingLastPathComponent
+        let inherited = base["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+        environment["PATH"] = directory.isEmpty ? inherited : "\(directory):\(inherited)"
+        return environment
+    }
+
     /// Cursor is a GUI app first. The CLI may be absent from PATH even when
     /// `/Applications/Cursor.app` is installed, so Setup still treats that as
     /// detected rather than "Not Installed".
@@ -53,7 +69,12 @@ public enum ExecutableLocator {
         let appBinary: [String]
         switch name {
         case "codex":
+            // The app bundles moved the CLI into `codex-cli/bin` (seen in
+            // ChatGPT 26.930, 2026-10-04). The old location is kept for
+            // installs that have not updated yet.
             appBinary = [
+                "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex",
+                "/Applications/Codex.app/Contents/Resources/codex-cli/bin/codex",
                 "/Applications/ChatGPT.app/Contents/Resources/codex",
                 "/Applications/Codex.app/Contents/Resources/codex"
             ]

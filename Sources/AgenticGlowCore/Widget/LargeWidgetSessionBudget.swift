@@ -37,18 +37,55 @@ public enum LargeWidgetSessionBudget {
     /// The "+ N more" summary line.
     public static let summaryHeight: Double = 16
 
+    /// The fixed canvas the budget is spent on. The two platforms draw the
+    /// large family at different heights and the iPhone spends a line on
+    /// its Mac footer, so each carries its own calibration; the macOS
+    /// figures are the ones measured against the installed desktop widget
+    /// and are unchanged.
+    public enum Canvas: Equatable, Sendable {
+        case macOS
+        /// The iPhone large canvas, with the sync footer already paid for.
+        case iOS
+    }
+
+    #if os(macOS)
+    public static let currentCanvas: Canvas = .macOS
+    #else
+    public static let currentCanvas: Canvas = .iOS
+    #endif
+
     /// Vertical points the session area may spend, after the insets and
-    /// the allowance section have taken theirs.
+    /// the allowance section have taken theirs, on this build's canvas.
     public static func availablePoints(allowanceWindowCount: Int) -> Double {
-        switch allowanceWindowCount {
-        case 0...2: 160
-        case 3: 90
-        case 4: 52
-        case 5: 18
-        // Three providers with usage on: the allowance section alone
-        // fills the canvas and the session area yields entirely. Session
-        // state stays available in the menu bar and the smaller families.
-        default: 0
+        availablePoints(allowanceWindowCount: allowanceWindowCount, canvas: currentCanvas)
+    }
+
+    public static func availablePoints(
+        allowanceWindowCount: Int,
+        canvas: Canvas
+    ) -> Double {
+        switch canvas {
+        case .macOS:
+            switch allowanceWindowCount {
+            case 0...2: 160
+            case 3: 90
+            case 4: 52
+            case 5: 18
+            // Three providers with usage on: the allowance section alone
+            // fills the canvas and the session area yields entirely. Session
+            // state stays available in the menu bar and the smaller families.
+            default: 0
+            }
+        case .iOS:
+            // Calibrated against the iPhone simulator's large canvas
+            // (taller than the desktop's), net of the footer line.
+            switch allowanceWindowCount {
+            case 0...2: 172
+            case 3: 102
+            case 4: 64
+            case 5: 30
+            default: 0
+            }
         }
     }
 
@@ -76,19 +113,22 @@ public enum LargeWidgetSessionBudget {
     /// rendering anything.
     public static func layout(
         snapshot: WidgetSnapshot,
-        page: WidgetAllowancePage
+        page: WidgetAllowancePage,
+        canvas: Canvas = currentCanvas
     ) -> LargeWidgetSessionLayout {
         layout(
             sessionCount: snapshot.sessions.count,
-            allowanceWindowCount: allowanceWindowCount(snapshot: snapshot, page: page)
+            allowanceWindowCount: allowanceWindowCount(snapshot: snapshot, page: page),
+            canvas: canvas
         )
     }
 
     public static func layout(
         sessionCount: Int,
-        allowanceWindowCount: Int
+        allowanceWindowCount: Int,
+        canvas: Canvas = currentCanvas
     ) -> LargeWidgetSessionLayout {
-        let budget = availablePoints(allowanceWindowCount: allowanceWindowCount)
+        let budget = availablePoints(allowanceWindowCount: allowanceWindowCount, canvas: canvas)
         // Drop a row at a time until what would actually be drawn fits,
         // counting the summary line whenever anything is left over.
         for rows in stride(from: sessionCount, through: 0, by: -1) {
@@ -112,8 +152,9 @@ public enum LargeWidgetSessionBudget {
 ///
 /// Selection is presentation only, and it is deliberately not a function
 /// of time. It reads the snapshot's own `revision`, so the row advances
-/// exactly when the widget naturally receives new data and never in
-/// between. That is what keeps this free: it adds no timeline entry, no
+/// exactly when the app publishes changed data and never in between: not
+/// on a re-read of unchanged values, and not on a timeline entry that only
+/// marks a reading stale. That is what keeps this free: it adds no timeline entry, no
 /// reload, no timer, and no read of anything the widget was not already
 /// holding. It also means the row cannot change without new data, which
 /// is why no extra refresh mechanism is needed to drive it.

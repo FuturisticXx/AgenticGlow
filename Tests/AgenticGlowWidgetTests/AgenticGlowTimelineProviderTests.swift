@@ -15,10 +15,11 @@ final class AgenticGlowTimelineProviderTests: XCTestCase {
 
         let timeline = provider.timeline(now: now)
 
-        XCTAssertEqual(timeline.entries.count, 1)
-        XCTAssertEqual(timeline.entries.first?.state, .result(.loaded(snapshot)))
+        // The second entry redraws the same snapshot when its allowance
+        // turns stale, so the "Updated" label appears on time.
+        XCTAssertEqual(timeline.entries.map(\.date), [now, now.addingTimeInterval(WidgetDataFreshness.staleThreshold + 1)])
+        XCTAssertEqual(timeline.entries.map(\.state), Array(repeating: .result(.loaded(snapshot)), count: 2))
         XCTAssertEqual(timeline.entries.first?.page, .overview)
-        XCTAssertEqual(timeline.entries.first?.date, now)
         XCTAssertEqual(provider.currentEntry(now: now).state, .result(.loaded(snapshot)))
     }
 
@@ -92,9 +93,11 @@ final class AgenticGlowTimelineProviderTests: XCTestCase {
 
         let entries = provider.timeline(now: now).entries
 
-        XCTAssertEqual(entries.map(\.page), [.cursorDetail, .overview])
-        XCTAssertEqual(entries.last?.date, state.cursorDetailUntil)
-        XCTAssertEqual(entries.map(\.state), Array(repeating: .result(.loaded(snapshot)), count: 2))
+        // Detail, the return to overview, then the stale-label redraw.
+        XCTAssertEqual(entries.map(\.page), [.cursorDetail, .overview, .overview])
+        XCTAssertEqual(entries[1].date, state.cursorDetailUntil)
+        XCTAssertEqual(entries.last?.date, now.addingTimeInterval(WidgetDataFreshness.staleThreshold + 1))
+        XCTAssertEqual(entries.map(\.state), Array(repeating: .result(.loaded(snapshot)), count: 3))
     }
 
     func testWidgetKindAndDefaultsAreTheProductionOnes() {

@@ -51,7 +51,13 @@ struct AgenticGlowWidgetView: View {
                 message: "This widget isn't allowed to read AgenticGlow's status. Reinstall AgenticGlow to restore it."
             )
         case let .result(.loaded(snapshot)):
-            LoadedContentView(snapshot: snapshot, family: family, now: entry.date, page: entry.page)
+            LoadedContentView(
+                snapshot: snapshot,
+                family: family,
+                now: entry.date,
+                page: entry.page,
+                provenance: entry.provenance
+            )
         }
     }
 }
@@ -61,6 +67,7 @@ private struct LoadedContentView: View {
     let family: WidgetFamily
     let now: Date
     let page: WidgetAllowancePage
+    var provenance: WidgetSyncProvenance? = nil
 
     var body: some View {
         switch family {
@@ -68,11 +75,11 @@ private struct LoadedContentView: View {
             // Small stays on one number and stays non-interactive: its
             // whole canvas is a single headline, and a control there
             // would compete with the tap that opens the app.
-            SmallWidgetView(snapshot: snapshot, now: now)
+            SmallWidgetView(snapshot: snapshot, now: now, provenance: provenance)
         case .systemMedium:
-            MediumWidgetView(snapshot: snapshot, now: now, page: page)
+            MediumWidgetView(snapshot: snapshot, now: now, page: page, provenance: provenance)
         default:
-            LargeWidgetView(snapshot: snapshot, now: now, page: page)
+            LargeWidgetView(snapshot: snapshot, now: now, page: page, provenance: provenance)
         }
     }
 }

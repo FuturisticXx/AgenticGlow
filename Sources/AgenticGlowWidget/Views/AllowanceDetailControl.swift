@@ -15,6 +15,10 @@ import AgenticGlowCore
 /// The glyph is small on purpose, so the hit target is padded well past
 /// it. The accessibility label carries the meaning the shape cannot.
 struct AllowanceDetailControl: View {
+    /// Trims the vertical padding when the control shares a line with
+    /// the iPhone footer, so that line costs what a caption costs.
+    var compact = false
+
     var body: some View {
         Button(intent: ShowCursorUsageIntent()) {
             Image(systemName: "chevron.right")
@@ -23,7 +27,7 @@ struct AllowanceDetailControl: View {
                 // Generous around a small glyph: the padding is the hit
                 // target, and it also holds the chevron clear of the
                 // card's rounded corner.
-                .padding(.vertical, 6)
+                .padding(.vertical, compact ? 2 : 6)
                 .padding(.horizontal, 10)
                 .contentShape(Rectangle())
         }

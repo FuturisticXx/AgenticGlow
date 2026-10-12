@@ -9,6 +9,9 @@ import AgenticGlowCore
 enum SampleData {
     static let now = Date()
 
+    /// The iPhone gallery preview's Mac, observed just now.
+    static let provenance = WidgetSyncProvenance(sourceMacName: "MacBook Pro", observedAt: now)
+
     static let workingSession = WidgetSessionSummary(
         provider: .claude, sessionID: "sample-1", projectName: "AgenticGlow",
         phase: .thinking, toolCategory: nil, elapsedSeconds: 125, updatedAt: now, needsAttention: false

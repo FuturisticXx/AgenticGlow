@@ -10,30 +10,49 @@ import AgenticGlowCore
 /// state. Each session row still carries its own phase ("Needs you"),
 /// which is status rather than a prompt.
 struct MediumWidgetView: View {
-    /// Medium's canvas is short; 2 session rows and an allowance strip
-    /// already fill it. More would risk clipping instead of just being
-    /// unreachable (widgets don't scroll).
-    private static let maximumDisplayedSessions = 2
-
     /// The Cursor page needs two bars where the overview needs one, so
-    /// the session list gives up a row for as long as it is showing.
+    /// the session list gives up a row for as long as it is showing. The
+    /// iPhone's footer costs a line too (`MediumWidgetSessionBudget`).
     private var displayedSessionLimit: Int {
-        page == .cursorDetail ? 1 : Self.maximumDisplayedSessions
+        MediumWidgetSessionBudget.rows(
+            sessionCount: snapshot.sessions.count,
+            page: page,
+            hasFooter: provenance != nil
+        )
     }
 
     let snapshot: WidgetSnapshot
     let now: Date
     var page: WidgetAllowancePage = .overview
+    /// Set on the iPhone: adds the Mac footer and withdraws what an
+    /// offline Mac cannot vouch for. Nil on the desktop, which is
+    /// unchanged.
+    var provenance: WidgetSyncProvenance? = nil
+
+    private var syncFreshness: SyncFreshness? {
+        provenance?.freshness(now: now)
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            if snapshot.sessions.isEmpty {
+        VStack(alignment: .leading, spacing: provenance == nil ? 6 : 4) {
+            if displayedSessionLimit == 0 {
+                // The session area has yielded to the page's bars.
+            } else if syncFreshness?.isOffline == true {
+                Text(SyncStatusCopy.offlineSessionsLine)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+            } else if snapshot.sessions.isEmpty {
                 Text("No active or recent sessions")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(snapshot.sessions.prefix(displayedSessionLimit)) { session in
-                    SessionRow(session: session, now: now, style: .compact)
+                    SessionRow(
+                        session: session,
+                        now: now,
+                        style: .compact,
+                        showsElapsed: syncFreshness?.isFresh ?? true
+                    )
                 }
                 if snapshot.sessions.count > displayedSessionLimit {
                     Text("+ \(snapshot.sessions.count - displayedSessionLimit) more")
@@ -48,10 +67,24 @@ struct MediumWidgetView: View {
                 AllowanceWindowRow(
                     window: lowest,
                     captionLabel: "\(lowest.provider.displayName) · \(lowest.label)",
+                    staleLabel: snapshot.allowances
+                        .first { $0.provider == lowest.provider }?
+                        .staleLabel(now: now),
                     now: now
                 )
-                if !snapshot.poolAllowances.isEmpty {
+                if provenance == nil, !snapshot.poolAllowances.isEmpty {
                     AllowanceDetailControl()
+                }
+            }
+            if let provenance {
+                // The footer and the chevron share the last line: the
+                // iPhone's medium canvas has no row to spare for each.
+                HStack(alignment: .center, spacing: 0) {
+                    SyncStatusFooter(provenance: provenance, now: now)
+                    Spacer(minLength: 8)
+                    if page == .overview, !snapshot.poolAllowances.isEmpty {
+                        AllowanceDetailControl(compact: true)
+                    }
                 }
             }
         }
@@ -66,7 +99,7 @@ struct MediumWidgetView: View {
     /// canvas can spare.
     private var lowestWindow: WidgetAllowanceWindow? {
         snapshot.overviewAllowances
-            .flatMap(\.windows)
+            .flatMap { $0.windows(asOf: provenance == nil ? nil : now) }
             .compactMap { window in
                 window.percentLeft.map { (window, $0) }
             }

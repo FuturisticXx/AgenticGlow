@@ -142,7 +142,10 @@ should have safe defaults).
 
 WidgetKit does not support continuous updates. The MVP timeline provider
 (`AgenticGlowTimelineProvider`) requests one more check 15 minutes out as a
-fallback, on top of the `WidgetCenter.reloadAllTimelines()` calls the app makes
+fallback, or sooner when an allowance on the canvas turns stale before then
+(`WidgetDataFreshness.nextTimelineRefresh`), and carries a timeline entry at
+each such moment so the "Updated" label is drawn on time even if no reload is
+granted. All of this is on top of the `WidgetCenter.reloadAllTimelines()` calls the app makes
 after meaningful snapshot changes and WidgetKit's own system-managed refresh
 budget. Do not expect sub-minute updates; the widget is a glance, not a live
 view.
@@ -152,10 +155,22 @@ snapshot stale once it's older than 15 minutes (`staleThreshold`), above
 the app's own idle allowance refresh interval (5 minutes) so a normal idle
 gap doesn't falsely read as stale.
 
+Each allowance is also judged on its own clock. When a provider read fails,
+the app keeps serving its last good value, and every snapshot written after
+that carries the value forward under a new `generatedAt`. So an allowance's
+age is its own `fetchedAt`, never the snapshot's: past the same 15 minutes,
+`WidgetAllowanceSummary.staleLabel(now:)` says "Updated 16h ago" on that
+provider (large: its heading; medium: in place of the reset caption; Cursor
+page: each pool row), and the small widget's footer dates the allowance it
+headlines. The app writes the snapshot whenever a provider is read again,
+even with unchanged values, so a healthy read always reaches the widget's
+next timeline request. That write reloads WidgetKit only when it clears a
+stale label; unchanged values otherwise leave the reload budget alone.
+
 ### Explicit states
 
 - **Fresh** / **Stale**: `.loaded(snapshot)`, freshness evaluated against
-  `snapshot.generatedAt`.
+  `snapshot.generatedAt`, and per allowance against its `fetchedAt`.
 - **No data yet**: `.noSnapshotYet` — the container path resolves but no
   snapshot file exists there. This is expected after adding the widget but
   before the correctly signed main app has launched and written its first
@@ -556,3 +571,161 @@ than by AgenticGlow itself.
 `Sendable` in every SDK this ships against, and a non-`Sendable` static is
 a hard error under Swift 6 language mode. CI runs `macos-15`, well behind
 the local toolchain, so only the measured `CGFloat`s are stored.
+
+## iPhone widget
+
+The same widget, moved to the iPhone. `Sources/AgenticGlowWidget` compiles
+into both the macOS and the iOS extension unchanged; the iOS extension links
+an iOS build of `AgenticGlowCore` (target `AgenticGlowCoreiOS`, module name
+`AgenticGlowCore`) made from the platform-neutral subset of Core listed in
+`project.yml`. A host app (`Sources/AgenticGlowiOS`) exists because a widget
+must ship inside one; it collects nothing and only keeps the cache current.
+
+```
+AgenticGlow macOS (AppModel, every 2s tick)
+   -> WidgetSnapshotBuilder.build(...)                  [Core, unchanged]
+   -> StateSyncService.snapshotDidRefresh               [App target]
+        publishes on meaningful change, and every
+        5 min (SyncFreshness.heartbeatInterval) while idle
+   -> SyncedStateEnvelope {schema, macID, macName,
+                           observedAt, snapshot}         [Core/Sync]
+   -> CloudKitSyncTransport.publish                      [Core/Sync]
+        private database, records "latest" and "mac-<id>"
+
+AgenticGlow iOS app
+   -> silent push (CKQuerySubscription) / foreground / pull to refresh
+   -> CachedSyncedStateSource: App Group cache first, CloudKit
+      opportunistically, newest observedAt wins           [Core/Sync]
+   -> AppGroupSyncedStateStore (SyncedState.json)        [Core/Sync]
+   -> WidgetCenter.reloadAllTimelines()
+
+AgenticGlowWidgetiOS extension
+   -> SyncedTimelineProvider (same entries and Cursor page
+      mechanism as the desktop provider, plus provenance)
+   -> the shared views, with a SyncStatusFooter
+```
+
+### What is the same
+
+- Every view, the typography, provider colors, the allowance bar, reset
+  captions, the low warning, the Codex-then-Claude default page with Cursor
+  hidden, the chevron and the 12 second Cursor page with its automatic
+  return (interactive widgets are supported from iOS 17, which is the iOS
+  deployment target, so this is the same `Button(intent:)` and the same
+  scheduled timeline entry), session grouping, deduplication, ordering,
+  `+ N more`, and the small family's headline ladder. The snapshot the
+  phone renders is byte-for-byte the one the Mac's own widget renders.
+- Families: `systemSmall`, `systemMedium`, `systemLarge`. Small carries
+  enough on the iPhone canvas (one number, one line) to keep; StandBy shows
+  it and it already handles `.vibrant`. Lock Screen accessory families are
+  not offered: they cannot host the chevron and would need a new layout.
+
+### What differs, and why
+
+- **Provenance footer.** Medium and large add one 11pt secondary line, the
+  Mac's name and the age of its observation (`SyncStatusFooter`). Small's
+  existing footer shows the same. Present only when the entry carries a
+  `WidgetSyncProvenance`; the desktop entries carry none, so the desktop
+  layout is untouched.
+- **Freshness is judged from the Mac's `observedAt`** (`SyncFreshness`),
+  never from when the phone fetched. Fresh up to 15 minutes (the desktop
+  widget's own threshold, three missed heartbeats): rendered as live.
+  Stale up to 60 minutes: rendered with "Updated Nm ago" and the elapsed
+  timers hidden, since they are the Mac's figures at observation. Offline
+  past 60 minutes: the session list is replaced by "Mac unavailable" and
+  the footer says "<Mac> unavailable · last seen Nh ago"; allowances stay,
+  because their windows are dated. The timeline carries an entry at each
+  boundary, so the widget flips to stale and then offline on time even if
+  iOS never wakes it in between, and a successful fetch of an old record
+  renders as old.
+- **Refresh is not real time.** iOS decides when a widget may run. The
+  app reloads timelines when a silent push or a foreground fetch brings
+  newer state; the widget also tries CloudKit itself (8 second cap) on its
+  own budgeted refreshes, and falls back to the cache. Expect minutes,
+  not seconds.
+- **Session budget.** The iPhone's large canvas is taller than the
+  desktop's, so `LargeWidgetSessionBudget` carries a per-canvas table
+  (`Canvas.iOS`), net of the footer. The macOS figures are unchanged.
+- **Deep links** open the iOS app; there is no Mac window to raise from a
+  phone.
+- **A reset that has already passed** captions as "resets in Resetting
+  (6:29 AM)" on both platforms (`WidgetSnapshotFormatting.captionResetDetail`
+  composes the countdown label into the "in ..." phrasing). The desktop
+  rarely reaches it; a stale or offline iPhone snapshot can. Left as is so
+  the iOS work changes no macOS copy; a shared fix is a separate change.
+- **App Group** is `group.com.twodamax.agenticglow` on iOS (App Groups
+  there must start with `group.` and cannot carry the Team ID prefix the
+  Mac needs).
+
+### Security
+
+- Publishing is off by default (`PreferencesStore.iPhoneSyncEnabled`).
+- `StateSyncService` receives only the `WidgetSnapshot`, which already
+  excludes credentials, cookies, prompts, and working directories.
+- The Mac identifier is a random per-install UUID (`MacSyncIdentity`),
+  never a serial number.
+- Every received envelope is decoded and then bounds-checked
+  (`SyncedStateValidator`: schema versions, UUID-shaped Mac id, counts,
+  session cap, text lengths, finite in-range percentages, pool cap, clock
+  skew) before it is cached or rendered; a failure renders the existing
+  "Unavailable" state.
+- The CloudKit container is `iCloud.com.twodamax.agenticglow`. A Mac build
+  signed without that entitlement never constructs a container
+  (`CloudKitEntitlement.isPresent`); the fixture and test launches never
+  create the service at all.
+- `docs/privacy.md` lists exactly what crosses devices.
+
+### Debug-only verification
+
+Debug builds carry a verification facility that Release builds do not
+(`Scripts/verify-debug-diagnostics-absent.sh` proves both directions
+against built products):
+
+- Mac: `AgenticGlow --verify-cloudkit-sync [--observed-at-offset SECONDS]`
+  (`CloudKitVerificationCommand`) takes the installed app's current
+  App Group snapshot, publishes it through the real transport, reads
+  both records back by id, checks the field allowlist
+  (`SyncRecordAllowlist`: `payload`, `schemaVersion`, `sourceMacID`,
+  `observedAt`), audits the payload for forbidden key names and path-like
+  values (`SyncPayloadAudit`, reporting key paths only), decodes it with
+  the iOS decoder, and compares hashes. The offset shifts only that
+  envelope's `observedAt`, for stale and offline presentation checks.
+  "Publish & Verify (debug)" in Settings runs the same verifier on the
+  running app's latest snapshot.
+- iPhone: a "Diagnostics (debug build)" section on the status screen and
+  "Refresh & Verify", which fetches, validates, decodes, writes the cache,
+  reloads the widget, and reports each step. Unlike the production
+  refresh, it writes the fetched record even when it is older than the
+  cache, which is what makes the offline case reachable.
+
+Verified on 2026-09-20 against the real development container, a Mac
+Studio and an iPhone 13 Pro Max: publish and read-back PASS, allowlist
+exact, forbidden fields none, hashes equal end to end, the Home Screen
+widget matching the Mac's figures line by line, the Cursor page with both
+returns, and fresh, stale, offline, and recovery states. A silent push
+did not wake the app within two minutes; the foreground refresh and the
+widget's own budgeted refresh are the paths to rely on.
+
+### Building and testing
+
+- `xcodebuild -scheme AgenticGlowiOS -destination 'platform=iOS Simulator,name=iPhone 17 Pro'`
+  builds the app, its widget, and the iOS Core. Simulator builds need no
+  provisioning profile; the entitlements are embedded by ad-hoc signing.
+- Sync tests live in `Tests/AgenticGlowCoreTests/Sync` and
+  `Tests/AgenticGlowAppTests/StateSyncServiceTests.swift` and run on the
+  Mac with the rest of the suite (`script/test.sh`).
+- To render a state in the simulator without iCloud, write an envelope to
+  `SyncedState.json` in the app's App Group container
+  (`xcrun simctl get_app_container <udid> com.twodamax.agenticglow.ios group.com.twodamax.agenticglow`)
+  and open the app, which reloads the widget timelines when the cache
+  changed.
+- Real devices, and CloudKit end to end, need the iCloud container and the
+  iOS App IDs registered on the developer account (Xcode automatic signing
+  does this on the first device build) and both devices signed in to the
+  same iCloud account.
+- Release: the Mac pipeline embeds a Developer ID profile and signs for the
+  Production CloudKit environment (`docs/release-checklist.md`, "iCloud
+  Provisioning Requirements"). iOS archives and exports through Xcode's own
+  automatic signing (`xcodebuild archive` on the `AgenticGlowiOS` scheme,
+  then `-exportArchive` with `method: app-store-connect`); no manual
+  signing script exists or is needed for it.

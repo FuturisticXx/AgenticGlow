@@ -1,7 +1,9 @@
 # AgenticGlow Privacy
 
 AgenticGlow runs locally on your Mac. It has no account system, backend, analytics,
-telemetry, advertising, cloud sync, remote monitoring, or uploaded crash reports.
+telemetry, advertising, remote monitoring, or uploaded crash reports. The one
+optional cloud feature, syncing the widget's status to the iPhone widget through
+your own private iCloud database, is off by default and described below.
 
 ## Stored session fields
 
@@ -165,3 +167,42 @@ prompts, responses, commands, credentials, cookies, raw provider data, or file
 contents. AgenticGlow atomically overwrites this single file rather than keeping
 a widget history. The App Group is shared only by AgenticGlow and its own widget
 extension and does not add any network request or cloud synchronization.
+
+## iPhone widget sync (optional, off by default)
+
+"Sync to the iPhone widget" in Settings is off unless you turn it on. Nothing
+about this feature runs, and no iCloud request is made, while it is off.
+
+When it is on, the Mac publishes the same `WidgetSnapshot` described above,
+wrapped in a small envelope, to the **private database** of your own iCloud
+account through Apple's CloudKit. There is no AgenticGlow server; the data goes
+from your Mac to Apple's iCloud and from there to the AgenticGlow app and widget
+on an iPhone signed in to the same iCloud account. Apple encrypts it in transit
+and at rest.
+
+Exactly what crosses devices, per publish:
+
+- The widget snapshot fields listed under "Desktop widget and shared App
+  Group": provider, session ID, project name, phase, tool category, elapsed
+  and update times, normalized allowance percentages and reset times, and
+  provider-installed flags.
+- A random identifier for this Mac, generated once per install and stored in
+  UserDefaults. It is not a serial number, hardware identifier, or account
+  identifier.
+- The Mac's user-visible computer name, so the iPhone can say which Mac it is
+  showing.
+- The time the Mac observed the state, and a schema version.
+
+It never includes prompts, responses, commands, transcripts, file contents,
+working directories, cookies, credentials, authorization headers, raw provider
+responses, or diagnostic logs. The Claude and Cursor session cookies stay in
+the Mac's Keychain and are never read by the sync code.
+
+The Mac republishes on meaningful changes and, while idle, about every five
+minutes, overwriting the same record rather than keeping a history. The iPhone
+app keeps one local copy in its own App Group container for the widget to
+render from, validates every copy before showing it, and shows how old the
+Mac's observation is rather than presenting stale state as current. Turning
+the toggle off stops publishing immediately; the last record remains in your
+iCloud account until the Mac publishes again or you delete AgenticGlow's data
+from iCloud settings.

@@ -35,6 +35,7 @@ if grep -q '\$(APP_GROUP_ID)' <<< "$widget_entitlements$app_entitlements"; then
 fi
 grep -q '<string>Z52AX2BH7T.group.com.twodamax.agenticglow</string>' <<< "$widget_entitlements"
 grep -q '<string>Z52AX2BH7T.group.com.twodamax.agenticglow</string>' <<< "$app_entitlements"
+Scripts/verify-release-signing.sh "$app"
 spctl --assess --type execute --verbose=2 "$app"
 spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
 xcrun stapler validate "$dmg"

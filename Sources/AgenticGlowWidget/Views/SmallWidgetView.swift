@@ -19,9 +19,36 @@ struct SmallWidgetView: View {
 
     let snapshot: WidgetSnapshot
     let now: Date
+    /// Set on the iPhone. The footer then reports the Mac's observation
+    /// rather than the snapshot's build time, and the headline withdraws
+    /// session counts once the Mac has gone offline.
+    var provenance: WidgetSyncProvenance? = nil
 
     private var freshness: WidgetDataFreshness {
-        WidgetDataFreshness.evaluate(generatedAt: snapshot.generatedAt, now: now)
+        WidgetDataFreshness.evaluate(generatedAt: footerDate, now: now)
+    }
+
+    /// The age the footer states belongs to the number on the canvas.
+    /// When that number is an allowance, it is the provider's own read
+    /// time: the snapshot can be newer than a reading the Mac could not
+    /// refresh and carried forward.
+    private var footerDate: Date {
+        guard snapshot.attentionCount == 0, snapshot.activeCount == 0,
+              let lowest = lowestWindow,
+              let allowance = snapshot.allowances.first(where: { $0.provider == lowest.provider })
+        else { return snapshot.generatedAt }
+        return allowance.fetchedAt
+    }
+
+    private var syncFreshness: SyncFreshness? {
+        provenance?.freshness(now: now)
+    }
+
+    /// Session counts stand for current activity, which an offline Mac
+    /// cannot vouch for; allowances survive because their windows are
+    /// dated. The headline drops to the allowance ladder in that case.
+    private var showsSessionHeadlines: Bool {
+        !(syncFreshness?.isOffline ?? false)
     }
 
     var body: some View {
@@ -36,7 +63,7 @@ struct SmallWidgetView: View {
 
     @ViewBuilder
     private var headline: some View {
-        if snapshot.attentionCount > 0 {
+        if showsSessionHeadlines, snapshot.attentionCount > 0 {
             // Deliberately not an exclamation mark. Prompting belongs to the
             // menu bar and notifications; the widget reports state, and the
             // state is that a session is paused waiting on the user, which
@@ -53,7 +80,7 @@ struct SmallWidgetView: View {
             Text(WidgetSmallCopy.subtitle(for: snapshot) ?? "needs you")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.secondary)
-        } else if snapshot.activeCount > 0 {
+        } else if showsSessionHeadlines, snapshot.activeCount > 0 {
             glyph("sparkle", color: .accentColor)
             Text(WidgetSmallCopy.title(for: snapshot))
                 .font(.system(size: 28, weight: .medium))
@@ -65,7 +92,7 @@ struct SmallWidgetView: View {
                 .foregroundStyle(.secondary)
         } else if let lowest = lowestWindow {
             glyph("gauge.with.dots.needle.33percent", color: WidgetColorPalette.color(for: lowest.provider))
-            Text(WidgetSnapshotFormatting.percentLeftLabel(lowest.percentLeft))
+            Text(WidgetSnapshotFormatting.percentLeftLabel(lowest.percentLeft, isDerived: lowest.isDerived))
                 .font(.system(size: 28, weight: .medium))
                 .monospacedDigit()
                 .lineLimit(1)
@@ -100,7 +127,7 @@ struct SmallWidgetView: View {
     /// say which allowance it belongs to.
     private var lowestWindow: WidgetAllowanceWindow? {
         snapshot.overviewAllowances
-            .flatMap(\.windows)
+            .flatMap { $0.windows(asOf: provenance == nil ? nil : now) }
             .compactMap { window in
                 window.percentLeft.map { (window, $0) }
             }
@@ -108,12 +135,15 @@ struct SmallWidgetView: View {
             .0
     }
 
+    @ViewBuilder
     private var footer: some View {
         Group {
-            if freshness == .stale {
+            if let provenance {
+                SyncStatusFooter(provenance: provenance, now: now, compact: true)
+            } else if freshness == .stale {
                 Label("Stale", systemImage: "clock.arrow.circlepath")
             } else {
-                Text(WidgetSnapshotFormatting.lastUpdatedLabel(snapshot.generatedAt, now: now))
+                Text(WidgetSnapshotFormatting.lastUpdatedLabel(footerDate, now: now))
             }
         }
         .font(.system(size: 11, weight: .medium))

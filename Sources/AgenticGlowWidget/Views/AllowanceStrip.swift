@@ -15,6 +15,11 @@ struct AllowanceStrip: View {
     /// Cleared on the Cursor page, whose own heading already names the
     /// provider; repeating it would spend a line saying it twice.
     var showsProviderHeading = true
+    /// Set on the iPhone, where the snapshot can be hours old and a
+    /// window whose reset has passed must be re-read as the fresh window
+    /// it now is. Left clear on the desktop, whose snapshot is seconds
+    /// old and needs no such correction.
+    var rollsOverElapsedWindows = false
     let now: Date
 
     @Environment(\.widgetRenderingMode) private var renderingMode
@@ -24,11 +29,12 @@ struct AllowanceStrip: View {
             if showsProviderHeading {
                 providerHeading
             }
-            ForEach(allowance.windows) { window in
+            ForEach(allowance.windows(asOf: rollsOverElapsedWindows ? now : nil)) { window in
                 AllowanceWindowRow(
                     window: window,
                     captionLabel: window.label,
                     showsReset: showsResets && sharedPoolReset == nil,
+                    staleLabel: showsProviderHeading ? nil : staleLabel,
                     now: now
                 )
             }
@@ -48,7 +54,19 @@ struct AllowanceStrip: View {
                 .widgetAccentable()
             Text(allowance.provider.displayName)
                 .font(.system(size: 14, weight: .semibold))
+            if let staleLabel {
+                Text("· \(staleLabel)")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
         }
+    }
+
+    /// Said once per provider: on the heading when there is one, so it
+    /// costs no line, otherwise on each row.
+    private var staleLabel: String? {
+        allowance.staleLabel(now: now)
     }
 
     /// Formatted form of `WidgetAllowanceSummary.sharedPoolResetAt`,
@@ -69,6 +87,10 @@ struct AllowanceWindowRow: View {
     let captionLabel: String
     /// Cleared when a provider states one shared reset beneath its rows.
     var showsReset = true
+    /// "Updated 16h ago" when this provider's reading is stale. It takes
+    /// the reset's place in the caption: the line has room for one, and
+    /// the age is what says how far to trust the bar above it.
+    var staleLabel: String? = nil
     let now: Date
 
     @Environment(\.widgetRenderingMode) private var renderingMode
@@ -81,7 +103,7 @@ struct AllowanceWindowRow: View {
                 // instead of the true meaning, "we don't know."
                 WidgetAllowanceBar(
                     progress: progress,
-                    percentLabel: "\(Int(percentLeft.rounded()))%",
+                    percentLabel: percentLabel(percentLeft),
                     tint: WidgetColorPalette.color(for: window.provider)
                 )
                 caption(percentLeft: percentLeft)
@@ -97,8 +119,11 @@ struct AllowanceWindowRow: View {
 
     @ViewBuilder
     private func caption(percentLeft: Double) -> some View {
-        let text = (showsReset ? resetDetail : nil)
-            .map { "\(captionLabel) resets \($0)" } ?? captionLabel
+        // A rolled-over window keeps its reset copy even when the reading is
+        // old: the "~" estimate is already computed for now, and "window
+        // reset" is the one thing a disconnected iPhone most needs to say.
+        // Otherwise an old reading says how old it is instead of a reset.
+        let text = window.isDerived ? captionCopy : staleLabel.map { "\(captionLabel) · \($0)" } ?? captionCopy
         if isLow {
             // The icon takes width the caption used to have, which is how
             // a long next-day reset came to truncate. It is pinned to its
@@ -130,6 +155,31 @@ struct AllowanceWindowRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// A tilde on an inferred figure. The window is known to have reset,
+    /// so 100% left is the right reading, but no Mac reported it and the
+    /// number should not claim otherwise. One character is all this has
+    /// room for beside the bar, and it is the one everybody already reads
+    /// as "about".
+    private func percentLabel(_ percentLeft: Double) -> String {
+        let value = "\(Int(percentLeft.rounded()))%"
+        return window.isDerived ? "~\(value)" : value
+    }
+
+    /// Past tense for a window that has ended, naming the next boundary
+    /// instead of counting down to one that is already behind us. The
+    /// countdown phrasing belongs to a window still running; using it
+    /// here is what produced "5h resets in Resetting (12:14 AM)".
+    private var captionCopy: String {
+        guard showsReset else { return captionLabel }
+        guard window.isDerived else {
+            return resetDetail.map { "\(captionLabel) resets \($0)" } ?? captionLabel
+        }
+        guard let next = WidgetSnapshotFormatting.compactAbsoluteResetLabel(window.resetAt, now: now) else {
+            return "\(captionLabel) window reset"
+        }
+        return "\(captionLabel) reset · next \(next)"
+    }
+
     private var isLow: Bool {
         guard let percentLeft = window.percentLeft else { return false }
         return percentLeft < AllowanceWarning.thresholdPercentLeft
@@ -153,12 +203,19 @@ struct AllowanceWindowRow: View {
     private var accessibilityLabel: String {
         var parts = [window.provider.displayName, window.label]
         if let percentLeft = window.percentLeft {
-            parts.append("\(Int(percentLeft.rounded())) percent left")
-            if let resetDetail {
+            let figure = "\(Int(percentLeft.rounded())) percent left"
+            parts.append(window.isDerived ? "estimated \(figure)" : figure)
+            if window.isDerived {
+                let next = WidgetSnapshotFormatting.compactAbsoluteResetLabel(window.resetAt, now: now)
+                parts.append(next.map { "window reset, next reset \($0)" } ?? "window reset")
+            } else if let resetDetail {
                 parts.append("resets \(resetDetail)")
             }
             if isLow {
                 parts.append("low")
+            }
+            if let staleLabel {
+                parts.append(staleLabel)
             }
         } else {
             parts.append("unavailable")

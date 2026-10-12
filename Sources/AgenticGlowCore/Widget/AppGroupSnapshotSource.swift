@@ -31,7 +31,15 @@ public protocol WidgetSnapshotLoading: Sendable {
 /// every failure mode maps to an explicit, honest result case instead of
 /// being flattened into "no data."
 public struct AppGroupSnapshotSource: WidgetSnapshotLoading {
+    /// macOS needs the Team ID prefix because the containing app is not
+    /// sandboxed while the widget is (docs/widget.md). iOS App Groups must
+    /// start with `group.` and cannot carry that prefix, so each platform
+    /// names its own container.
+    #if os(macOS)
     public static let appGroupIdentifier = "Z52AX2BH7T.group.com.twodamax.agenticglow"
+    #else
+    public static let appGroupIdentifier = "group.com.twodamax.agenticglow"
+    #endif
     public static let snapshotFilename = "WidgetSnapshot.json"
 
     private let containerDirectory: @Sendable () -> URL?

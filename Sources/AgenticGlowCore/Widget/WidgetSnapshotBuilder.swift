@@ -46,6 +46,7 @@ public enum WidgetSnapshotBuilder {
             return WidgetAllowanceSummary(
                 provider: provider,
                 currentWindowLabel: allowance.currentWindowLabel,
+                currentWindowDuration: allowance.currentWindowDuration,
                 currentPercentLeft: allowance.currentPercentLeft,
                 currentResetAt: allowance.currentResetAt,
                 weeklyPercentLeft: allowance.weeklyPercentLeft,
@@ -90,6 +91,33 @@ public enum WidgetSnapshotBuilder {
             || lhs.providers != rhs.providers
             || !sessionsMatch(lhs.sessions, rhs.sessions)
             || !allowancesMatch(lhs.allowances, rhs.allowances)
+    }
+
+    /// Whether `lhs` carries a newer observation of some provider's
+    /// allowance than `rhs` does. `isMeaningfullyDifferent` ignores
+    /// `fetchedAt`, so without this a provider re-read with unchanged
+    /// values never reached the widget, which then judged those values
+    /// by the old read's age.
+    public static func allowanceObservationsAdvanced(_ lhs: WidgetSnapshot, from rhs: WidgetSnapshot) -> Bool {
+        lhs.allowances.contains { allowance in
+            guard let previous = rhs.allowances.first(where: { $0.provider == allowance.provider }) else {
+                return true
+            }
+            return allowance.fetchedAt > previous.fetchedAt
+        }
+    }
+
+    /// Whether a provider the widget would label stale from `rhs` reads
+    /// as current in `lhs`. The one re-observation worth a reload: it
+    /// removes a label already on the canvas, and it happens once per
+    /// recovery rather than on every refresh.
+    public static func clearsStaleAllowance(_ lhs: WidgetSnapshot, from rhs: WidgetSnapshot, now: Date) -> Bool {
+        lhs.allowances.contains { allowance in
+            guard allowance.staleLabel(now: now) == nil,
+                  let previous = rhs.allowances.first(where: { $0.provider == allowance.provider })
+            else { return false }
+            return previous.staleLabel(now: now) != nil
+        }
     }
 
     private static func sessionsMatch(_ lhs: [WidgetSessionSummary], _ rhs: [WidgetSessionSummary]) -> Bool {

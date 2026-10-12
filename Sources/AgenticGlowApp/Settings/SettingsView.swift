@@ -22,6 +22,8 @@ struct SettingsView: View {
     @Bindable var preferences: PreferencesStore
     @Bindable var updates: UpdateViewModel
     let launchAtLogin: LaunchAtLoginServicing
+    /// Nil when this run has no publisher at all (fixtures and tests).
+    let stateSync: StateSyncService?
     let openIntegrations: () -> Void
     let serviceStatusChanged: (Bool) -> Void
     let notificationsDenied: () async -> Bool
@@ -45,11 +47,16 @@ struct SettingsView: View {
     /// apart is the difference between an alert arriving and vanishing.
     @State private var storedRecipient = ""
     @FocusState private var recipientFocused: Bool
+    #if DEBUG
+    @State private var verificationReport: String?
+    @State private var isVerifying = false
+    #endif
 
     init(
         preferences: PreferencesStore,
         updates: UpdateViewModel,
         launchAtLogin: LaunchAtLoginServicing,
+        stateSync: StateSyncService? = nil,
         openIntegrations: @escaping () -> Void,
         serviceStatusChanged: @escaping (Bool) -> Void = { _ in },
         notificationsDenied: @escaping () async -> Bool = { false },
@@ -61,6 +68,7 @@ struct SettingsView: View {
         self.preferences = preferences
         self.updates = updates
         self.launchAtLogin = launchAtLogin
+        self.stateSync = stateSync
         self.openIntegrations = openIntegrations
         self.serviceStatusChanged = serviceStatusChanged
         self.notificationsDenied = notificationsDenied
@@ -137,6 +145,36 @@ struct SettingsView: View {
                 Text("Checks the public Anthropic, OpenAI, and Cursor status pages when you open AgenticGlow. Off by default. No account data is sent.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+            Section {
+                Toggle("Sync to the iPhone widget", isOn: $preferences.iPhoneSyncEnabled)
+                    .disabled(stateSync?.isAvailable == false)
+                Text("Publishes what the desktop widget shows (project names, session phases, allowance percentages, and reset times) to your private iCloud database for the AgenticGlow iPhone widget. Off by default. Never includes cookies, credentials, or prompts.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let stateSync, preferences.iPhoneSyncEnabled || !stateSync.isAvailable {
+                    Text(stateSync.status)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                #if DEBUG
+                if let stateSync, stateSync.isAvailable {
+                    Button(isVerifying ? "Verifying..." : "Publish & Verify (debug)") {
+                        isVerifying = true
+                        Task {
+                            verificationReport = await stateSync.publishAndVerify().text
+                            isVerifying = false
+                        }
+                    }
+                    .disabled(isVerifying)
+                    if let verificationReport {
+                        Text(verificationReport)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+                }
+                #endif
             }
             Toggle("Check GitHub for updates automatically", isOn: $preferences.automaticUpdateChecks)
             Toggle("Enable sanitized local diagnostics", isOn: $preferences.diagnosticsEnabled)

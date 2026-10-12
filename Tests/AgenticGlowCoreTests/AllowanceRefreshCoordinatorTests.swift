@@ -91,6 +91,35 @@ final class AllowanceRefreshCoordinatorTests: XCTestCase {
         XCTAssertEqual(count, 2)
     }
 
+    func testFailedRefreshKeepsTheCachedReadingAtItsOriginalTime() async throws {
+        let cache = InMemoryAllowanceCache()
+        let readAt = Date(timeIntervalSince1970: 1_000)
+        try cache.save(ProviderAllowance(
+            provider: .codex,
+            currentWindowLabel: "5h",
+            currentPercentUsed: 0,
+            currentResetAt: readAt.addingTimeInterval(5 * 3600),
+            weeklyPercentUsed: 38,
+            weeklyResetAt: readAt.addingTimeInterval(86_400),
+            fetchedAt: readAt
+        ))
+        let coordinator = AllowanceRefreshCoordinator(
+            adapters: [FailingAllowanceAdapter()],
+            cache: cache,
+            now: { Date(timeIntervalSince1970: 1_000 + 16 * 3600) },
+            jitter: { 0 }
+        )
+
+        await coordinator.setEnabled(true, provider: .codex)
+
+        guard case let .available(allowance, freshness) = await coordinator.state(for: .codex) else {
+            return XCTFail("Expected the cached reading")
+        }
+        XCTAssertEqual(freshness, .stale)
+        XCTAssertEqual(allowance.fetchedAt, readAt, "a failed read must not restamp the cached one")
+        XCTAssertEqual(try cache.load(.codex)?.fetchedAt, readAt)
+    }
+
     func testSuspensionStopsRefreshUntilNetworkAndWakeResume() async {
         let adapter = RecordingAllowanceAdapter(provider: .codex)
         let coordinator = AllowanceRefreshCoordinator(
