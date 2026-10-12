@@ -230,9 +230,13 @@ extension UserNotificationCenterClient: UserNotificationScheduling {
     // handler. Awaiting notificationSettings() directly would carry the
     // non-Sendable UNNotificationSettings across the MainActor boundary,
     // which fails to compile under the CI toolchain (Xcode 16.4).
+    // The handler is @Sendable because UserNotifications calls it on a
+    // background queue. Without it, Xcode 16.4 infers MainActor isolation
+    // from this method and the runtime isolation check traps (0.8.0
+    // crashed on opening Settings).
     private func authorizationStatus() async -> UNAuthorizationStatus {
         await withCheckedContinuation { continuation in
-            UNUserNotificationCenter.current().getNotificationSettings { settings in
+            UNUserNotificationCenter.current().getNotificationSettings { @Sendable settings in
                 continuation.resume(returning: settings.authorizationStatus)
             }
         }

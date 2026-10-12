@@ -3,6 +3,6 @@
 // verification build) reports the current version instead of a placeholder
 // the updater would read as older than the shipped release.
 // Scripts/build-release.sh refuses a VERSION that disagrees with this value.
-// CURRENT_PROJECT_VERSION 7 is the build number 0.8.0 ships with.
-MARKETING_VERSION = 0.8.0
-CURRENT_PROJECT_VERSION = 7
+// CURRENT_PROJECT_VERSION 8 is the build number 0.8.1 ships with.
+MARKETING_VERSION = 0.8.1
+CURRENT_PROJECT_VERSION = 8
