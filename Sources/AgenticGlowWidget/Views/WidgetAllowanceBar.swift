@@ -1,4 +1,8 @@
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import SwiftUI
 import WidgetKit
 
@@ -21,10 +25,17 @@ struct WidgetAllowanceBar: View {
     /// Built per use rather than held in a `static let`: `NSFont` is not
     /// `Sendable` in every SDK this ships against, and a non-`Sendable`
     /// static is a hard error under Swift 6 language mode. Only the
-    /// measured `CGFloat`s are stored.
+    /// measured `CGFloat`s are stored. The same metrics come from
+    /// `UIFont` on iOS, so the pill is sized from the real font there too.
+    #if canImport(AppKit)
     private static func labelFont() -> NSFont {
         NSFont.monospacedDigitSystemFont(ofSize: labelPointSize, weight: .semibold)
     }
+    #else
+    private static func labelFont() -> UIFont {
+        UIFont.monospacedDigitSystemFont(ofSize: labelPointSize, weight: .semibold)
+    }
+    #endif
 
     /// Every pill is sized for the widest label the bar can show ("100%"),
     /// measured from the real font rather than guessed at. Two reasons:

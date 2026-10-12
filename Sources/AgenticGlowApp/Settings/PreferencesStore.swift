@@ -94,6 +94,9 @@ final class PreferencesStore {
     var serviceStatusEnabled: Bool {
         didSet { defaults.set(serviceStatusEnabled, forKey: "serviceStatusEnabled") }
     }
+    var iPhoneSyncEnabled: Bool {
+        didSet { defaults.set(iPhoneSyncEnabled, forKey: "iPhoneSyncEnabled") }
+    }
     var menuBarIconStyle: MenuBarIconStyle {
         didSet { defaults.set(menuBarIconStyle.rawValue, forKey: "menuBarIconStyle") }
     }
@@ -135,6 +138,9 @@ final class PreferencesStore {
             defaults.object(forKey: "usageResetNativeNotification") as? Bool ?? true
         self.usageResetMessages = defaults.bool(forKey: "usageResetMessages")
         self.serviceStatusEnabled = defaults.bool(forKey: "serviceStatusEnabled")
+        // Off unless the user turns it on: nothing leaves the Mac for
+        // iCloud until they ask for the iPhone widget.
+        self.iPhoneSyncEnabled = defaults.bool(forKey: "iPhoneSyncEnabled")
         self.menuBarIconStyle = Self.storedIconStyle(in: defaults)
         self.globalShortcut = Self.storedGlobalShortcut(in: defaults)
         self.storedGlassClarity = Self.clampedGlassClarity(
@@ -161,6 +167,7 @@ final class PreferencesStore {
             defaults.object(forKey: "usageResetNativeNotification") as? Bool ?? true
         let usageResetMessages = defaults.bool(forKey: "usageResetMessages")
         let serviceStatusEnabled = defaults.bool(forKey: "serviceStatusEnabled")
+        let iPhoneSyncEnabled = defaults.bool(forKey: "iPhoneSyncEnabled")
         let menuBarIconStyle = Self.storedIconStyle(in: defaults)
         let globalShortcut = Self.storedGlobalShortcut(in: defaults)
         let glassClarity = Self.clampedGlassClarity(
@@ -184,6 +191,7 @@ final class PreferencesStore {
         self.usageResetNativeNotification = usageResetNativeNotification
         self.usageResetMessages = usageResetMessages
         self.serviceStatusEnabled = serviceStatusEnabled
+        self.iPhoneSyncEnabled = iPhoneSyncEnabled
         self.menuBarIconStyle = menuBarIconStyle
         self.globalShortcut = globalShortcut
         self.storedGlassClarity = glassClarity

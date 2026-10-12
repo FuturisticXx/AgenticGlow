@@ -382,6 +382,163 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.weeklyResetCount, 1)
     }
 
+    func testUsageKeepsRefreshingWhileASessionWaitsForPermission() {
+        let store = InMemorySessionStore(events: [
+            .testEvent(provider: .claude, phase: .permission, turnStartedAt: Date(timeIntervalSince1970: 80)),
+            .testEvent(provider: .codex, phase: .thinking, turnStartedAt: Date(timeIntervalSince1970: 90))
+        ])
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            now: { Date(timeIntervalSince1970: 100) }
+        )
+        model.refresh()
+        let phases = Dictionary(uniqueKeysWithValues: model.resolved.sessions.map { ($0.id, $0.phase) })
+        XCTAssertEqual(model.resolved.dominantPhase, .permission)
+
+        XCTAssertEqual(AppModel.usageRefreshReason(for: model.resolved, previousPhases: phases), .working)
+
+        store.write(.testEvent(provider: .codex, phase: .idle, turnStartedAt: nil))
+        model.refresh()
+        let waitingOnly = Dictionary(uniqueKeysWithValues: model.resolved.sessions.map { ($0.id, $0.phase) })
+        XCTAssertEqual(model.resolved.dominantPhase, .permission)
+        XCTAssertEqual(AppModel.usageRefreshReason(for: model.resolved, previousPhases: waitingOnly), .idle)
+    }
+
+    func testUsageRefreshReasonPrefersTurnCompletion() {
+        let store = InMemorySessionStore(events: [
+            .testEvent(provider: .claude, phase: .completed, turnStartedAt: nil)
+        ])
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            now: { Date(timeIntervalSince1970: 100) }
+        )
+        model.refresh()
+        let id = model.resolved.sessions.first?.id ?? ""
+        XCTAssertFalse(id.isEmpty)
+
+        XCTAssertEqual(
+            AppModel.usageRefreshReason(for: model.resolved, previousPhases: [id: .thinking]),
+            .turnCompleted
+        )
+        XCTAssertEqual(
+            AppModel.usageRefreshReason(for: model.resolved, previousPhases: [id: .completed]),
+            .idle
+        )
+    }
+
+    func testReobservedAllowanceIsWrittenForTheWidgetWithoutAReload() async {
+        let clock = MutableClock(Date(timeIntervalSince1970: 1_783_099_000))
+        let adapter = MutableAllowanceAdapter(
+            provider: .codex,
+            allowance: appModelAllowance(currentUsed: 40, weeklyResetAt: nil, fetchedAt: clock.current)
+        )
+        let writer = RecordingSnapshotWriter()
+        let reloader = RecordingTimelineReloader()
+        let model = AppModel(
+            store: InMemorySessionStore(events: []),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            allowanceCoordinator: AllowanceRefreshCoordinator(adapters: [adapter], cache: AppModelAllowanceCache()),
+            widgetSnapshotWriter: writer,
+            widgetTimelineReloader: reloader,
+            installedProviders: { [.codex: true] },
+            now: { clock.current }
+        )
+        await model.setUsageEnabled(true, provider: .codex)
+        let writesBefore = writer.writtenSnapshots.count
+        let reloadsBefore = reloader.reloadCount
+
+        clock.current = clock.current.addingTimeInterval(300)
+        adapter.update(appModelAllowance(currentUsed: 40, weeklyResetAt: nil, fetchedAt: clock.current))
+        await model.refreshUsage(.manual)
+
+        XCTAssertEqual(writer.writtenSnapshots.count, writesBefore + 1)
+        XCTAssertEqual(writer.writtenSnapshots.last?.allowances.first?.fetchedAt, clock.current)
+        XCTAssertEqual(reloader.reloadCount, reloadsBefore, "unchanged values must not spend a reload")
+        XCTAssertEqual(
+            writer.writtenSnapshots.last?.revision,
+            writer.writtenSnapshots[writesBefore - 1].revision,
+            "a re-read of unchanged values must not rotate the large widget's session row"
+        )
+
+        // A real change still advances it.
+        adapter.update(appModelAllowance(currentUsed: 45, weeklyResetAt: nil, fetchedAt: clock.current.addingTimeInterval(60)))
+        await model.refreshUsage(.manual)
+        XCTAssertEqual(
+            writer.writtenSnapshots.last?.revision,
+            writer.writtenSnapshots[writesBefore - 1].revision + 1
+        )
+    }
+
+    func testUsageKeepsRefreshingWhenSavedSessionsFailToLoad() async throws {
+        let clock = MutableClock(Date(timeIntervalSince1970: 1_783_099_000))
+        let adapter = MutableAllowanceAdapter(
+            provider: .codex,
+            allowance: appModelAllowance(currentUsed: 40, weeklyResetAt: nil, fetchedAt: clock.current)
+        )
+        let model = AppModel(
+            store: FailingSessionStore(),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            allowanceCoordinator: AllowanceRefreshCoordinator(
+                adapters: [adapter],
+                cache: AppModelAllowanceCache(),
+                now: { clock.current },
+                jitter: { 0 }
+            ),
+            now: { clock.current }
+        )
+        await model.setUsageEnabled(true, provider: .codex)
+        XCTAssertEqual(adapter.fetchCount, 1)
+
+        clock.current = clock.current.addingTimeInterval(AllowanceRefreshPolicy.idleInterval + 1)
+        model.refresh()
+        XCTAssertNotNil(model.storeErrorDescription)
+
+        let deadline = Date().addingTimeInterval(2)
+        while adapter.fetchCount < 2, Date() < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(adapter.fetchCount, 2, "the idle usage refresh must survive a session store failure")
+    }
+
+    func testRecoveringFromAStaleAllowanceReloadsTheWidget() async {
+        let clock = MutableClock(Date(timeIntervalSince1970: 1_783_099_000))
+        let adapter = MutableAllowanceAdapter(
+            provider: .codex,
+            allowance: appModelAllowance(
+                currentUsed: 40,
+                weeklyResetAt: nil,
+                fetchedAt: clock.current.addingTimeInterval(-16 * 3600)
+            )
+        )
+        let writer = RecordingSnapshotWriter()
+        let reloader = RecordingTimelineReloader()
+        let model = AppModel(
+            store: InMemorySessionStore(events: []),
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            allowanceCoordinator: AllowanceRefreshCoordinator(adapters: [adapter], cache: AppModelAllowanceCache()),
+            widgetSnapshotWriter: writer,
+            widgetTimelineReloader: reloader,
+            installedProviders: { [.codex: true] },
+            now: { clock.current }
+        )
+        await model.setUsageEnabled(true, provider: .codex)
+        XCTAssertNotNil(writer.writtenSnapshots.last?.allowances.first?.staleLabel(now: clock.current))
+        let reloadsBefore = reloader.reloadCount
+
+        adapter.update(appModelAllowance(currentUsed: 40, weeklyResetAt: nil, fetchedAt: clock.current))
+        await model.refreshUsage(.manual)
+
+        XCTAssertNil(writer.writtenSnapshots.last?.allowances.first?.staleLabel(now: clock.current))
+        XCTAssertEqual(reloader.reloadCount, reloadsBefore + 1)
+    }
+
     func testEndedThisRefreshFiresOnTransitionIntoCompleted() {
         let session = self.session(sessionID: "s", phase: .completed)
         XCTAssertTrue(AppModel.endedThisRefresh(session, previousPhases: [session.id: .thinking]))
@@ -448,7 +605,8 @@ final class AppModelTests: XCTestCase {
 
     private func appModelAllowance(
         currentUsed: Double?,
-        weeklyResetAt: Date?
+        weeklyResetAt: Date?,
+        fetchedAt: Date = Date(timeIntervalSince1970: 1_783_099_000)
     ) -> ProviderAllowance {
         ProviderAllowance(
             provider: .codex,
@@ -457,7 +615,7 @@ final class AppModelTests: XCTestCase {
             currentResetAt: nil,
             weeklyPercentUsed: 20,
             weeklyResetAt: weeklyResetAt,
-            fetchedAt: Date(timeIntervalSince1970: 1_783_099_000)
+            fetchedAt: fetchedAt
         )
     }
 
@@ -575,6 +733,31 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.resolved.sessions.count, 1)
     }
 
+    func testAppModelOffersEverySnapshotToThePublisher() {
+        let store = InMemorySessionStore(events: [
+            .testEvent(provider: .claude, phase: .thinking, turnStartedAt: Date(timeIntervalSince1970: 90))
+        ])
+        let publisher = RecordingSyncPublisher()
+        let model = AppModel(
+            store: store,
+            processMonitor: AlwaysAliveProcessMonitor(),
+            activator: RecordingActivator(),
+            stateSyncPublisher: publisher,
+            installedProviders: { [.claude: true] },
+            now: { Date(timeIntervalSince1970: 200) }
+        )
+
+        model.refresh()
+        model.refresh()
+
+        // Offered on every tick, unchanged or not: the heartbeat is the
+        // publisher's decision, not the model's. No App Group writer is
+        // needed for the offer to happen.
+        XCTAssertEqual(publisher.offered.count, 2)
+        XCTAssertEqual(publisher.offered.first?.sessions.count, 1)
+        XCTAssertEqual(publisher.offered.first?.generatedAt, Date(timeIntervalSince1970: 200))
+    }
+
     func testInstalledProvidersIsThrottledNotCalledEveryRefresh() {
         let store = InMemorySessionStore(events: [])
         let writer = RecordingSnapshotWriter()
@@ -642,8 +825,14 @@ private final class MutableAllowanceAdapter: AllowanceProviding, @unchecked Send
         lock.withLock { self.allowance = allowance }
     }
 
+    var fetchCount: Int { lock.withLock { fetches } }
+    private var fetches = 0
+
     func fetch() async throws -> ProviderAllowance {
-        lock.withLock { allowance }
+        lock.withLock {
+            fetches += 1
+            return allowance
+        }
     }
 }
 
@@ -807,5 +996,14 @@ private actor StubCodexSessionDiscoverer: CodexSessionDiscovering {
     func discover() async throws -> [NormalizedEvent] {
         guard !results.isEmpty else { return [] }
         return try results.removeFirst().get()
+    }
+}
+
+@MainActor
+private final class RecordingSyncPublisher: WidgetSnapshotSyncing {
+    private(set) var offered: [WidgetSnapshot] = []
+
+    func snapshotDidRefresh(_ snapshot: WidgetSnapshot, now: Date) {
+        offered.append(snapshot)
     }
 }

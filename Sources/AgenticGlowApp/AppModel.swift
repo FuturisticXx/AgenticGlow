@@ -21,6 +21,9 @@ final class AppModel {
     private let codexSessionDiscoverer: (any CodexSessionDiscovering)?
     private let widgetSnapshotWriter: (any WidgetSnapshotWriting)?
     private let widgetTimelineReloader: (any WidgetTimelineReloading)?
+    /// Sees every snapshot the app builds, changed or not, and decides
+    /// for itself what to publish for the iPhone widget.
+    private let stateSyncPublisher: (any WidgetSnapshotSyncing)?
     private let installedProviders: (() -> [AgentProvider: Bool])?
     private let now: () -> Date
     private var timer: Timer?
@@ -30,9 +33,9 @@ final class AppModel {
     private var allowanceStates: [AgentProvider: AllowanceAvailability] = [:]
     private var serviceStatuses: [AgentProvider: ProviderServiceStatus] = [:]
     private var lastWidgetSnapshot: WidgetSnapshot?
-    /// Snapshots published this launch. Advances only when a snapshot is
-    /// actually written, so it counts real data changes rather than
-    /// attempts. In memory only: nothing new is stored on disk for it, and
+    /// Snapshots published this launch. Advances only when a meaningfully
+    /// different snapshot is written, so it counts real data changes rather
+    /// than attempts or re-reads of unchanged values. In memory only: nothing new is stored on disk for it, and
     /// starting over at zero after a relaunch simply shows the first
     /// session again.
     private var widgetSnapshotRevision = 0
@@ -64,6 +67,7 @@ final class AppModel {
         codexSessionDiscoverer: (any CodexSessionDiscovering)? = nil,
         widgetSnapshotWriter: (any WidgetSnapshotWriting)? = nil,
         widgetTimelineReloader: (any WidgetTimelineReloading)? = nil,
+        stateSyncPublisher: (any WidgetSnapshotSyncing)? = nil,
         installedProviders: (() -> [AgentProvider: Bool])? = nil,
         now: @escaping () -> Date = Date.init
     ) {
@@ -77,6 +81,7 @@ final class AppModel {
         self.codexSessionDiscoverer = codexSessionDiscoverer
         self.widgetSnapshotWriter = widgetSnapshotWriter
         self.widgetTimelineReloader = widgetTimelineReloader
+        self.stateSyncPublisher = stateSyncPublisher
         self.installedProviders = installedProviders
         self.now = now
         reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
@@ -129,6 +134,9 @@ final class AppModel {
                 memory: &resolutionMemory,
                 isProcessAlive: { _, _ in false }
             )
+            // Usage does not depend on the session store, so a failed read
+            // must not stop the usage timer with it.
+            Task { [weak self] in await self?.refreshUsage(.idle) }
             syncWidgetSnapshot()
             return
         }
@@ -172,17 +180,33 @@ final class AppModel {
                 notifier.sessionsFailed(newlyFailed)
             }
         }
-        if resolved.sessions.contains(where: { Self.endedThisRefresh($0, previousPhases: previousPhases) }) {
+        switch Self.usageRefreshReason(for: resolved, previousPhases: previousPhases) {
+        case .turnCompleted:
             Task { [weak self] in
                 try? await Task.sleep(for: .seconds(AllowanceRefreshPolicy.turnCompletionDebounce))
                 await self?.refreshUsage(.turnCompleted)
             }
-        } else if resolved.dominantPhase.isActive {
-            Task { [weak self] in await self?.refreshUsage(.working) }
-        } else if resolved.dominantPhase == .idle {
-            Task { [weak self] in await self?.refreshUsage(.idle) }
+        case let reason:
+            Task { [weak self] in await self?.refreshUsage(reason) }
         }
         syncWidgetSnapshot()
+    }
+
+    /// Which usage refresh this tick asks for. Every tick asks for one:
+    /// the coordinator's own intervals decide whether it actually runs.
+    ///
+    /// Not keyed on `dominantPhase`. That ranks a permission prompt above
+    /// work, and a prompt never ages out, so one session left waiting
+    /// stopped every periodic refresh for every provider, and the brief
+    /// completed, failed, and disconnected phases did the same.
+    static func usageRefreshReason(
+        for resolved: ResolvedSessions,
+        previousPhases: [String: SessionPhase]
+    ) -> AllowanceRefreshReason {
+        if resolved.sessions.contains(where: { endedThisRefresh($0, previousPhases: previousPhases) }) {
+            return .turnCompleted
+        }
+        return resolved.sessions.contains(where: { $0.phase.isActive }) ? .working : .idle
     }
 
     func refreshCodexDiscovery() async {
@@ -327,7 +351,7 @@ final class AppModel {
     /// when widget integration is not injected, such as in fixtures and
     /// tests that do not exercise the widget path.
     private func syncWidgetSnapshot() {
-        guard let widgetSnapshotWriter else { return }
+        guard widgetSnapshotWriter != nil || stateSyncPublisher != nil else { return }
         var allowances: [AgentProvider: ProviderAllowance] = [:]
         for provider in AgentProvider.allCases {
             guard case let .available(allowance, _) = allowanceState(for: provider) else { continue }
@@ -340,20 +364,42 @@ final class AppModel {
             now: now(),
             revision: widgetSnapshotRevision + 1
         )
+        // Offered every tick, whether or not the desktop widget's file
+        // changes: the publisher has its own heartbeat, so a quiet Mac
+        // keeps telling the phone it is still there.
+        stateSyncPublisher?.snapshotDidRefresh(snapshot, now: now())
+        guard let widgetSnapshotWriter else { return }
         // The revision is deliberately absent from this comparison: a
         // snapshot must never become worth writing merely because the
         // counter moved, or the widget would reload on every tick.
-        if let last = lastWidgetSnapshot, !WidgetSnapshotBuilder.isMeaningfullyDifferent(snapshot, from: last) {
-            return
-        }
+        let changed = lastWidgetSnapshot.map {
+            WidgetSnapshotBuilder.isMeaningfullyDifferent(snapshot, from: $0)
+        } ?? true
+        // A provider read again with unchanged values is still written, so
+        // the widget's next read carries its true observation time instead
+        // of the old one. It reloads only when that clears a stale label;
+        // otherwise nothing on the canvas changes and WidgetKit's reload
+        // budget is kept for real changes.
+        let reobserved = lastWidgetSnapshot.map {
+            WidgetSnapshotBuilder.allowanceObservationsAdvanced(snapshot, from: $0)
+        } ?? false
+        guard changed || reobserved else { return }
+        let clearsStaleness = lastWidgetSnapshot.map {
+            WidgetSnapshotBuilder.clearsStaleAllowance(snapshot, from: $0, now: snapshot.generatedAt)
+        } ?? false
+        // A re-read keeps the revision: the large widget rotates its session
+        // row on revision, and unchanged values are not new data to rotate on.
+        let written = changed ? snapshot : snapshot.withRevision(widgetSnapshotRevision)
         do {
-            try widgetSnapshotWriter.write(snapshot)
+            try widgetSnapshotWriter.write(written)
         } catch {
             return
         }
-        widgetSnapshotRevision = snapshot.revision
-        lastWidgetSnapshot = snapshot
-        widgetTimelineReloader?.reloadAll()
+        widgetSnapshotRevision = written.revision
+        lastWidgetSnapshot = written
+        if changed || clearsStaleness {
+            widgetTimelineReloader?.reloadAll()
+        }
     }
 
     /// installedProviders does file I/O (reads settings.json/hooks.json).

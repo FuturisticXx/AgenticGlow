@@ -39,6 +39,11 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.event
         PRODUCT_NAME: agenticglow-event
+        # The helper ships inside the app bundle (see the app's embed
+        # script), never as a standalone install. Without this an archive
+        # also installs it to usr/local/bin, which turns the archive into
+        # a generic one that Xcode refuses to export as an application.
+        SKIP_INSTALL: YES
         LD_RUNPATH_SEARCH_PATHS:
           - "$(inherited)"
           - "@loader_path"
@@ -114,6 +119,14 @@ targets:
         # target app individually under Privacy & Security, Automation.
         # Used for raising a Codex window and for Messages reset alerts.
         com.apple.security.automation.apple-events: true
+        # Publishes the widget snapshot to the user's private CloudKit
+        # database for the iPhone widget, only when "Sync to the iPhone
+        # widget" is on. The publisher checks for this entitlement at
+        # runtime and stays inert in a build signed without it.
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.twodamax.agenticglow
+        com.apple.developer.icloud-services:
+          - CloudKit
     dependencies:
       - target: AgenticGlowCore
       - target: AgenticGlowEvent
@@ -159,6 +172,145 @@ targets:
       configs:
         Debug:
           DEVELOPMENT_TEAM: Z52AX2BH7T
+  # iOS. The same Core sources compile into a second framework with the
+  # same module name, so the widget views import AgenticGlowCore on both
+  # platforms unchanged. The file list is the platform-neutral subset:
+  # the widget snapshot model and semantics, the session and work rules
+  # the snapshot builder relies on, and synchronization. Process
+  # inspection, hook installation, Keychain, and provider adapters stay
+  # macOS-only. A new Core file the widget needs is added here; the iOS
+  # build fails loudly if one is missed.
+  AgenticGlowCoreiOS:
+    type: framework
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Sources/AgenticGlowCore/Widget
+      - path: Sources/AgenticGlowCore/Sync
+      - path: Sources/AgenticGlowCore/Work
+      - path: Sources/AgenticGlowCore/Events/AgentProvider.swift
+      - path: Sources/AgenticGlowCore/Events/ToolCategory.swift
+      - path: Sources/AgenticGlowCore/Events/JSONCoding.swift
+      - path: Sources/AgenticGlowCore/Events/NormalizedEvent.swift
+      - path: Sources/AgenticGlowCore/Events/HookEventKind.swift
+      # Allowance is listed file by file rather than as a directory,
+      # unlike Widget/Sync/Work above. The adapters in it hold the
+      # provider credentials and make the network calls, and none of that
+      # belongs on the phone, which only ever reads a snapshot the Mac
+      # published. A new file here is not in the iOS build until it is
+      # named on this list.
+      - path: Sources/AgenticGlowCore/Allowance/AllowanceWarning.swift
+      - path: Sources/AgenticGlowCore/Allowance/ProviderAllowance.swift
+      - path: Sources/AgenticGlowCore/Allowance/AllowancePool.swift
+      - path: Sources/AgenticGlowCore/Allowance/AllowanceWindowRollover.swift
+      - path: Sources/AgenticGlowCore/State/SessionKey.swift
+      - path: Sources/AgenticGlowCore/State/SessionResolver.swift
+      - path: Sources/AgenticGlowCore/State/SessionSnapshot.swift
+      - path: Sources/AgenticGlowCore/State/SessionVisibilityPolicy.swift
+      - path: Sources/AgenticGlowCore/Product/ProductMetadata.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.ios.core
+        PRODUCT_NAME: AgenticGlowCore
+        PRODUCT_MODULE_NAME: AgenticGlowCore
+        DEFINES_MODULE: YES
+        GENERATE_INFOPLIST_FILE: YES
+        MACH_O_TYPE: staticlib
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        TARGETED_DEVICE_FAMILY: "1"
+  AgenticGlowWidgetiOS:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    # The same view, intent, and provider sources as the desktop widget.
+    sources:
+      - Sources/AgenticGlowWidget
+    info:
+      path: Config/AgenticGlowWidgetiOS-Info.plist
+      properties:
+        CFBundleDisplayName: AgenticGlow
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSHumanReadableCopyright: Copyright © 2026 AgenticGlow contributors
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: Config/AgenticGlowWidgetiOS.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.twodamax.agenticglow
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.twodamax.agenticglow
+        com.apple.developer.icloud-services:
+          - CloudKit
+    dependencies:
+      - target: AgenticGlowCoreiOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.ios.widget
+        PRODUCT_NAME: AgenticGlowWidgetiOS
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: Z52AX2BH7T
+  AgenticGlowiOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - Sources/AgenticGlowiOS
+    resources:
+      - Sources/AgenticGlowiOS/Resources
+    info:
+      path: Config/AgenticGlowiOS-Info.plist
+      properties:
+        CFBundleDisplayName: AgenticGlow
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSHumanReadableCopyright: Copyright © 2026 AgenticGlow contributors
+        # Only Apple's CloudKit transport security; no encryption of the
+        # app's own, so the export-compliance question is answered here.
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        # Silent CloudKit pushes when the Mac publishes. Apple's push
+        # service on CloudKit's behalf; no AgenticGlow server exists.
+        UIBackgroundModes:
+          - remote-notification
+        CFBundleURLTypes:
+          - CFBundleURLName: com.twodamax.agenticglow.ios
+            CFBundleURLSchemes:
+              - agenticglow
+    entitlements:
+      path: Config/AgenticGlowiOS.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.twodamax.agenticglow
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.twodamax.agenticglow
+        com.apple.developer.icloud-services:
+          - CloudKit
+        aps-environment: development
+    dependencies:
+      - target: AgenticGlowCoreiOS
+      - target: AgenticGlowWidgetiOS
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.twodamax.agenticglow.ios
+        PRODUCT_NAME: AgenticGlow
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        TARGETED_DEVICE_FAMILY: "1"
+        # iOS ships through Xcode's own signing (archive and export), not
+        # the Mac's manual Developer ID pipeline, so both configurations
+        # sign automatically for the team.
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: Z52AX2BH7T
   AgenticGlowCoreTests:
     type: bundle.unit-test
     platform: macOS
@@ -257,3 +409,7 @@ schemes:
     test:
       targets:
         - AgenticGlowEventTests
+  AgenticGlowiOS:
+    build:
+      targets:
+        AgenticGlowiOS: all

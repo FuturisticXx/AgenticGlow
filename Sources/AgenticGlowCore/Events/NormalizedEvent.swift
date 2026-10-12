@@ -127,20 +127,3 @@ public struct NormalizedEvent: Codable, Equatable, Sendable {
             && value.unicodeScalars.allSatisfy(allowed.contains)
     }
 }
-
-public extension JSONEncoder {
-    static var agenticglow: JSONEncoder {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .secondsSince1970
-        encoder.outputFormatting = [.sortedKeys]
-        return encoder
-    }
-}
-
-public extension JSONDecoder {
-    static var agenticglow: JSONDecoder {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .secondsSince1970
-        return decoder
-    }
-}

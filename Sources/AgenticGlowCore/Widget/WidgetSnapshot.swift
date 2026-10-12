@@ -49,6 +49,22 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         self.revision = revision
     }
 
+    /// The same snapshot under another revision. Used when the app rewrites
+    /// a snapshot whose shown data did not change, which must not advance
+    /// anything keyed on the revision.
+    public func withRevision(_ revision: Int) -> WidgetSnapshot {
+        WidgetSnapshot(
+            schemaVersion: schemaVersion,
+            generatedAt: generatedAt,
+            sessions: sessions,
+            allowances: allowances,
+            providers: providers,
+            attentionCount: attentionCount,
+            activeCount: activeCount,
+            revision: revision
+        )
+    }
+
     /// Hand-written for the same reason as `WidgetAllowanceSummary`'s: a
     /// snapshot written by an older app build has no `revision` key, and
     /// the widget must render it rather than fail the whole decode and
@@ -143,6 +159,9 @@ public struct WidgetSessionSummary: Codable, Equatable, Sendable, Identifiable {
 public struct WidgetAllowanceSummary: Codable, Equatable, Sendable {
     public let provider: AgentProvider
     public let currentWindowLabel: String
+    /// The current window's period, carried so a disconnected iPhone can
+    /// tell that the window elapsed. See `ProviderAllowance`.
+    public let currentWindowDuration: TimeInterval?
     public let currentPercentLeft: Double?
     public let currentResetAt: Date?
     public let weeklyPercentLeft: Double?
@@ -157,6 +176,7 @@ public struct WidgetAllowanceSummary: Codable, Equatable, Sendable {
     public init(
         provider: AgentProvider,
         currentWindowLabel: String,
+        currentWindowDuration: TimeInterval? = nil,
         currentPercentLeft: Double?,
         currentResetAt: Date?,
         weeklyPercentLeft: Double?,
@@ -166,6 +186,7 @@ public struct WidgetAllowanceSummary: Codable, Equatable, Sendable {
     ) {
         self.provider = provider
         self.currentWindowLabel = currentWindowLabel
+        self.currentWindowDuration = currentWindowDuration
         self.currentPercentLeft = currentPercentLeft
         self.currentResetAt = currentResetAt
         self.weeklyPercentLeft = weeklyPercentLeft
@@ -182,12 +203,29 @@ public struct WidgetAllowanceSummary: Codable, Equatable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         provider = try container.decode(AgentProvider.self, forKey: .provider)
         currentWindowLabel = try container.decode(String.self, forKey: .currentWindowLabel)
+        // Absent from a snapshot written by a Mac that predates durations.
+        // Decodes as nil, which simply means no window can be rolled
+        // forward, exactly as before.
+        currentWindowDuration = try container.decodeIfPresent(TimeInterval.self, forKey: .currentWindowDuration)
         currentPercentLeft = try container.decodeIfPresent(Double.self, forKey: .currentPercentLeft)
         currentResetAt = try container.decodeIfPresent(Date.self, forKey: .currentResetAt)
         weeklyPercentLeft = try container.decodeIfPresent(Double.self, forKey: .weeklyPercentLeft)
         weeklyResetAt = try container.decodeIfPresent(Date.self, forKey: .weeklyResetAt)
         pools = try container.decodeIfPresent([WidgetAllowancePool].self, forKey: .pools) ?? []
         fetchedAt = try container.decode(Date.self, forKey: .fetchedAt)
+    }
+
+    /// "Updated 16h ago" once this provider's own reading is older than
+    /// the widget's staleness threshold, nil while it is current.
+    ///
+    /// Judged from `fetchedAt`, when the Mac actually read the provider,
+    /// never from the snapshot's `generatedAt`. When a read fails the Mac
+    /// keeps its last good value, and every snapshot written afterwards
+    /// carries that value forward under a new generation time, so the
+    /// snapshot's age says nothing about how old these numbers are.
+    public func staleLabel(now: Date) -> String? {
+        guard WidgetDataFreshness.evaluate(generatedAt: fetchedAt, now: now) == .stale else { return nil }
+        return "Updated \(WidgetSnapshotFormatting.lastUpdatedLabel(fetchedAt, now: now))"
     }
 
     /// The one reset every pool shares, when they genuinely share one.
@@ -212,6 +250,47 @@ public struct WidgetAllowanceSummary: Codable, Equatable, Sendable {
     /// display-layer projection over already-serialized fields, so it
     /// doesn't need Codable or a schema version bump.
     public var windows: [WidgetAllowanceWindow] {
+        windows(asOf: nil)
+    }
+
+    /// The same projection, re-read as of `now`.
+    ///
+    /// Passing a date is what an iPhone does: its snapshot can be hours
+    /// old, so a window whose reset has since passed is reported as the
+    /// fresh window it now is rather than the spent one it was. Passing
+    /// nil is what the desktop does, where the snapshot is seconds old
+    /// and every figure still describes the window it was read from.
+    public func windows(asOf now: Date?) -> [WidgetAllowanceWindow] {
+        rawWindows.map { window in
+            guard let now else { return window }
+            let rolled = AllowanceWindowRollover.apply(
+                percentLeft: window.percentLeft,
+                resetAt: window.resetAt,
+                duration: duration(of: window.kind),
+                now: now
+            )
+            return WidgetAllowanceWindow(
+                provider: window.provider,
+                kind: window.kind,
+                label: window.label,
+                percentLeft: rolled.percentLeft,
+                resetAt: rolled.resetAt,
+                isDerived: rolled.isDerived
+            )
+        }
+    }
+
+    /// The period of a given window, where one is known. A pool states no
+    /// period, so a pool never rolls forward.
+    private func duration(of kind: WidgetAllowanceWindow.Kind) -> TimeInterval? {
+        switch kind {
+        case .current: currentWindowDuration
+        case .weekly: AllowanceWindowRollover.weeklyDuration
+        case .pool: nil
+        }
+    }
+
+    private var rawWindows: [WidgetAllowanceWindow] {
         guard pools.isEmpty else {
             return pools.map { pool in
                 WidgetAllowanceWindow(
@@ -289,19 +368,25 @@ public struct WidgetAllowanceWindow: Equatable, Sendable, Identifiable {
     public let label: String
     public let percentLeft: Double?
     public let resetAt: Date?
+    /// Set when `percentLeft` was inferred from a window having elapsed
+    /// rather than read off the Mac. The caption marks it so an inferred
+    /// figure is never mistaken for an observed one.
+    public let isDerived: Bool
 
     public init(
         provider: AgentProvider,
         kind: Kind,
         label: String,
         percentLeft: Double?,
-        resetAt: Date?
+        resetAt: Date?,
+        isDerived: Bool = false
     ) {
         self.provider = provider
         self.kind = kind
         self.label = label
         self.percentLeft = percentLeft
         self.resetAt = resetAt
+        self.isDerived = isDerived
     }
 
     public var id: String {

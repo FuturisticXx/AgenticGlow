@@ -113,6 +113,7 @@ public enum ClaudeAllowanceNormalizer {
         return ProviderAllowance(
             provider: .claude,
             currentWindowLabel: "5h",
+            currentWindowDuration: AllowanceWindowRollover.claudeCurrentDuration,
             currentPercentUsed: response.fiveHour.utilization,
             currentResetAt: parseDate(response.fiveHour.resetsAt),
             weeklyPercentUsed: response.sevenDay?.utilization,

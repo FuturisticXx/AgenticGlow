@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var setupWindow: NSWindow?
     private var uiTestSessionWindow: NSWindow?
     private var preferences = PreferencesStore()
+    private var stateSyncService: StateSyncService?
     private var updateViewModel = UpdateViewModel()
     private let launchAtLogin = LaunchAtLoginService()
     private var claudeCredentialStore: any SessionCredentialStoring =
@@ -93,6 +94,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             performCleanRemoval()
             exit(EXIT_SUCCESS)
         }
+        #if DEBUG
+        // One-shot CloudKit round trip for the iPhone widget. Runs before
+        // any monitoring starts, so this process never collects, never
+        // opens the Keychain, and exits as soon as the report is printed.
+        if CloudKitVerificationCommand.isRequested {
+            Task {
+                let status = await CloudKitVerificationCommand.run()
+                exit(status)
+            }
+            return
+        }
+        #endif
 
         // AgenticGlow's Setup and Settings windows are transient utility
         // panels, not documents — they must never be restored by macOS's
@@ -215,6 +228,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 )
             ]
             : []
+        // Only a real, signed run gets a transport: fixtures and test runs
+        // must never reach iCloud, and an unentitled build must never
+        // construct a container (CloudKit raises rather than throws).
+        if fixtureName == nil, !Self.isRunningUnderXCTest {
+            stateSyncService = StateSyncService(
+                transport: CloudKitEntitlement.isPresent() ? CloudKitSyncTransport() : nil,
+                identity: MacSyncIdentity.stored(),
+                isEnabled: { [weak self] in self?.preferences.iPhoneSyncEnabled ?? false }
+            )
+        }
         model = AppModel(
             store: store,
             processMonitor: DarwinProcessMonitor(),
@@ -228,6 +251,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 : nil,
             widgetSnapshotWriter: fixtureName == nil ? AppGroupSnapshotWriter() : nil,
             widgetTimelineReloader: fixtureName == nil ? SystemWidgetTimelineReloader() : nil,
+            stateSyncPublisher: stateSyncService,
             installedProviders: fixtureName == nil ? {
                 Dictionary(uniqueKeysWithValues: widgetIntegrationManagers.map { manager in
                     var installed = (try? manager.status().installed) ?? false
@@ -391,6 +415,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             preferences: preferences,
             updates: updateViewModel,
             launchAtLogin: launchAtLogin,
+            stateSync: stateSyncService,
             openIntegrations: { [weak self] in self?.showSetupWindow() },
             serviceStatusChanged: { [weak self] enabled in
                 Task { await self?.model.setServiceStatusEnabled(enabled) }

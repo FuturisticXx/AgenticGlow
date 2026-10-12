@@ -327,7 +327,60 @@ final class WidgetSnapshotBuilderTests: XCTestCase {
         XCTAssertTrue(WidgetSnapshotBuilder.isMeaningfullyDifferent(b, from: a))
     }
 
+    // MARK: - Observation time
+
+    func testReobservedUnchangedAllowanceAdvancesWithoutBeingAMeaningfulChange() {
+        let a = snapshot(fetchedAt: now)
+        let b = snapshot(fetchedAt: now.addingTimeInterval(300), generatedAt: now.addingTimeInterval(300))
+        XCTAssertFalse(WidgetSnapshotBuilder.isMeaningfullyDifferent(b, from: a))
+        XCTAssertTrue(WidgetSnapshotBuilder.allowanceObservationsAdvanced(b, from: a))
+    }
+
+    func testOlderOrEqualObservationIsNotAnAdvance() {
+        let newer = snapshot(fetchedAt: now)
+        let older = snapshot(fetchedAt: now.addingTimeInterval(-300))
+        XCTAssertFalse(WidgetSnapshotBuilder.allowanceObservationsAdvanced(older, from: newer))
+        XCTAssertFalse(WidgetSnapshotBuilder.allowanceObservationsAdvanced(newer, from: newer))
+    }
+
+    func testStaleLabelFollowsTheProviderReadNotTheSnapshot() {
+        // Generated just now for a session change, carrying a Codex value
+        // the Mac last read 16 hours ago: the 2026-10-04 failure.
+        let carried = snapshot(fetchedAt: now.addingTimeInterval(-16 * 3600), generatedAt: now)
+        XCTAssertEqual(WidgetDataFreshness.evaluate(generatedAt: carried.generatedAt, now: now), .fresh)
+        XCTAssertEqual(carried.allowances.first?.staleLabel(now: now), "Updated 16h ago")
+    }
+
+    func testStaleLabelBoundaries() {
+        let threshold = WidgetDataFreshness.staleThreshold
+        XCTAssertNil(snapshot(fetchedAt: now.addingTimeInterval(-threshold)).allowances.first?.staleLabel(now: now))
+        XCTAssertEqual(
+            snapshot(fetchedAt: now.addingTimeInterval(-threshold - 1)).allowances.first?.staleLabel(now: now),
+            "Updated 15m ago"
+        )
+        // A reading stamped ahead of this clock is not stale, and never a negative age.
+        XCTAssertNil(snapshot(fetchedAt: now.addingTimeInterval(600)).allowances.first?.staleLabel(now: now))
+    }
+
+    func testOnlyARecoveryFromStaleClearsTheLabel() {
+        let stale = snapshot(fetchedAt: now.addingTimeInterval(-16 * 3600))
+        let current = snapshot(fetchedAt: now)
+        let recent = snapshot(fetchedAt: now.addingTimeInterval(-60))
+        XCTAssertTrue(WidgetSnapshotBuilder.clearsStaleAllowance(current, from: stale, now: now))
+        XCTAssertFalse(WidgetSnapshotBuilder.clearsStaleAllowance(current, from: recent, now: now))
+        XCTAssertFalse(WidgetSnapshotBuilder.clearsStaleAllowance(stale, from: current, now: now))
+    }
+
     // MARK: - Fixtures
+
+    private func snapshot(fetchedAt: Date, generatedAt: Date? = nil) -> WidgetSnapshot {
+        WidgetSnapshotBuilder.build(
+            resolved: resolved(sessions: []),
+            allowances: [.codex: allowance(provider: .codex, currentPercentUsed: 40, fetchedAt: fetchedAt)],
+            installedProviders: [:],
+            now: generatedAt ?? now
+        )
+    }
 
     private func resolved(
         sessions: [SessionSnapshot],
@@ -366,7 +419,7 @@ final class WidgetSnapshotBuilderTests: XCTestCase {
         )
     }
 
-    private func allowance(provider: AgentProvider, currentPercentUsed: Double) -> ProviderAllowance {
+    private func allowance(provider: AgentProvider, currentPercentUsed: Double, fetchedAt: Date? = nil) -> ProviderAllowance {
         ProviderAllowance(
             provider: provider,
             currentWindowLabel: "5h",
@@ -374,7 +427,7 @@ final class WidgetSnapshotBuilderTests: XCTestCase {
             currentResetAt: now.addingTimeInterval(3600),
             weeklyPercentUsed: currentPercentUsed,
             weeklyResetAt: now.addingTimeInterval(86_400),
-            fetchedAt: now
+            fetchedAt: fetchedAt ?? now
         )
     }
 }

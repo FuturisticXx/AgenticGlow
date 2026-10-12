@@ -1,5 +1,4 @@
-MARKETING_VERSION = 0.6.0
-CURRENT_PROJECT_VERSION = 6
+#include "Version.xcconfig"
 CODE_SIGN_STYLE = Automatic
 ENABLE_HARDENED_RUNTIME = YES
 APP_GROUP_ID = group.com.twodamax.agenticglow

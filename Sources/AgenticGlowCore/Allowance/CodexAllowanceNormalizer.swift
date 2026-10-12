@@ -35,6 +35,7 @@ public enum CodexAllowanceNormalizer {
         return ProviderAllowance(
             provider: .codex,
             currentWindowLabel: Self.label(forMinutes: limits.primary.windowDurationMins),
+            currentWindowDuration: TimeInterval(limits.primary.windowDurationMins) * 60,
             currentPercentUsed: limits.primary.usedPercent,
             currentResetAt: Self.resetDate(limits.primary.resetsAt, fetchedAt: fetchedAt),
             weeklyPercentUsed: limits.secondary?.usedPercent,

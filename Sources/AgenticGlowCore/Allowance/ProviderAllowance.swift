@@ -3,6 +3,13 @@ import Foundation
 public struct ProviderAllowance: Codable, Equatable, Sendable {
     public let provider: AgentProvider
     public let currentWindowLabel: String
+    /// How long the current window runs, when the provider states it.
+    /// The label alone ("5h", "Weekly", "Billing cycle") is for reading,
+    /// not arithmetic; without the period nothing downstream can tell
+    /// that a window elapsed or when the next one opens, which is what
+    /// left a disconnected iPhone showing a spent window as current.
+    /// Nil for a provider that states no period (Cursor's billing cycle).
+    public let currentWindowDuration: TimeInterval?
     public let currentPercentUsed: Double?
     public let currentPercentLeft: Double?
     public let currentResetAt: Date?
@@ -20,6 +27,7 @@ public struct ProviderAllowance: Codable, Equatable, Sendable {
     public init(
         provider: AgentProvider,
         currentWindowLabel: String,
+        currentWindowDuration: TimeInterval? = nil,
         currentPercentUsed: Double?,
         currentResetAt: Date?,
         weeklyPercentUsed: Double?,
@@ -29,6 +37,7 @@ public struct ProviderAllowance: Codable, Equatable, Sendable {
     ) {
         self.provider = provider
         self.currentWindowLabel = currentWindowLabel
+        self.currentWindowDuration = Self.validDuration(currentWindowDuration)
         self.currentPercentUsed = Self.clamp(currentPercentUsed)
         self.currentPercentLeft = Self.remaining(from: currentPercentUsed)
         self.currentResetAt = currentResetAt
@@ -46,6 +55,11 @@ public struct ProviderAllowance: Codable, Equatable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         provider = try container.decode(AgentProvider.self, forKey: .provider)
         currentWindowLabel = try container.decode(String.self, forKey: .currentWindowLabel)
+        // Absent from anything cached before durations were carried, which
+        // decodes as nil and behaves exactly as that build did.
+        currentWindowDuration = Self.validDuration(
+            try container.decodeIfPresent(TimeInterval.self, forKey: .currentWindowDuration)
+        )
         // Clamped here as well as in the designated initializer: a cache
         // file is untrusted input, and decoding bypasses that initializer.
         currentPercentUsed = Self.clamp(try container.decodeIfPresent(Double.self, forKey: .currentPercentUsed))
@@ -56,6 +70,14 @@ public struct ProviderAllowance: Codable, Equatable, Sendable {
         weeklyResetAt = try container.decodeIfPresent(Date.self, forKey: .weeklyResetAt)
         pools = try container.decodeIfPresent([AllowancePool].self, forKey: .pools) ?? []
         fetchedAt = try container.decode(Date.self, forKey: .fetchedAt)
+    }
+
+    /// A period is a positive, finite number of seconds or it is not a
+    /// period. A cache file is untrusted input, so this guards the
+    /// decoder as well as the initializer.
+    private static func validDuration(_ value: TimeInterval?) -> TimeInterval? {
+        guard let value, value.isFinite, value > 0 else { return nil }
+        return value
     }
 
     private static func clamp(_ value: Double?) -> Double? {

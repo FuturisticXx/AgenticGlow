@@ -103,6 +103,7 @@ public struct CodexAppServerClient: CodexRateLimitRequesting {
             let output = Pipe()
             process.executableURL = executableURL
             process.arguments = ["app-server"]
+            process.environment = ExecutableLocator.launchEnvironment(for: executableURL)
             process.standardInput = input
             process.standardOutput = output
             process.standardError = FileHandle.nullDevice

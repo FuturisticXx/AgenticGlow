@@ -6,9 +6,12 @@ import Foundation
 /// follows the same conventions: exact seconds under one minute, absolute
 /// clock time alongside relative countdowns.
 public enum WidgetSnapshotFormatting {
-    public static func percentLeftLabel(_ percent: Double?) -> String {
+    public static func percentLeftLabel(_ percent: Double?, isDerived: Bool = false) -> String {
         guard let percent else { return "Unavailable" }
-        return "\(Int(percent.rounded()))% left"
+        let value = "\(Int(percent.rounded()))% left"
+        // Inferred from a window having elapsed rather than read off a
+        // Mac. See `AllowanceWindowRollover`.
+        return isDerived ? "~\(value)" : value
     }
 
     public static func elapsedLabel(seconds: Int?) -> String? {
@@ -123,6 +126,10 @@ public enum WidgetSnapshotFormatting {
         let minutes = Int(interval / 60)
         if minutes < 60 { return "\(minutes)m ago" }
         let hours = minutes / 60
-        return "\(hours)h ago"
+        if hours < 24 { return "\(hours)h ago" }
+        // Reachable only through synchronized state: the desktop widget
+        // labels anything past its threshold "Stale" before this point.
+        let days = hours / 24
+        return "\(days)d ago"
     }
 }
