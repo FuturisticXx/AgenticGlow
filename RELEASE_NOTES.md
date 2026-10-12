@@ -1,3 +1,9 @@
+# v0.8.1
+
+## Fixed
+
+- **Settings opens again.** In v0.8.0, opening Settings closed AgenticGlow. The rest of the app was unaffected.
+
 # v0.8.0
 
 ## New
