@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var setupWindow: NSWindow?
     private var uiTestSessionWindow: NSWindow?
     private var preferences = PreferencesStore()
-    private var stateSyncService: StateSyncService?
+    private(set) var stateSyncService: StateSyncService?
     private var updateViewModel = UpdateViewModel()
     private let launchAtLogin = LaunchAtLoginService()
     private var claudeCredentialStore: any SessionCredentialStoring =
@@ -23,6 +23,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private static var isRunningUnderXCTest: Bool {
         TestExecutionEnvironment.isRunningTests()
+    }
+
+    override convenience init() {
+        self.init(arguments: CommandLine.arguments, isRunningTests: Self.isRunningUnderXCTest)
+    }
+
+    /// The sync service is built here, not in applicationDidFinishLaunching,
+    /// because SwiftUI evaluates the Settings scene before launch finishes and
+    /// never re-reads it: a service created later left Settings without one,
+    /// so 0.8.0 and 0.8.1 never showed the sync status line.
+    init(arguments: [String], isRunningTests: Bool) {
+        super.init()
+        // Only a real, signed run gets a transport: fixtures and test runs
+        // must never reach iCloud, and an unentitled build must never
+        // construct a container (CloudKit raises rather than throws).
+        if Self.fixtureName(arguments: arguments) == nil, !isRunningTests {
+            stateSyncService = StateSyncService(
+                transport: CloudKitEntitlement.isPresent() ? CloudKitSyncTransport() : nil,
+                identity: MacSyncIdentity.stored(),
+                isEnabled: { [weak self] in self?.preferences.iPhoneSyncEnabled ?? false }
+            )
+        }
+    }
+
+    private static func fixtureName(arguments: [String]) -> String? {
+        VisualQALaunchConfiguration(arguments: arguments) == nil
+            ? UITestFixtureFactory.name(arguments: arguments)
+            : "empty"
     }
 
     private var notificationService: AgentNotificationService?
@@ -128,9 +156,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 named: visualQA.appearance == .dark ? .darkAqua : .aqua
             )
         }
-        let fixtureName = visualQA == nil
-            ? UITestFixtureFactory.name(arguments: CommandLine.arguments)
-            : "empty"
+        let fixtureName = Self.fixtureName(arguments: CommandLine.arguments)
         // Test runs never touch the login Keychain. Each locally re-signed
         // build is a new code identity, so an app-hosted test that reads a
         // stored cookie re-prompts for the Keychain password on every run
@@ -228,16 +254,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 )
             ]
             : []
-        // Only a real, signed run gets a transport: fixtures and test runs
-        // must never reach iCloud, and an unentitled build must never
-        // construct a container (CloudKit raises rather than throws).
-        if fixtureName == nil, !Self.isRunningUnderXCTest {
-            stateSyncService = StateSyncService(
-                transport: CloudKitEntitlement.isPresent() ? CloudKitSyncTransport() : nil,
-                identity: MacSyncIdentity.stored(),
-                isEnabled: { [weak self] in self?.preferences.iPhoneSyncEnabled ?? false }
-            )
-        }
         model = AppModel(
             store: store,
             processMonitor: DarwinProcessMonitor(),
