@@ -1,3 +1,9 @@
+# v0.8.2
+
+## Fixed
+
+- **Settings shows the iPhone sync status again.** With **Sync to the iPhone widget** on, Settings now says when it last published, or why it could not.
+
 # v0.8.1
 
 ## Fixed

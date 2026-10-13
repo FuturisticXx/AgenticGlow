@@ -22,6 +22,19 @@ final class StateSyncServiceTests: XCTestCase {
         }
     }
 
+    /// SwiftUI builds the Settings scene before applicationDidFinishLaunching,
+    /// so the service has to exist as soon as the delegate does, or Settings
+    /// never gets one and hides the sync status line.
+    func testSyncServiceExistsBeforeLaunchFinishes() {
+        let delegate = AppDelegate(arguments: ["AgenticGlow"], isRunningTests: false)
+        XCTAssertNotNil(delegate.stateSyncService)
+    }
+
+    func testFixtureAndTestLaunchesGetNoSyncService() {
+        XCTAssertNil(AppDelegate(arguments: ["AgenticGlow"], isRunningTests: true).stateSyncService)
+        XCTAssertNil(AppDelegate(arguments: ["AgenticGlow", "--visual-qa"], isRunningTests: false).stateSyncService)
+    }
+
     func testPreferenceDefaultsOff() {
         let suiteName = "StateSyncServiceTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
